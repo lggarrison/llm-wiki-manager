@@ -24,7 +24,7 @@ scripts/wiki/
 ├── log.mjs            # Append operation entries to log.md
 └── sync-see-also.mjs  # Sync related: frontmatter to body links
 
-AGENTS.md              # Generic agent instructions (created or amended)
+AGENTS.md              # Repo-root pointer to wiki/AGENTS.md (created or amended)
 
 package.json           # wiki:* npm scripts added (when present)
 ```
@@ -97,7 +97,7 @@ You will be prompted for:
 After `init` completes:
 
 1. Open `wiki/schema.md` to review the conventions your agent will follow
-2. Share `AGENTS.md` with your LLM agent (or point it to the file)
+2. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
 3. Run `npm run wiki:lint` to confirm the scaffold is valid
 
 If your project has no `package.json`, use the raw script paths under `scripts/wiki/` instead (see [Managing the wiki](#managing-the-wiki)).
@@ -340,12 +340,36 @@ npm run format:check # verify formatting without writing
 
 The compiled CLI entry point is `dist/bin/cli.js` (built from `bin/cli.ts`). The `prepare` script sets up Husky and runs the build automatically on install and before publishing, so `dist/` is always present in the published package.
 
+### Internal wiki
+
+This repo dogfoods its own wiki workflow. Internal knowledge about `src/` and `templates/` lives in:
+
+- [`wiki/index.md`](wiki/index.md) — auto-generated page catalog
+- [`wiki/AGENTS.md`](wiki/AGENTS.md) — agent instructions (`AGENTS.md` at repo root points here)
+
+Run `npm run wiki:help` for wiki commands. CI and `release:check` run `wiki:lint` and `wiki:check`.
+
+### Refreshing dogfooded scaffold
+
+When you change files under `templates/scripts/`, refresh the dogfooded copy and verify sync:
+
+```bash
+npm run build
+node scripts/bootstrap-dogfood.mjs
+npm test                    # includes templates/scripts ↔ scripts/wiki sync test
+npm run wiki:lint
+npm run wiki:build
+npm run wiki:check
+```
+
+The bootstrap script copies `templates/scripts/` into `scripts/wiki/` with placeholders resolved. It does not overwrite wiki content pages.
+
 ### Code quality & git hooks
 
 This repo uses [ESLint](https://eslint.org), [Prettier](https://prettier.io), and [Husky](https://typicode.github.io/husky/) with [lint-staged](https://github.com/lint-staged/lint-staged):
 
-- **pre-commit** — runs `lint-staged`, applying `eslint --fix` and `prettier --write` to staged files
-- **pre-push** — runs the full test suite (`npm test`)
+- **pre-commit** — runs `lint-staged`; when staged files include `wiki/`, also runs `npm run wiki:lint`
+- **pre-push** — runs `npm run release:check` (lint, format, tests, build, and wiki checks)
 
 Husky is only installed in the local development repo; it is skipped automatically in CI, production installs, and when the package is consumed as a dependency.
 

@@ -4,7 +4,7 @@
  * Usage: node {{SCRIPTS_DIR}}/lint.mjs [--warn-only] [--wiki-dir <path>]
  */
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
-import { join, resolve, relative, dirname } from 'path';
+import { join, resolve, relative, dirname, basename } from 'path';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -16,6 +16,18 @@ const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}
 const VALID_TYPES = new Set(['concept', 'source', 'overview', 'hub']);
 const VALID_STATUSES = new Set(['draft', 'stable', 'archived']);
 const REQUIRED_FIELDS = ['type', 'title', 'last_updated', 'tags', 'related', 'status'];
+
+const RAW_ARTIFACT_DIRS = ['articles', 'prs', 'tickets', 'design-notes', 'transcripts', 'assets'];
+
+function shouldSkipWikiPath(full) {
+  const rel = relative(WIKI_DIR, full).replace(/\\/g, '/');
+  if (rel.startsWith('archive/') || rel === 'archive') return true;
+  if (rel.includes('.obsidian')) return true;
+  for (const sub of RAW_ARTIFACT_DIRS) {
+    if (rel.startsWith(`raw/${sub}/`) || rel === `raw/${sub}`) return true;
+  }
+  return false;
+}
 
 // ── Frontmatter parser ────────────────────────────────────────────────────────
 
@@ -39,13 +51,13 @@ function parseFrontmatter(content) {
 
 // ── File walker ───────────────────────────────────────────────────────────────
 
-function walkMd(dir, skip = []) {
+function walkMd(dir) {
   const results = [];
   if (!existsSync(dir)) return results;
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
-    if (skip.some(s => full.includes(s))) continue;
-    if (statSync(full).isDirectory()) results.push(...walkMd(full, skip));
+    if (shouldSkipWikiPath(full)) continue;
+    if (statSync(full).isDirectory()) results.push(...walkMd(full));
     else if (entry.endsWith('.md')) results.push(full);
   }
   return results;
@@ -57,7 +69,8 @@ function extractBodyLinks(content) {
   const links = [];
   // skip frontmatter block
   const body = content.replace(/^---[\s\S]*?---\r?\n/, '');
-  for (const [, path] of body.matchAll(/\[([^\]]*)\]\(([^)]+)\)/g)) {
+  for (const match of body.matchAll(/\[([^\]]*)\]\(([^)]+)\)/g)) {
+    const path = match[2];
     if (!path.startsWith('http')) links.push(path.split('#')[0]);
   }
   return links;
@@ -75,7 +88,31 @@ const warnings = [];
 function err(file, msg) { errors.push(`  ${relative(process.cwd(), file)}: ${msg}`); }
 function warn(file, msg) { warnings.push(`  ${relative(process.cwd(), file)}: ${msg}`); }
 
-const pages = walkMd(WIKI_DIR, ['raw']);
+const pages = walkMd(WIKI_DIR);
+
+const entitiesDir = join(WIKI_DIR, 'entities');
+if (existsSync(entitiesDir)) {
+  for (const entry of readdirSync(entitiesDir)) {
+    const full = join(entitiesDir, entry);
+    if (statSync(full).isDirectory()) {
+      err(full, `entities/ must be flat — remove subdirectory: ${entry}/`);
+    }
+  }
+}
+
+const scopesPath = join(WIKI_DIR, '.entity-scopes');
+if (existsSync(scopesPath) && existsSync(entitiesDir)) {
+  const required = readFileSync(scopesPath, 'utf8')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !l.startsWith('#'));
+  for (const slug of required) {
+    const target = join(entitiesDir, `${slug}.md`);
+    if (!existsSync(target)) {
+      err(scopesPath, `missing entity overview: entities/${slug}.md`);
+    }
+  }
+}
 
 // Build inbound-link map for orphan detection
 const inbound = new Map(pages.map(p => [p, 0]));
@@ -86,7 +123,16 @@ for (const file of pages) {
   const fileDir = dirname(file);
 
   // Skip non-wiki meta files
-  if (file === join(WIKI_DIR, 'index.md') || file === join(WIKI_DIR, 'log.md')) continue;
+  if (
+    file === join(WIKI_DIR, 'index.md') ||
+    file === join(WIKI_DIR, 'log.md') ||
+    file === join(WIKI_DIR, 'schema.md') ||
+    file === join(WIKI_DIR, 'README.md') ||
+    file === join(WIKI_DIR, 'AGENTS.md')
+  )
+    continue;
+
+  const relPath = relative(WIKI_DIR, file).replace(/\\/g, '/');
 
   // Frontmatter presence
   if (!fm) {
@@ -104,6 +150,18 @@ for (const file of pages) {
   // Valid type
   if (fm.type && !VALID_TYPES.has(fm.type)) {
     err(file, `invalid type "${fm.type}" — must be one of: ${[...VALID_TYPES].join(', ')}`);
+  }
+
+  if (fm.type === 'overview' && !relPath.startsWith('entities/')) {
+    err(file, 'overview pages must live in entities/<slug>.md');
+  }
+
+  if (fm.type === 'overview' && dirname(file) === entitiesDir) {
+    const slug = basename(file, '.md');
+    const tags = Array.isArray(fm.tags) ? fm.tags : [];
+    if (tags.length === 0 || tags[0] !== slug) {
+      warn(file, `scope-tag: first tag should be "${slug}", got "${tags[0] ?? ''}"`);
+    }
   }
 
   // Valid status
@@ -171,7 +229,8 @@ for (const [file, count] of inbound) {
 const agentsPath = resolve(process.cwd(), 'AGENTS.md');
 if (existsSync(agentsPath)) {
   const agentsContent = readFileSync(agentsPath, 'utf8');
-  for (const [, link] of agentsContent.matchAll(/\[([^\]]*)\]\(([^)]+\.md)\)/g)) {
+  for (const match of agentsContent.matchAll(/\[([^\]]*)\]\(([^)]+\.md)\)/g)) {
+    const link = match[2];
     const target = resolve(process.cwd(), link);
     if (!existsSync(target)) {
       warn(agentsPath, `stale wiki reference: ${link}`);

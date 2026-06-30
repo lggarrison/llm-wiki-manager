@@ -37,7 +37,7 @@ if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
 
 // Title is remaining args that aren't flags
 const title = rest
-  .filter(a => !a.startsWith('--') && a !== rest[wikiDirFlag + 1])
+  .filter((a, i) => !a.startsWith('--') && (wikiDirFlag < 0 || i !== wikiDirFlag + 1))
   .join(' ')
   .replace(/^["']|["']$/g, '')
   .trim();

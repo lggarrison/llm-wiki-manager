@@ -11,6 +11,18 @@ const checkOnly = args.includes('--check');
 const wikiDirFlag = args.indexOf('--wiki-dir');
 const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}}');
 
+const RAW_ARTIFACT_DIRS = ['articles', 'prs', 'tickets', 'design-notes', 'transcripts', 'assets'];
+
+function shouldSkipWikiPath(full) {
+  const rel = relative(WIKI_DIR, full).replace(/\\/g, '/');
+  if (rel.startsWith('archive/') || rel === 'archive') return true;
+  if (rel.includes('.obsidian')) return true;
+  for (const sub of RAW_ARTIFACT_DIRS) {
+    if (rel.startsWith(`raw/${sub}/`) || rel === `raw/${sub}`) return true;
+  }
+  return false;
+}
+
 // ── Frontmatter parser ────────────────────────────────────────────────────────
 
 function parseFrontmatter(content) {
@@ -33,13 +45,13 @@ function parseFrontmatter(content) {
 
 // ── File walker ───────────────────────────────────────────────────────────────
 
-function walkMd(dir, skip = []) {
+function walkMd(dir) {
   const results = [];
   if (!existsSync(dir)) return results;
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
-    if (skip.some(s => full.includes(s))) continue;
-    if (statSync(full).isDirectory()) results.push(...walkMd(full, skip));
+    if (shouldSkipWikiPath(full)) continue;
+    if (statSync(full).isDirectory()) results.push(...walkMd(full));
     else if (entry.endsWith('.md')) results.push(full);
   }
   return results;
@@ -47,8 +59,8 @@ function walkMd(dir, skip = []) {
 
 // ── Collect pages ─────────────────────────────────────────────────────────────
 
-const SKIP = ['index.md', 'log.md', 'schema.md'];
-const pages = walkMd(WIKI_DIR, ['raw'])
+const SKIP = ['index.md', 'log.md', 'schema.md', 'README.md', 'AGENTS.md'];
+const pages = walkMd(WIKI_DIR)
   .filter(f => !SKIP.some(s => f.endsWith(s)))
   .map(f => {
     const content = readFileSync(f, 'utf8');
@@ -57,10 +69,12 @@ const pages = walkMd(WIKI_DIR, ['raw'])
   })
   .filter(p => p.fm.type);
 
-const byType = { overview: [], hub: [], concept: [], source: [] };
+const byType = { hub: [], entity: [], concept: [], source: [] };
 for (const page of pages) {
-  const bucket = byType[page.fm.type];
-  if (bucket) bucket.push(page);
+  if (page.fm.type === 'hub') byType.hub.push(page);
+  else if (page.fm.type === 'overview' && page.rel.startsWith('entities/')) byType.entity.push(page);
+  else if (page.fm.type === 'concept') byType.concept.push(page);
+  else if (page.fm.type === 'source') byType.source.push(page);
 }
 
 // Sort each bucket alphabetically by title
@@ -76,7 +90,7 @@ function row(cells) {
 
 const sections = [];
 
-const overviewHub = [...byType.overview, ...byType.hub];
+const overviewHub = byType.hub;
 sections.push('## Overview & Hub Pages\n');
 sections.push(row(['Title', 'Status', 'Updated']));
 sections.push(row(['---', '---', '---']));
@@ -85,6 +99,19 @@ if (overviewHub.length === 0) {
 } else {
   for (const { rel, fm } of overviewHub) {
     sections.push(row([`[${fm.title ?? rel}](${rel})`, fm.status ?? '', fm.last_updated ?? '']));
+  }
+}
+
+sections.push('\n## Entities\n');
+sections.push(row(['Title', 'Scope tag', 'Status', 'Updated']));
+sections.push(row(['---', '---', '---', '---']));
+if (byType.entity.length === 0) {
+  sections.push(row(['_(none yet)_', '', '', '']));
+} else {
+  for (const { rel, fm } of byType.entity) {
+    const tags = Array.isArray(fm.tags) ? fm.tags : [];
+    const scopeTag = tags[0] ?? '';
+    sections.push(row([`[${fm.title ?? rel}](${rel})`, scopeTag, fm.status ?? '', fm.last_updated ?? '']));
   }
 }
 

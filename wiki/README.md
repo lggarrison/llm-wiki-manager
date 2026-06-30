@@ -1,0 +1,21 @@
+# llm-wiki-manager Wiki
+
+Human entry point for browsing this vault in Obsidian (or any markdown viewer).
+
+## Start here
+
+| File                   | Purpose                                            |
+| ---------------------- | -------------------------------------------------- |
+| [index.md](index.md)   | Auto-generated catalog of all wiki pages           |
+| [schema.md](schema.md) | Full conventions — frontmatter, layout, operations |
+| [AGENTS.md](AGENTS.md) | Agent instructions (Cursor / LLM maintainers)      |
+| [log.md](log.md)       | Chronological record of wiki operations            |
+
+## Layout (short)
+
+- **`entities/`** — flat namespace; one page per documented source scope (`entities/<slug>.md`)
+- **`concepts/`** — cross-cutting architecture and mechanisms
+- **`sources/`** — LLM summaries of ingested raw artifacts
+- **`raw/`** — immutable inputs ([raw.md](raw/raw.md) hub → `articles/`, `prs/`, etc.)
+
+Open this folder as an Obsidian vault. Vault settings live in `.obsidian/` (committed).

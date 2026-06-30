@@ -48,18 +48,59 @@ When ingesting new source material or creating concept pages, prefer content tha
 
 ```
 {{WIKI_DIR}}/
-├── schema.md       ← this file
-├── index.md        ← auto-generated; run build-index.mjs
-├── log.md          ← append-only operation log
-├── concepts/       ← synthesized knowledge pages
-├── sources/        ← summaries of raw source documents
-└── raw/            ← immutable ingested source documents (never edit)
+├── AGENTS.md        ← agent entry point (read first; full rules for LLM agents)
+├── README.md        ← human entry point (Obsidian onboarding, browsing)
+├── schema.md        ← full frontmatter spec and conventions (this file)
+├── index.md         ← auto-generated content catalog (never hand-edit tables)
+├── log.md           ← append-only chronological event record
+├── raw/             ← immutable ingested artifacts
+│   ├── raw.md       ← hub page (the only sub-folder hub in the wiki)
+│   ├── articles/    ← source artifacts
+│   ├── prs/
+│   ├── tickets/
+│   ├── design-notes/
+│   ├── transcripts/
+│   └── assets/      ← images/diagrams (Obsidian attachment folder)
+├── entities/        ← FLAT namespace — one .md per topic, NO subdirectories
+├── concepts/        ← cross-cutting topics / shared mechanisms
+├── sources/         ← one LLM-written summary per raw artifact
+├── archive/         ← pre-migration snapshots (excluded from lint + graph)
+└── .obsidian/       ← committed vault config (link style, attachments, plugins)
 ```
 
-Place new pages in the directory that matches their `type`:
-- `concept` → `{{WIKI_DIR}}/concepts/<slug>.md`
+Place new pages by role:
+
+- `overview` (entity scope entry) → `{{WIKI_DIR}}/entities/<slug>.md` — **never nested**
+- `concept` (cross-cutting) → `{{WIKI_DIR}}/concepts/<slug>.md`
 - `source` → `{{WIKI_DIR}}/sources/<slug>.md`
-- `overview` / `hub` → `{{WIKI_DIR}}/<slug>.md` (top-level)
+- `hub` → `{{WIKI_DIR}}/raw/raw.md` for the raw tree; other hubs only at `entities/<slug>.md` when flat
+
+Do **not** place topic pages at the wiki root (only meta files listed above belong there).
+
+---
+
+## Flat `entities/` namespace
+
+`entities/` has **no subdirectories**. Every entity overview, comparison, and deep-dive lives at `entities/<slug>.md`. App or scope membership is **not** encoded by folders — it is recovered from the **first tag** in the page's `tags:` list (the **scope-tag convention**; see `{{WIKI_DIR}}/AGENTS.md` §3a).
+
+This keeps the Obsidian graph readable: one node per topic, not a pile of identical README nodes.
+
+### Scope-tag convention
+
+The **first tag** must be the scope slug for entity pages. Derive slugs from documented source directories (adapt this table per project):
+
+| Source path       | Scope tag   | Entity overview            |
+| ----------------- | ----------- | -------------------------- |
+| `src/commands/`   | `commands`  | `entities/commands.md`     |
+| `src/utils/`      | `utils`     | `entities/utils.md`        |
+| `templates/`      | `templates` | `entities/templates.md`    |
+| `bin/`            | `cli`       | `entities/cli.md`          |
+
+In UI-heavy projects the same rule applies with paths like `src/ui/_<app>/` → tag `<app>`, `src/ui/core/` → `core`, `src/api/` → `api`.
+
+Every documented source directory must have a matching `entities/<slug>.md` page with `type: overview`. The linter enforces flat `entities/` and missing scope overviews.
+
+Cross-cutting mechanisms (init flow, template interpolation, dogfooding) belong in `concepts/`, not `entities/`.
 
 ---
 

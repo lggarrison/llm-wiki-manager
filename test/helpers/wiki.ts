@@ -8,7 +8,7 @@ export const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..
 
 export function makeTmpWikiDir(): string {
   const dir = mkdtempSync(join(tmpdir(), 'llm-wiki-test-'));
-  for (const sub of ['concepts', 'sources', 'raw']) {
+  for (const sub of ['concepts', 'sources', 'entities', 'raw/articles']) {
     mkdirSync(join(dir, sub), { recursive: true });
   }
   return dir;

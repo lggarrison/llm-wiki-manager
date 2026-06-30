@@ -1,0 +1,164 @@
+#!/usr/bin/env node
+/**
+ * build-index.mjs — regenerate wiki/index.md from page frontmatter
+ * Usage: node scripts/wiki/build-index.mjs [--wiki-dir <path>] [--check]
+ */
+import { readdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'fs';
+import { join, resolve, relative } from 'path';
+
+const args = process.argv.slice(2);
+const checkOnly = args.includes('--check');
+const wikiDirFlag = args.indexOf('--wiki-dir');
+const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : 'wiki');
+
+const RAW_ARTIFACT_DIRS = ['articles', 'prs', 'tickets', 'design-notes', 'transcripts', 'assets'];
+
+function shouldSkipWikiPath(full) {
+  const rel = relative(WIKI_DIR, full).replace(/\\/g, '/');
+  if (rel.startsWith('archive/') || rel === 'archive') return true;
+  if (rel.includes('.obsidian')) return true;
+  for (const sub of RAW_ARTIFACT_DIRS) {
+    if (rel.startsWith(`raw/${sub}/`) || rel === `raw/${sub}`) return true;
+  }
+  return false;
+}
+
+// ── Frontmatter parser ────────────────────────────────────────────────────────
+
+function parseFrontmatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return null;
+  const fm = {};
+  for (const line of match[1].split('\n')) {
+    const colon = line.indexOf(':');
+    if (colon < 0) continue;
+    const key = line.slice(0, colon).trim();
+    const raw = line.slice(colon + 1).trim();
+    if (raw.startsWith('[') && raw.endsWith(']')) {
+      fm[key] = raw.slice(1, -1).split(',').map(s => s.trim()).filter(Boolean);
+    } else {
+      fm[key] = raw.replace(/^["']|["']$/g, '');
+    }
+  }
+  return fm;
+}
+
+// ── File walker ───────────────────────────────────────────────────────────────
+
+function walkMd(dir) {
+  const results = [];
+  if (!existsSync(dir)) return results;
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (shouldSkipWikiPath(full)) continue;
+    if (statSync(full).isDirectory()) results.push(...walkMd(full));
+    else if (entry.endsWith('.md')) results.push(full);
+  }
+  return results;
+}
+
+// ── Collect pages ─────────────────────────────────────────────────────────────
+
+const SKIP = ['index.md', 'log.md', 'schema.md', 'README.md', 'AGENTS.md'];
+const pages = walkMd(WIKI_DIR)
+  .filter(f => !SKIP.some(s => f.endsWith(s)))
+  .map(f => {
+    const content = readFileSync(f, 'utf8');
+    const fm = parseFrontmatter(content) ?? {};
+    return { file: f, rel: relative(WIKI_DIR, f).replace(/\\/g, '/'), fm };
+  })
+  .filter(p => p.fm.type);
+
+const byType = { hub: [], entity: [], concept: [], source: [] };
+for (const page of pages) {
+  if (page.fm.type === 'hub') byType.hub.push(page);
+  else if (page.fm.type === 'overview' && page.rel.startsWith('entities/')) byType.entity.push(page);
+  else if (page.fm.type === 'concept') byType.concept.push(page);
+  else if (page.fm.type === 'source') byType.source.push(page);
+}
+
+// Sort each bucket alphabetically by title
+for (const bucket of Object.values(byType)) {
+  bucket.sort((a, b) => (a.fm.title ?? '').localeCompare(b.fm.title ?? ''));
+}
+
+// ── Build markdown ────────────────────────────────────────────────────────────
+
+function row(cells) {
+  return `| ${cells.join(' | ')} |`;
+}
+
+const sections = [];
+
+const overviewHub = byType.hub;
+sections.push('## Overview & Hub Pages\n');
+sections.push(row(['Title', 'Status', 'Updated']));
+sections.push(row(['---', '---', '---']));
+if (overviewHub.length === 0) {
+  sections.push(row(['_(none yet)_', '', '']));
+} else {
+  for (const { rel, fm } of overviewHub) {
+    sections.push(row([`[${fm.title ?? rel}](${rel})`, fm.status ?? '', fm.last_updated ?? '']));
+  }
+}
+
+sections.push('\n## Entities\n');
+sections.push(row(['Title', 'Scope tag', 'Status', 'Updated']));
+sections.push(row(['---', '---', '---', '---']));
+if (byType.entity.length === 0) {
+  sections.push(row(['_(none yet)_', '', '', '']));
+} else {
+  for (const { rel, fm } of byType.entity) {
+    const tags = Array.isArray(fm.tags) ? fm.tags : [];
+    const scopeTag = tags[0] ?? '';
+    sections.push(row([`[${fm.title ?? rel}](${rel})`, scopeTag, fm.status ?? '', fm.last_updated ?? '']));
+  }
+}
+
+sections.push('\n## Concepts\n');
+sections.push(row(['Title', 'Tags', 'Status', 'Updated']));
+sections.push(row(['---', '---', '---', '---']));
+if (byType.concept.length === 0) {
+  sections.push(row(['_(none yet)_', '', '', '']));
+} else {
+  for (const { rel, fm } of byType.concept) {
+    const tags = Array.isArray(fm.tags) ? fm.tags.join(', ') : fm.tags ?? '';
+    sections.push(row([`[${fm.title ?? rel}](${rel})`, tags, fm.status ?? '', fm.last_updated ?? '']));
+  }
+}
+
+sections.push('\n## Sources\n');
+sections.push(row(['Title', 'Status', 'Ingested']));
+sections.push(row(['---', '---', '---']));
+if (byType.source.length === 0) {
+  sections.push(row(['_(none yet)_', '', '']));
+} else {
+  for (const { rel, fm } of byType.source) {
+    sections.push(row([`[${fm.title ?? rel}](${rel})`, fm.status ?? '', fm.last_updated ?? '']));
+  }
+}
+
+const output = [
+  `# Wiki Index`,
+  '',
+  '> Auto-generated by `build-index.mjs`. Do not edit by hand.',
+  '',
+  '---',
+  '',
+  ...sections,
+  '',
+].join('\n');
+
+const indexPath = join(WIKI_DIR, 'index.md');
+
+if (checkOnly) {
+  const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
+  if (existing !== output) {
+    console.error('✗ index.md is stale — run npm run wiki:build');
+    process.exit(1);
+  }
+  console.log(`✓ index.md is up to date (${pages.length} page(s))`);
+} else {
+  writeFileSync(indexPath, output, 'utf8');
+  console.log(`✓ index.md written (${pages.length} page(s))`);
+}

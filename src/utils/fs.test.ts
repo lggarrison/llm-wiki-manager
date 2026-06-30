@@ -10,6 +10,9 @@ import {
   mergePackageJsonScripts,
   WIKI_SCRIPT_KEYS,
   wikiScriptCandidates,
+  scopeSlugFromFocusDir,
+  scaffoldEntityOverviews,
+  scaffoldWikiEmptyDirs,
 } from './fs.js';
 
 const tmpDirs: string[] = [];
@@ -117,6 +120,19 @@ describe('copyTemplate', () => {
     expect(readFileSync(join(dest, 'script.mjs'), 'utf8')).toBe('// acme');
   });
 
+  it('interpolates .entity-scopes and .json template files', () => {
+    const src = makeTmpDir();
+    const dest = makeTmpDir();
+    mkdirSync(join(src, '.obsidian'), { recursive: true });
+    writeFileSync(join(src, '.entity-scopes'), 'scopes:\n{{ENTITY_SCOPE_LINES}}\n');
+    writeFileSync(join(src, '.obsidian', 'app.json'), '{"project":"{{PROJECT_NAME}}"}');
+
+    copyTemplate(src, dest, { ENTITY_SCOPE_LINES: 'api\nui', PROJECT_NAME: 'acme' });
+
+    expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('api\nui');
+    expect(readFileSync(join(dest, '.obsidian', 'app.json'), 'utf8')).toContain('acme');
+  });
+
   it('does not modify files when no vars are given', () => {
     const src = makeTmpDir();
     const dest = makeTmpDir();
@@ -125,6 +141,61 @@ describe('copyTemplate', () => {
     copyTemplate(src, dest);
 
     expect(readFileSync(join(dest, 'page.md'), 'utf8')).toBe('Project: {{PROJECT_NAME}}');
+  });
+});
+
+describe('scopeSlugFromFocusDir', () => {
+  it('uses the last path segment as the slug', () => {
+    expect(scopeSlugFromFocusDir('src/commands')).toBe('commands');
+    expect(scopeSlugFromFocusDir('templates')).toBe('templates');
+  });
+
+  it('strips a leading underscore from the segment', () => {
+    expect(scopeSlugFromFocusDir('src/ui/_national-map')).toBe('national-map');
+  });
+});
+
+describe('scaffoldEntityOverviews', () => {
+  it('creates draft overview stubs for each focus directory', () => {
+    const dir = makeTmpDir();
+    scaffoldWikiEmptyDirs(dir);
+    const slugs = scaffoldEntityOverviews(dir, ['src/commands', 'templates'], '2026-06-30');
+    expect(slugs).toEqual(['commands', 'templates']);
+    const commands = readFileSync(join(dir, 'entities', 'commands.md'), 'utf8');
+    expect(commands).toContain('type: overview');
+    expect(commands).toContain('tags: [commands]');
+    expect(commands).toContain('src/commands/');
+  });
+
+  it('does not overwrite existing entity pages', () => {
+    const dir = makeTmpDir();
+    mkdirSync(join(dir, 'entities'), { recursive: true });
+    writeFileSync(join(dir, 'entities', 'api.md'), 'existing');
+    scaffoldEntityOverviews(dir, ['src/api'], '2026-06-30');
+    expect(readFileSync(join(dir, 'entities', 'api.md'), 'utf8')).toBe('existing');
+  });
+});
+
+describe('wiki template bundle', () => {
+  it('includes vault entry files and obsidian config', () => {
+    const dest = makeTmpDir();
+    copyTemplate(templatePath('wiki'), dest, {
+      PROJECT_NAME: 'acme',
+      WIKI_DIR: 'wiki',
+      SCRIPTS_DIR: 'scripts/wiki',
+      INIT_DATE: '2026-06-30',
+      ENTITY_SCOPE_LINES: 'api',
+      FOCUS_DIRS: '`src/`',
+      FOCUS_DIRS_LIST: '- `src/`',
+    });
+
+    expect(existsSync(join(dest, 'README.md'))).toBe(true);
+    expect(existsSync(join(dest, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(dest, 'raw', 'raw.md'))).toBe(true);
+    expect(existsSync(join(dest, '.entity-scopes'))).toBe(true);
+    expect(existsSync(join(dest, '.obsidian', 'app.json'))).toBe(true);
+    expect(readFileSync(join(dest, 'README.md'), 'utf8')).toContain('acme');
+    expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('api');
   });
 });
 

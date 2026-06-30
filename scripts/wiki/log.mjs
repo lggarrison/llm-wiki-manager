@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * log.mjs — append operation entries to wiki/log.md
- * Usage: node {{SCRIPTS_DIR}}/log.mjs add <op> "<title>" [--date=YYYY-MM-DD] [--wiki-dir <path>]
+ * Usage: node scripts/wiki/log.mjs add <op> "<title>" [--date=YYYY-MM-DD] [--wiki-dir <path>]
  *
  * Operations: ingest | query | lint | maintenance
  */
@@ -25,7 +25,7 @@ if (!VALID_OPS.has(op)) {
 }
 
 const wikiDirFlag = rest.indexOf('--wiki-dir');
-const WIKI_DIR = resolve(wikiDirFlag >= 0 ? rest[wikiDirFlag + 1] : '{{WIKI_DIR}}');
+const WIKI_DIR = resolve(wikiDirFlag >= 0 ? rest[wikiDirFlag + 1] : 'wiki');
 
 const dateFlag = rest.find(a => a.startsWith('--date='));
 const date = dateFlag ? dateFlag.slice(7) : new Date().toISOString().slice(0, 10);

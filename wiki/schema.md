@@ -1,4 +1,4 @@
-# Wiki Schema — {{PROJECT_NAME}}
+# Wiki Schema — llm-wiki-manager
 
 This document defines the conventions your LLM agent must follow when creating and maintaining wiki pages.
 
@@ -11,7 +11,7 @@ Every wiki page **must** begin with YAML frontmatter:
 ```yaml
 ---
 type: concept | source | overview | hub
-title: "Human-readable title"
+title: 'Human-readable title'
 last_updated: YYYY-MM-DD
 tags: []
 related: []
@@ -21,16 +21,16 @@ status: draft | stable | archived
 
 ### Field definitions
 
-| Field | Required | Values / Notes |
-|---|---|---|
-| `type` | yes | `concept` — synthesized knowledge; `source` — summary of a raw source; `overview` — entry point for a topic area; `hub` — links-only navigation page |
-| `title` | yes | Human-readable, used in index and log |
-| `last_updated` | yes | ISO date `YYYY-MM-DD`; update every time the page changes |
-| `tags` | yes | List of topic labels; used to group pages in index.md |
-| `related` | yes | List of relative paths to related pages (may be empty `[]`) |
-| `status` | yes | `draft` → actively being built; `stable` → reliable reference; `archived` → superseded |
-| `summary` | no | One-sentence description; shown in index tables |
-| `sources` | no | (concept pages) paths to source summaries that back this concept |
+| Field          | Required | Values / Notes                                                                                                                                       |
+| -------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`         | yes      | `concept` — synthesized knowledge; `source` — summary of a raw source; `overview` — entry point for a topic area; `hub` — links-only navigation page |
+| `title`        | yes      | Human-readable, used in index and log                                                                                                                |
+| `last_updated` | yes      | ISO date `YYYY-MM-DD`; update every time the page changes                                                                                            |
+| `tags`         | yes      | List of topic labels; used to group pages in index.md                                                                                                |
+| `related`      | yes      | List of relative paths to related pages (may be empty `[]`)                                                                                          |
+| `status`       | yes      | `draft` → actively being built; `stable` → reliable reference; `archived` → superseded                                                               |
+| `summary`      | no       | One-sentence description; shown in index tables                                                                                                      |
+| `sources`      | no       | (concept pages) paths to source summaries that back this concept                                                                                     |
 
 ---
 
@@ -38,7 +38,8 @@ status: draft | stable | archived
 
 This wiki documents the following directories:
 
-{{FOCUS_DIRS_LIST}}
+- `src/`
+- `templates/`
 
 When ingesting new source material or creating concept pages, prefer content that originates from or is relevant to these directories. Pages about code outside this scope are allowed but should be clearly tagged.
 
@@ -47,7 +48,7 @@ When ingesting new source material or creating concept pages, prefer content tha
 ## Directory Layout
 
 ```
-{{WIKI_DIR}}/
+wiki/
 ├── AGENTS.md        ← agent entry point (read first; points to schema.md)
 ├── README.md        ← human entry point (Obsidian onboarding, browsing)
 ├── schema.md        ← full frontmatter spec and conventions (this file)
@@ -70,10 +71,10 @@ When ingesting new source material or creating concept pages, prefer content tha
 
 Place new pages by role:
 
-- `overview` (entity scope entry) → `{{WIKI_DIR}}/entities/<slug>.md` — **never nested**
-- `concept` (cross-cutting) → `{{WIKI_DIR}}/concepts/<slug>.md`
-- `source` → `{{WIKI_DIR}}/sources/<slug>.md`
-- `hub` → `{{WIKI_DIR}}/raw/raw.md` for the raw tree; other hubs only at `entities/<slug>.md` when flat
+- `overview` (entity scope entry) → `wiki/entities/<slug>.md` — **never nested**
+- `concept` (cross-cutting) → `wiki/concepts/<slug>.md`
+- `source` → `wiki/sources/<slug>.md`
+- `hub` → `wiki/raw/raw.md` for the raw tree; other hubs only at `entities/<slug>.md` when flat
 
 Do **not** place topic pages at the wiki root (only meta files listed above belong there).
 
@@ -81,20 +82,20 @@ Do **not** place topic pages at the wiki root (only meta files listed above belo
 
 ## Flat `entities/` namespace
 
-`entities/` has **no subdirectories**. Every entity overview, comparison, and deep-dive lives at `entities/<slug>.md`. App or scope membership is **not** encoded by folders — it is recovered from the **first tag** in the page's `tags:` list (the **scope-tag convention**; see `{{WIKI_DIR}}/AGENTS.md` §3a).
+`entities/` has **no subdirectories**. Every entity overview, comparison, and deep-dive lives at `entities/<slug>.md`. App or scope membership is **not** encoded by folders — it is recovered from the **first tag** in the page's `tags:` list (the **scope-tag convention**; see `wiki/AGENTS.md` §3a).
 
 This keeps the Obsidian graph readable: one node per topic, not a pile of identical README nodes.
 
 ### Scope-tag convention
 
-The **first tag** must be the scope slug for entity pages. Derive slugs from documented source directories (adapt this table per project):
+The **first tag** must be the scope slug for entity pages. Derive slugs from documented source directories:
 
-| Source path       | Scope tag   | Entity overview            |
-| ----------------- | ----------- | -------------------------- |
-| `src/commands/`   | `commands`  | `entities/commands.md`     |
-| `src/utils/`      | `utils`     | `entities/utils.md`        |
-| `templates/`      | `templates` | `entities/templates.md`    |
-| `bin/`            | `cli`       | `entities/cli.md`          |
+| Source path     | Scope tag   | Entity overview         |
+| --------------- | ----------- | ----------------------- |
+| `src/commands/` | `commands`  | `entities/commands.md`  |
+| `src/utils/`    | `utils`     | `entities/utils.md`     |
+| `templates/`    | `templates` | `entities/templates.md` |
+| `bin/`          | `cli`       | `entities/cli.md`       |
 
 In UI-heavy projects the same rule applies with paths like `src/ui/_<app>/` → tag `<app>`, `src/ui/core/` → `core`, `src/api/` → `api`.
 
@@ -116,26 +117,32 @@ Cross-cutting mechanisms (init flow, template interpolation, dogfooding) belong 
 ## Three Core Operations
 
 ### Ingest
+
 Process a new source document:
-1. Place the raw document in `{{WIKI_DIR}}/raw/`
+
+1. Place the raw document in `wiki/raw/`
 2. Read it and discuss key takeaways
-3. Create a summary page in `{{WIKI_DIR}}/sources/<slug>.md`
-4. Create or update concept pages in `{{WIKI_DIR}}/concepts/` that reference this source
+3. Create a summary page in `wiki/sources/<slug>.md`
+4. Create or update concept pages in `wiki/concepts/` that reference this source
 5. Update `related:` and body links on affected pages
 6. Run `npm run wiki:sync` to sync missing body links
 7. Run `npm run wiki:build` to update `index.md`
 8. Run `npm run wiki:log -- add ingest "<title of source>"`
 
 ### Query
+
 Answer a question using the wiki:
+
 1. Read `index.md` to locate relevant pages
 2. Synthesize an answer with citations to wiki pages
 3. If the answer reveals a gap, create a stub page with `status: draft`
 4. Log: `npm run wiki:log -- add query "<question summary>"`
 
 ### Lint
+
 Periodic health check:
-1. Run `npm run wiki:lint` (or `node {{SCRIPTS_DIR}}/lint.mjs` if npm scripts are unavailable)
+
+1. Run `npm run wiki:lint` (or `node scripts/wiki/lint.mjs` if npm scripts are unavailable)
 2. Resolve any errors before adding new content
 3. Log: `npm run wiki:log -- add lint "health check"`
 
@@ -144,6 +151,7 @@ Periodic health check:
 ## Contradiction Handling
 
 When two pages assert conflicting facts:
+
 1. Add a `> ⚠️ Contradiction: see [other page](path)` blockquote to both pages
 2. Create a concept page that reconciles the conflict with evidence
 3. Update both original pages to reference the reconciliation page

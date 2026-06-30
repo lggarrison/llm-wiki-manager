@@ -1,1 +1,15 @@
+# Dev / repo-only (never ship)
+src/
+test/
+bin/
+.github/
+.husky/
+wiki/
+scripts/
+AGENTS.md
+eslint.config.js
+vitest.config.ts
+tsconfig.json
+.prettierrc.json
+.prettierignore
 _references

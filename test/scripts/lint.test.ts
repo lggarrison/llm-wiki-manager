@@ -133,9 +133,9 @@ describe('lint.mjs', () => {
     expect(result.stdout).toContain('missing frontmatter');
   });
 
-  it('ignores files under raw/', () => {
+  it('ignores raw artifact files without frontmatter', () => {
     const dir = newWikiDir();
-    writePage(dir, 'raw/notes.md', 'not frontmatter, should be ignored');
+    writePage(dir, 'raw/articles/notes.md', 'not frontmatter, should be ignored');
     const result = runLint(dir);
     expect(result.status).toBe(0);
   });

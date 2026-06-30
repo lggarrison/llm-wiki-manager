@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { spawnSync } from 'child_process';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
-import { makeTmpWikiDir, cleanup, scriptPath } from '../helpers/wiki.js';
+import { tmpdir } from 'os';
+import { makeTmpWikiDir, cleanup, scriptPath, PACKAGE_ROOT } from '../helpers/wiki.js';
 
 const dirs: string[] = [];
 function newWikiDirWithLog(): string {
@@ -13,7 +14,10 @@ function newWikiDirWithLog(): string {
 }
 
 afterEach(() => {
-  for (const dir of dirs.splice(0)) cleanup(dir);
+  for (const dir of dirs.splice(0)) {
+    if (dir.includes('llm-wiki-log-test-')) rmSync(dir, { recursive: true, force: true });
+    else cleanup(dir);
+  }
 });
 
 function runLog(wikiDir: string, args: string[]) {
@@ -70,6 +74,22 @@ describe('log.mjs', () => {
     const result = runLog(dir, ['add', 'ingest']);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('Title is required');
+  });
+
+  it('parses title without --wiki-dir flag', () => {
+    const projectDir = mkdtempSync(join(tmpdir(), 'llm-wiki-log-test-'));
+    dirs.push(projectDir);
+    const wikiDir = join(projectDir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+    writeFileSync(join(wikiDir, 'log.md'), '# Log\n');
+    const result = spawnSync(
+      'node',
+      [join(PACKAGE_ROOT, 'scripts/wiki/log.mjs'), 'add', 'ingest', 'No wiki dir flag'],
+      { encoding: 'utf8', cwd: projectDir },
+    );
+    expect(result.status).toBe(0);
+    const log = readFileSync(join(wikiDir, 'log.md'), 'utf8');
+    expect(log).toContain('ingest | No wiki dir flag');
   });
 
   it('fails when log.md does not exist', () => {

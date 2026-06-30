@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * build-index.mjs — regenerate wiki/index.md from page frontmatter
- * Usage: node {{SCRIPTS_DIR}}/build-index.mjs [--wiki-dir <path>] [--check]
+ * Usage: node scripts/wiki/build-index.mjs [--wiki-dir <path>] [--check]
  */
 import { readdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'fs';
 import { join, resolve, relative } from 'path';
@@ -9,7 +9,7 @@ import { join, resolve, relative } from 'path';
 const args = process.argv.slice(2);
 const checkOnly = args.includes('--check');
 const wikiDirFlag = args.indexOf('--wiki-dir');
-const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}}');
+const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : 'wiki');
 
 const RAW_ARTIFACT_DIRS = ['articles', 'prs', 'tickets', 'design-notes', 'transcripts', 'assets'];
 

@@ -50,14 +50,20 @@ describe('build-index.mjs', () => {
     expect(index).toContain('[RFC 9110](sources/s.md)');
   });
 
-  it('lists overview and hub pages together', () => {
+  it('lists hub pages and entity overviews in separate sections', () => {
     const dir = newWikiDir();
-    writePage(dir, 'hub.md', fm({ type: 'hub', title: 'Hub Page' }));
-    writePage(dir, 'overview.md', fm({ type: 'overview', title: 'Overview Page' }));
+    writePage(dir, 'raw/raw.md', fm({ type: 'hub', title: 'Hub Page' }));
+    writePage(
+      dir,
+      'entities/billing.md',
+      fm({ type: 'overview', title: 'Billing', tags: ['billing'] }),
+    );
     runBuildIndex(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
-    expect(index).toContain('[Hub Page](hub.md)');
-    expect(index).toContain('[Overview Page](overview.md)');
+    expect(index).toContain('[Hub Page](raw/raw.md)');
+    expect(index).toMatch(/## Entities/);
+    expect(index).toContain('[Billing](entities/billing.md)');
+    expect(index).toContain('billing');
   });
 
   it('sorts pages within a section alphabetically by title', () => {
@@ -79,12 +85,14 @@ describe('build-index.mjs', () => {
     expect(index).not.toContain('Schema');
   });
 
-  it('ignores files under raw/', () => {
+  it('ignores raw artifact files but indexes raw/raw.md hub', () => {
     const dir = newWikiDir();
-    writePage(dir, 'raw/notes.md', fm({ type: 'concept', title: 'Should Not Appear' }));
+    writePage(dir, 'raw/articles/notes.md', fm({ type: 'concept', title: 'Should Not Appear' }));
+    writePage(dir, 'raw/raw.md', fm({ type: 'hub', title: 'Raw Hub' }));
     runBuildIndex(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index).not.toContain('Should Not Appear');
+    expect(index).toContain('[Raw Hub](raw/raw.md)');
   });
 
   it('is idempotent across repeated runs', () => {

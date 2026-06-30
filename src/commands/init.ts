@@ -80,7 +80,18 @@ export async function init(): Promise<void> {
   // 1. Scaffold wiki directory
   log.step('Scaffolding wiki directory…');
   copyTemplate(templatePath('wiki'), wikiDest, vars);
-  for (const sub of ['concepts', 'sources', 'raw']) {
+  for (const sub of [
+    'concepts',
+    'sources',
+    'entities',
+    'archive',
+    'raw/articles',
+    'raw/prs',
+    'raw/tickets',
+    'raw/design-notes',
+    'raw/transcripts',
+    'raw/assets',
+  ]) {
     mkdirSync(join(wikiDest, sub), { recursive: true });
     // place a .gitkeep so the directory is tracked by git
     const keep = join(wikiDest, sub, '.gitkeep');

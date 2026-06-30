@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * lint.mjs — validate wiki frontmatter, links, and structure
- * Usage: node {{SCRIPTS_DIR}}/lint.mjs [--warn-only] [--wiki-dir <path>]
+ * Usage: node scripts/wiki/lint.mjs [--warn-only] [--wiki-dir <path>]
  */
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join, resolve, relative, dirname, basename } from 'path';
@@ -11,7 +11,7 @@ import { join, resolve, relative, dirname, basename } from 'path';
 const args = process.argv.slice(2);
 const warnOnly = args.includes('--warn-only');
 const wikiDirFlag = args.indexOf('--wiki-dir');
-const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}}');
+const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : 'wiki');
 
 const VALID_TYPES = new Set(['concept', 'source', 'overview', 'hub']);
 const VALID_STATUSES = new Set(['draft', 'stable', 'archived']);

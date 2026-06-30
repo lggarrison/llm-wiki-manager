@@ -2,7 +2,15 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { interpolate, amendFile, copyTemplate, templatePath } from './fs.js';
+import {
+  interpolate,
+  amendFile,
+  copyTemplate,
+  templatePath,
+  mergePackageJsonScripts,
+  WIKI_SCRIPT_KEYS,
+  wikiScriptCandidates,
+} from './fs.js';
 
 const tmpDirs: string[] = [];
 function makeTmpDir(): string {
@@ -125,5 +133,72 @@ describe('templatePath', () => {
     const p = templatePath('wiki', 'schema.md');
     expect(p.endsWith(join('templates', 'wiki', 'schema.md'))).toBe(true);
     expect(existsSync(p)).toBe(true);
+  });
+});
+
+describe('mergePackageJsonScripts', () => {
+  it('adds wiki scripts to an existing package.json', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+
+    const result = mergePackageJsonScripts(dir, 'scripts/wiki');
+    expect(result).toEqual({
+      status: 'merged',
+      added: [...WIKI_SCRIPT_KEYS],
+    });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.scripts).toEqual(wikiScriptCandidates('scripts/wiki'));
+  });
+
+  it('uses a custom scripts directory in script paths', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+
+    mergePackageJsonScripts(dir, 'tools/wiki-scripts');
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.scripts).toEqual(wikiScriptCandidates('tools/wiki-scripts'));
+  });
+
+  it('is idempotent when wiki scripts already exist', () => {
+    const dir = makeTmpDir();
+    const original = {
+      name: 'acme',
+      scripts: { 'wiki:lint': 'node custom/lint.mjs' },
+    };
+    writeFileSync(join(dir, 'package.json'), JSON.stringify(original, null, 2) + '\n');
+
+    const result = mergePackageJsonScripts(dir, 'scripts/wiki');
+    expect(result).toEqual({
+      status: 'merged',
+      added: WIKI_SCRIPT_KEYS.filter((k) => k !== 'wiki:lint'),
+    });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.scripts['wiki:lint']).toBe('node custom/lint.mjs');
+  });
+
+  it('returns unchanged when all wiki scripts are already present', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          scripts: wikiScriptCandidates('scripts/wiki'),
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    const result = mergePackageJsonScripts(dir, 'scripts/wiki');
+    expect(result).toEqual({ status: 'unchanged' });
+  });
+
+  it('returns no-package-json when package.json is missing', () => {
+    const dir = makeTmpDir();
+    expect(mergePackageJsonScripts(dir, 'scripts/wiki')).toEqual({ status: 'no-package-json' });
   });
 });

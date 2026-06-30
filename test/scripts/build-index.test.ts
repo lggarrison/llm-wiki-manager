@@ -15,8 +15,8 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) cleanup(dir);
 });
 
-function runBuildIndex(wikiDir: string) {
-  return spawnSync('node', [scriptPath('build-index.mjs'), '--wiki-dir', wikiDir], {
+function runBuildIndex(wikiDir: string, extraArgs: string[] = []) {
+  return spawnSync('node', [scriptPath('build-index.mjs'), '--wiki-dir', wikiDir, ...extraArgs], {
     encoding: 'utf8',
   });
 }
@@ -95,5 +95,38 @@ describe('build-index.mjs', () => {
     runBuildIndex(dir);
     const second = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(second).toBe(first);
+  });
+
+  it('--check passes when index.md matches the generated output', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
+    runBuildIndex(dir);
+    const result = runBuildIndex(dir, ['--check']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('up to date');
+  });
+
+  it('--check fails when index.md is missing or stale', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
+
+    const missing = runBuildIndex(dir, ['--check']);
+    expect(missing.status).toBe(1);
+    expect(missing.stderr).toContain('stale');
+
+    runBuildIndex(dir);
+    writeFileSync(join(dir, 'index.md'), '# stale index\n');
+    const stale = runBuildIndex(dir, ['--check']);
+    expect(stale.status).toBe(1);
+    expect(stale.stderr).toContain('stale');
+  });
+
+  it('--check does not modify index.md', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
+    runBuildIndex(dir);
+    const before = readFileSync(join(dir, 'index.md'), 'utf8');
+    runBuildIndex(dir, ['--check']);
+    expect(readFileSync(join(dir, 'index.md'), 'utf8')).toBe(before);
   });
 });

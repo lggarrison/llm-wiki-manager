@@ -52,6 +52,67 @@ export function copyTemplate(src: string, dest: string, vars: Record<string, str
   }
 }
 
+export const WIKI_SCRIPT_KEYS = [
+  'wiki:help',
+  'wiki:lint',
+  'wiki:build',
+  'wiki:check',
+  'wiki:sync',
+  'wiki:log',
+] as const;
+
+export type WikiScriptKey = (typeof WIKI_SCRIPT_KEYS)[number];
+
+export const WIKI_TEMPLATE_SCRIPTS = [
+  'help.mjs',
+  'lint.mjs',
+  'build-index.mjs',
+  'sync-see-also.mjs',
+  'log.mjs',
+] as const;
+
+export function wikiScriptCandidates(scriptsDir: string): Record<WikiScriptKey, string> {
+  return {
+    'wiki:help': `node ${scriptsDir}/help.mjs`,
+    'wiki:lint': `node ${scriptsDir}/lint.mjs`,
+    'wiki:build': `node ${scriptsDir}/build-index.mjs`,
+    'wiki:check': `node ${scriptsDir}/build-index.mjs --check`,
+    'wiki:sync': `node ${scriptsDir}/sync-see-also.mjs`,
+    'wiki:log': `node ${scriptsDir}/log.mjs`,
+  };
+}
+
+export type MergePackageJsonResult =
+  { status: 'no-package-json' } | { status: 'merged'; added: string[] } | { status: 'unchanged' };
+
+export function mergePackageJsonScripts(
+  projectRoot: string,
+  scriptsDir: string,
+): MergePackageJsonResult {
+  const pkgPath = join(projectRoot, 'package.json');
+  if (!existsSync(pkgPath)) return { status: 'no-package-json' };
+
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+    scripts?: Record<string, string>;
+  };
+  if (!pkg.scripts) pkg.scripts = {};
+
+  const candidates = wikiScriptCandidates(scriptsDir);
+
+  const added: string[] = [];
+  for (const key of WIKI_SCRIPT_KEYS) {
+    if (!(key in pkg.scripts)) {
+      pkg.scripts[key] = candidates[key];
+      added.push(key);
+    }
+  }
+
+  if (added.length === 0) return { status: 'unchanged' };
+
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+  return { status: 'merged', added };
+}
+
 export function amendFile(filePath: string, section: string): boolean {
   const delimiter = '<!-- llm-wiki-manager -->';
   if (existsSync(filePath)) {

@@ -119,6 +119,6 @@ export async function init(): Promise<void> {
       `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
       `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
       `  • See AGENTS.md for instructions to give your LLM agent\n` +
-      `  • Optional: add git hooks — see README "Optional git hooks"`,
+      `  • Optional: ${pc.bold('npm install -D husky')} then ${pc.bold('npm run wiki:setup:husky')} — see README`,
   );
 }

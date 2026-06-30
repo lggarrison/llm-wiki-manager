@@ -143,14 +143,15 @@ npm run wiki:log -- add query "Summary of the question"
 
 When `init` finds a `package.json`, it adds these npm scripts. Run `npm run wiki:help` anytime for a quick reference.
 
-| Script       | Command                                     | Purpose                                     |
-| ------------ | ------------------------------------------- | ------------------------------------------- |
-| `wiki:help`  | `node scripts/wiki/help.mjs`                | List commands, usage, and when to run them  |
-| `wiki:lint`  | `node scripts/wiki/lint.mjs`                | Validate frontmatter, links, and structure  |
-| `wiki:build` | `node scripts/wiki/build-index.mjs`         | Regenerate `index.md`                       |
-| `wiki:check` | `node scripts/wiki/build-index.mjs --check` | Verify `index.md` is up to date (read-only) |
-| `wiki:sync`  | `node scripts/wiki/sync-see-also.mjs`       | Sync `related:` frontmatter to body links   |
-| `wiki:log`   | `node scripts/wiki/log.mjs`                 | Append operation entries to `log.md`        |
+| Script             | Command                                     | Purpose                                     |
+| ------------------ | ------------------------------------------- | ------------------------------------------- |
+| `wiki:help`        | `node scripts/wiki/help.mjs`                | List commands, usage, and when to run them  |
+| `wiki:lint`        | `node scripts/wiki/lint.mjs`                | Validate frontmatter, links, and structure  |
+| `wiki:build`       | `node scripts/wiki/build-index.mjs`         | Regenerate `index.md`                       |
+| `wiki:check`       | `node scripts/wiki/build-index.mjs --check` | Verify `index.md` is up to date (read-only) |
+| `wiki:sync`        | `node scripts/wiki/sync-see-also.mjs`       | Sync `related:` frontmatter to body links   |
+| `wiki:log`         | `node scripts/wiki/log.mjs`                 | Append operation entries to `log.md`        |
+| `wiki:setup:husky` | `node scripts/wiki/setup-husky.mjs`         | Wire wiki lint/check into Husky git hooks   |
 
 ### Lint — validate structure
 
@@ -284,25 +285,26 @@ status: draft # draft | stable | archived
 
 Run `npm run wiki:build` manually (or via your agent workflow) after adding, removing, or renaming pages — it writes `index.md`, so it belongs in the edit workflow rather than as a silent pre-commit step.
 
+### Quick setup with Husky
+
+Install [Husky](https://typicode.github.io/husky/) first, then run the setup script. It creates `.husky/pre-commit` and `.husky/pre-push` when missing, or appends wiki commands to existing hooks without removing what you already have.
+
+```bash
+npm install -D husky
+npm run wiki:setup:husky
+```
+
+Re-running `wiki:setup:husky` is safe — it skips hooks that are already configured.
+
 ### Scoped pre-commit (only when wiki files change)
 
-Append to an existing `.husky/pre-commit` (or equivalent):
+If you prefer not to lint on every commit, append this to an existing `.husky/pre-commit` instead of using `wiki:setup:husky` as-is:
 
 ```sh
 git diff --cached --name-only --diff-filter=ACM | grep -q '^wiki/' && npm run wiki:lint
 ```
 
 Replace `^wiki/` with your wiki directory if you chose a non-default name at init.
-
-### Pre-push index check
-
-Append to an existing `.husky/pre-push`:
-
-```sh
-npm run wiki:check
-```
-
-These snippets use npm scripts and work cross-platform (including Windows/PowerShell).
 
 ### Advanced: lint-staged
 

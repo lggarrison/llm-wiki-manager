@@ -13,6 +13,15 @@
   "engines": {
     "node": ">=18"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lggarrison/llm-wiki-manager.git"
+  },
+  "homepage": "https://github.com/lggarrison/llm-wiki-manager#readme",
+  "bugs": {
+    "url": "https://github.com/lggarrison/llm-wiki-manager/issues"
+  },
+  "author": "lggarrison",
   "dependencies": {
     "@clack/prompts": "^0.9.1",
     "picocolors": "^1.1.1"
@@ -24,6 +33,8 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "keywords": [

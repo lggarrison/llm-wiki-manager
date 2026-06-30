@@ -30,57 +30,46 @@ AGENTS.md              # Generic agent instructions (created or amended)
 
 ## Installation
 
+The source lives at [github.com/lggarrison/llm-wiki-manager](https://github.com/lggarrison/llm-wiki-manager).
+
+### From GitHub (recommended for now)
+
+Run directly without installing — npm builds the package from source on install:
+
+```bash
+npx github:lggarrison/llm-wiki-manager init
+```
+
+Or add it as a dev dependency in your project:
+
+```bash
+npm install --save-dev github:lggarrison/llm-wiki-manager
+npx llm-wiki-manager init
+```
+
+If your machine is set up with a GitHub SSH key, you can use the SSH form instead:
+
+```bash
+npm install --save-dev git+ssh://git@github.com/lggarrison/llm-wiki-manager.git
+```
+
 ### From npm (once published)
 
 ```bash
 npx llm-wiki-manager init
 ```
 
-### From a private GitHub repository
-
-If the package is hosted in a private GitHub repo, install it directly using an HTTPS URL with a personal access token, or via SSH if your environment has GitHub access configured.
-
-**Using npm with a GitHub URL:**
+### From a local clone
 
 ```bash
-# HTTPS (replace TOKEN and owner/repo)
-npm install --save-dev github:owner/llm-wiki-manager
+git clone https://github.com/lggarrison/llm-wiki-manager.git
+cd llm-wiki-manager
+npm install
+npm run build
+npm link            # makes `llm-wiki-manager` available globally
 
-# SSH (if your machine has a GitHub SSH key)
-npm install --save-dev git+ssh://git@github.com:owner/llm-wiki-manager.git
-```
-
-Then run via:
-
-```bash
-npx llm-wiki-manager init
-```
-
-**Or run directly without installing:**
-
-```bash
-# HTTPS with token
-npx github:owner/llm-wiki-manager init
-
-# If npm is configured with a GitHub token (see below)
-npx --yes github:owner/llm-wiki-manager init
-```
-
-**Configuring a GitHub personal access token for private repos:**
-
-1. Create a token at GitHub → Settings → Developer settings → Personal access tokens
-2. Grant it `repo` (read) scope
-3. Add it to your `.npmrc`:
-
-```
-//npm.pkg.github.com/:_authToken=YOUR_TOKEN
-@owner:registry=https://npm.pkg.github.com
-```
-
-Or set it as an environment variable before running:
-
-```bash
-NPM_TOKEN=your_token npx github:owner/llm-wiki-manager init
+# then, from your target project:
+llm-wiki-manager init
 ```
 
 ---
@@ -246,3 +235,25 @@ status: draft          # draft | stable | archived
 ## Requirements
 
 - Node.js 18 or later
+
+---
+
+## Development
+
+```bash
+git clone https://github.com/lggarrison/llm-wiki-manager.git
+cd llm-wiki-manager
+npm install
+npm run build     # compile TypeScript to dist/
+npm test          # run the vitest suite
+```
+
+The compiled CLI entry point is `dist/bin/cli.js` (built from `bin/cli.ts`). The `prepare` script runs the build automatically on install and before publishing, so `dist/` is always present in the published package.
+
+Issues and pull requests are welcome at [github.com/lggarrison/llm-wiki-manager](https://github.com/lggarrison/llm-wiki-manager/issues).
+
+---
+
+## License
+
+MIT

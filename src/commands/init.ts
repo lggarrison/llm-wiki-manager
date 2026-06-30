@@ -2,7 +2,13 @@ import { intro, outro, text, isCancel, cancel, log } from '@clack/prompts';
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
 import pc from 'picocolors';
-import { templatePath, copyTemplate, amendFile, interpolate } from '../utils/fs.js';
+import {
+  templatePath,
+  copyTemplate,
+  amendFile,
+  interpolate,
+  mergePackageJsonScripts,
+} from '../utils/fs.js';
 
 export async function init(): Promise<void> {
   intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
@@ -85,7 +91,17 @@ export async function init(): Promise<void> {
   log.step('Installing management scripts…');
   copyTemplate(templatePath('scripts'), scriptsDest, vars);
 
-  // 3. Create or amend AGENTS.md
+  // 3. Add npm scripts to package.json (when present)
+  const pkgResult = mergePackageJsonScripts(cwd, vars.SCRIPTS_DIR);
+  if (pkgResult.status === 'merged') {
+    log.step(`Adding npm scripts to package.json (${pkgResult.added.join(', ')})…`);
+  } else if (pkgResult.status === 'no-package-json') {
+    log.warn('No package.json found — skipped npm scripts (see README for manual setup).');
+  } else {
+    log.warn('package.json already has wiki scripts — skipped.');
+  }
+
+  // 4. Create or amend AGENTS.md
   log.step('Writing AGENTS.md…');
   const agentsTemplate = readFileSync(templatePath('AGENTS.md'), 'utf8');
   const agentsContent = interpolate(agentsTemplate, vars);
@@ -99,8 +115,10 @@ export async function init(): Promise<void> {
     pc.green('Done!') +
       ' Next steps:\n' +
       `  • Review ${pc.bold(join((wikiDir as string).trim(), 'schema.md'))} to understand wiki conventions\n` +
-      `  • Run ${pc.bold(`node ${(scriptsDir as string).trim()}/lint.mjs`)} to validate your wiki\n` +
-      `  • Run ${pc.bold(`node ${(scriptsDir as string).trim()}/build-index.mjs`)} to regenerate index.md\n` +
-      `  • See AGENTS.md for instructions to give your LLM agent`,
+      `  • Run ${pc.bold('npm run wiki:help')} for a list of wiki commands\n` +
+      `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
+      `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
+      `  • See AGENTS.md for instructions to give your LLM agent\n` +
+      `  • Optional: add git hooks — see README "Optional git hooks"`,
   );
 }

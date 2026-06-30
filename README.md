@@ -20,10 +20,13 @@ wiki/
 scripts/wiki/
 ├── lint.mjs           # Validate frontmatter, links, and structure
 ├── build-index.mjs    # Regenerate index.md from page frontmatter
+├── help.mjs           # List wiki commands and when to run them
 ├── log.mjs            # Append operation entries to log.md
 └── sync-see-also.mjs  # Sync related: frontmatter to body links
 
 AGENTS.md              # Generic agent instructions (created or amended)
+
+package.json           # wiki:* npm scripts added (when present)
 ```
 
 ---
@@ -95,7 +98,9 @@ After `init` completes:
 
 1. Open `wiki/schema.md` to review the conventions your agent will follow
 2. Share `AGENTS.md` with your LLM agent (or point it to the file)
-3. Run `node scripts/wiki/lint.mjs` to confirm the scaffold is valid
+3. Run `npm run wiki:lint` to confirm the scaffold is valid
+
+If your project has no `package.json`, use the raw script paths under `scripts/wiki/` instead (see [Managing the wiki](#managing-the-wiki)).
 
 ---
 
@@ -113,9 +118,9 @@ Place the raw document (article, spec, transcript, etc.) into `wiki/raw/`, then 
 After the agent finishes, run the maintenance scripts:
 
 ```bash
-node scripts/wiki/sync-see-also.mjs   # sync related: links to page bodies
-node scripts/wiki/build-index.mjs     # regenerate index.md
-node scripts/wiki/log.mjs add ingest "Title of source"
+npm run wiki:sync                     # sync related: links to page bodies
+npm run wiki:build                    # regenerate index.md
+npm run wiki:log -- add ingest "Title of source"
 ```
 
 ### Querying the wiki
@@ -123,23 +128,34 @@ node scripts/wiki/log.mjs add ingest "Title of source"
 Ask your agent a question. It will read `wiki/index.md` to locate relevant pages, then synthesize an answer with citations. If the query reveals a gap, the agent should create a stub page (`status: draft`) to track it.
 
 ```bash
-node scripts/wiki/log.mjs add query "Summary of the question"
+npm run wiki:log -- add query "Summary of the question"
 ```
 
 ### Editing pages manually
 
 - Update `last_updated` in the frontmatter whenever you change a page
-- Run `node scripts/wiki/build-index.mjs` after adding or removing pages
-- Run `node scripts/wiki/lint.mjs` to catch any broken links or missing fields
+- Run `npm run wiki:build` after adding or removing pages
+- Run `npm run wiki:lint` to catch any broken links or missing fields
 
 ---
 
 ## Managing the wiki
 
+When `init` finds a `package.json`, it adds these npm scripts. Run `npm run wiki:help` anytime for a quick reference.
+
+| Script       | Command                                     | Purpose                                     |
+| ------------ | ------------------------------------------- | ------------------------------------------- |
+| `wiki:help`  | `node scripts/wiki/help.mjs`                | List commands, usage, and when to run them  |
+| `wiki:lint`  | `node scripts/wiki/lint.mjs`                | Validate frontmatter, links, and structure  |
+| `wiki:build` | `node scripts/wiki/build-index.mjs`         | Regenerate `index.md`                       |
+| `wiki:check` | `node scripts/wiki/build-index.mjs --check` | Verify `index.md` is up to date (read-only) |
+| `wiki:sync`  | `node scripts/wiki/sync-see-also.mjs`       | Sync `related:` frontmatter to body links   |
+| `wiki:log`   | `node scripts/wiki/log.mjs`                 | Append operation entries to `log.md`        |
+
 ### Lint — validate structure
 
 ```bash
-node scripts/wiki/lint.mjs
+npm run wiki:lint
 ```
 
 Checks for:
@@ -162,7 +178,7 @@ node scripts/wiki/lint.mjs --wiki-dir path/to/wiki
 ### Build index — regenerate index.md
 
 ```bash
-node scripts/wiki/build-index.mjs
+npm run wiki:build
 ```
 
 Walks all wiki pages, reads their frontmatter, and writes a fresh `index.md` grouped by page type (overview/hub → concepts → sources). Run this any time pages are added, removed, or renamed.
@@ -170,13 +186,28 @@ Walks all wiki pages, reads their frontmatter, and writes a fresh `index.md` gro
 Options:
 
 ```bash
-node scripts/wiki/build-index.mjs --wiki-dir path/to/wiki
+npm run wiki:build -- --wiki-dir path/to/wiki
+node scripts/wiki/build-index.mjs --wiki-dir path/to/wiki   # without npm scripts
+```
+
+### Check index — verify index.md is current
+
+```bash
+npm run wiki:check
+```
+
+Compares the existing `index.md` to what `wiki:build` would produce. Exits with code 1 if stale. Useful in pre-push hooks and CI because it does not modify files.
+
+Options:
+
+```bash
+npm run wiki:check -- --wiki-dir path/to/wiki
 ```
 
 ### Log — record operations
 
 ```bash
-node scripts/wiki/log.mjs add <op> "<title>"
+npm run wiki:log -- add <op> "<title>"
 ```
 
 Operations: `ingest`, `query`, `lint`, `maintenance`
@@ -184,25 +215,26 @@ Operations: `ingest`, `query`, `lint`, `maintenance`
 Examples:
 
 ```bash
-node scripts/wiki/log.mjs add ingest "RFC 9110 HTTP Semantics"
-node scripts/wiki/log.mjs add query "How does auth token refresh work?"
-node scripts/wiki/log.mjs add lint "weekly health check"
-node scripts/wiki/log.mjs add maintenance "archived three stale pages"
+npm run wiki:log -- add ingest "RFC 9110 HTTP Semantics"
+npm run wiki:log -- add query "How does auth token refresh work?"
+npm run wiki:log -- add lint "weekly health check"
+npm run wiki:log -- add maintenance "archived three stale pages"
 
 # Backdate an entry
-node scripts/wiki/log.mjs add ingest "Old doc" --date=2025-01-15
+npm run wiki:log -- add ingest "Old doc" --date=2025-01-15
 ```
 
 Options:
 
 ```bash
-node scripts/wiki/log.mjs add <op> "<title>" --wiki-dir path/to/wiki
+npm run wiki:log -- add <op> "<title>" --wiki-dir path/to/wiki
+node scripts/wiki/log.mjs add <op> "<title>" --wiki-dir path/to/wiki   # without npm scripts
 ```
 
 ### Sync see-also — fix missing body links
 
 ```bash
-node scripts/wiki/sync-see-also.mjs
+npm run wiki:sync
 ```
 
 For every `related:` entry in a page's frontmatter that lacks a corresponding markdown link in the body, appends the missing link under a `## See also` section. This keeps the wiki graph consistent.
@@ -210,8 +242,9 @@ For every `related:` entry in a page's frontmatter that lacks a corresponding ma
 Options:
 
 ```bash
-node scripts/wiki/sync-see-also.mjs --dry            # preview changes without writing
-node scripts/wiki/sync-see-also.mjs --wiki-dir path/to/wiki
+npm run wiki:sync -- --dry            # preview changes without writing
+npm run wiki:sync -- --wiki-dir path/to/wiki
+node scripts/wiki/sync-see-also.mjs --wiki-dir path/to/wiki   # without npm scripts
 ```
 
 ---
@@ -233,8 +266,53 @@ status: draft # draft | stable | archived
 
 - Place pages in the directory matching their type: `concepts/`, `sources/`, or wiki root (overview/hub)
 - Use markdown links `[Title](path.md)` — never wikilinks `[[...]]`
-- Every path in `related:` must also appear as a body link (run `sync-see-also.mjs` to auto-add)
+- Every path in `related:` must also appear as a body link (run `npm run wiki:sync` to auto-add)
 - See `wiki/schema.md` for the full specification
+
+---
+
+## Optional git hooks
+
+`init` does not install git hooks in your project — it only adds npm scripts when `package.json` exists. You can wire up hooks yourself if you want automated wiki checks.
+
+**Recommended pattern:** lint on commit (read-only), check index on push (read-only).
+
+| Hook       | Command              | Why                                                           |
+| ---------- | -------------------- | ------------------------------------------------------------- |
+| pre-commit | `npm run wiki:lint`  | Catch broken links and invalid frontmatter before commit      |
+| pre-push   | `npm run wiki:check` | Ensure `index.md` matches current pages without writing files |
+
+Run `npm run wiki:build` manually (or via your agent workflow) after adding, removing, or renaming pages — it writes `index.md`, so it belongs in the edit workflow rather than as a silent pre-commit step.
+
+### Scoped pre-commit (only when wiki files change)
+
+Append to an existing `.husky/pre-commit` (or equivalent):
+
+```sh
+git diff --cached --name-only --diff-filter=ACM | grep -q '^wiki/' && npm run wiki:lint
+```
+
+Replace `^wiki/` with your wiki directory if you chose a non-default name at init.
+
+### Pre-push index check
+
+Append to an existing `.husky/pre-push`:
+
+```sh
+npm run wiki:check
+```
+
+These snippets use npm scripts and work cross-platform (including Windows/PowerShell).
+
+### Advanced: lint-staged
+
+If your project already uses [lint-staged](https://github.com/lint-staged/lint-staged), you can optionally add:
+
+```json
+"wiki/**/*.md": ["npm run wiki:build", "npm run wiki:lint"]
+```
+
+lint-staged re-stages any files modified by these tasks (including regenerated `index.md`).
 
 ---
 

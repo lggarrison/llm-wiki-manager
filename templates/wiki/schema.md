@@ -81,22 +81,22 @@ Process a new source document:
 3. Create a summary page in `{{WIKI_DIR}}/sources/<slug>.md`
 4. Create or update concept pages in `{{WIKI_DIR}}/concepts/` that reference this source
 5. Update `related:` and body links on affected pages
-6. Run `node {{SCRIPTS_DIR}}/sync-see-also.mjs` to sync missing body links
-7. Run `node {{SCRIPTS_DIR}}/build-index.mjs` to update `index.md`
-8. Run `node {{SCRIPTS_DIR}}/log.mjs add ingest "<title of source>"`
+6. Run `npm run wiki:sync` to sync missing body links
+7. Run `npm run wiki:build` to update `index.md`
+8. Run `npm run wiki:log -- add ingest "<title of source>"`
 
 ### Query
 Answer a question using the wiki:
 1. Read `index.md` to locate relevant pages
 2. Synthesize an answer with citations to wiki pages
 3. If the answer reveals a gap, create a stub page with `status: draft`
-4. Log: `node {{SCRIPTS_DIR}}/log.mjs add query "<question summary>"`
+4. Log: `npm run wiki:log -- add query "<question summary>"`
 
 ### Lint
 Periodic health check:
-1. Run `node {{SCRIPTS_DIR}}/lint.mjs`
+1. Run `npm run wiki:lint` (or `node {{SCRIPTS_DIR}}/lint.mjs` if npm scripts are unavailable)
 2. Resolve any errors before adding new content
-3. Log: `node {{SCRIPTS_DIR}}/log.mjs add lint "health check"`
+3. Log: `npm run wiki:log -- add lint "health check"`
 
 ---
 

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * build-index.mjs — regenerate wiki/index.md from page frontmatter
- * Usage: node {{SCRIPTS_DIR}}/build-index.mjs [--wiki-dir <path>]
+ * Usage: node {{SCRIPTS_DIR}}/build-index.mjs [--wiki-dir <path>] [--check]
  */
 import { readdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'fs';
 import { join, resolve, relative } from 'path';
 
 const args = process.argv.slice(2);
+const checkOnly = args.includes('--check');
 const wikiDirFlag = args.indexOf('--wiki-dir');
 const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}}');
 
@@ -121,5 +122,16 @@ const output = [
   '',
 ].join('\n');
 
-writeFileSync(join(WIKI_DIR, 'index.md'), output, 'utf8');
-console.log(`✓ index.md written (${pages.length} page(s))`);
+const indexPath = join(WIKI_DIR, 'index.md');
+
+if (checkOnly) {
+  const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
+  if (existing !== output) {
+    console.error('✗ index.md is stale — run npm run wiki:build');
+    process.exit(1);
+  }
+  console.log(`✓ index.md is up to date (${pages.length} page(s))`);
+} else {
+  writeFileSync(indexPath, output, 'utf8');
+  console.log(`✓ index.md written (${pages.length} page(s))`);
+}

@@ -1,0 +1,38 @@
+{
+  "name": "llm-wiki-manager",
+  "version": "0.1.0",
+  "description": "Scaffold and manage an LLM-maintained personal wiki",
+  "type": "module",
+  "bin": {
+    "llm-wiki-manager": "./dist/bin/cli.js"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.9.1",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^3.2.4"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "wiki",
+    "llm",
+    "ai",
+    "knowledge-base",
+    "scaffold",
+    "agents"
+  ],
+  "license": "MIT"
+}

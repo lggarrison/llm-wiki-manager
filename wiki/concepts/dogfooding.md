@@ -14,12 +14,12 @@ This repository is a **consumer of its own tool**. Running `init` against the re
 
 ## What is dogfooded
 
-| Artifact           | Path                                       | Role                                                                     |
-| ------------------ | ------------------------------------------ | ------------------------------------------------------------------------ |
-| Wiki               | `wiki/`                                    | Internal, agent-maintained knowledge about `src/` and `templates/`       |
-| Scripts            | `scripts/wiki/`                            | Interpolated copy of `templates/scripts/` (what consumers get from init) |
-| Agent instructions | `AGENTS.md` (repo root) + `wiki/AGENTS.md` | Cursor agents and vault orientation                                      |
-| npm scripts        | `wiki:*` in `package.json`                 | Lint, build, sync, check, and log commands                               |
+| Artifact           | Path                                                       | Role                                                                     |
+| ------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Wiki               | `wiki/`                                                    | Internal, agent-maintained knowledge about `src/` and `templates/`       |
+| Scripts            | `scripts/wiki/`                                            | Interpolated copy of `templates/scripts/` (what consumers get from init) |
+| Agent instructions | `AGENTS.md` (repo root) → [`wiki/AGENTS.md`](../AGENTS.md) | Repo root pointer; vault holds full agent rules                          |
+| npm scripts        | `wiki:*` in `package.json`                                 | Lint, build, sync, check, and log commands                               |
 
 These paths are **committed to git** but **not published** to npm. Consumers run [Init Command](init-command.md) to scaffold their own.
 

@@ -28,7 +28,7 @@ These become interpolation variables (`PROJECT_NAME`, `WIKI_DIR`, `SCRIPTS_DIR`,
 1. **Wiki directory** — copies `templates/wiki/` via `copyTemplate`, creates `concepts/`, `sources/`, `raw/` with `.gitkeep` files.
 2. **Management scripts** — copies `templates/scripts/` with placeholders replaced.
 3. **package.json** — merges `wiki:*` npm scripts via `mergePackageJsonScripts` (skipped if no `package.json` or scripts already exist).
-4. **AGENTS.md** — creates or appends the llm-wiki-manager section using `amendFile` (idempotent via `<!-- llm-wiki-manager -->` delimiter).
+4. **AGENTS.md** — amends repo-root `AGENTS.md` with a pointer to `wiki/AGENTS.md`; vault copy created from `templates/wiki/AGENTS.md`
 
 ## Idempotency
 

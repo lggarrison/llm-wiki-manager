@@ -2,7 +2,7 @@
 
 Read **`schema.md`** first for the full specification. This file is the quick orientation for agents maintaining this vault.
 
-**Documentation scope** — `src/`, `templates/`
+**Documentation scope** — {{FOCUS_DIRS}}
 
 ---
 

@@ -29,7 +29,8 @@ This repo is both the **llm-wiki-manager npm package** and a **dogfooded consume
 | `wiki/`          | Internal LLM-maintained knowledge base                             |
 | `wiki/entities/` | Flat scope overviews (see [Dogfooding](dogfooding.md))             |
 | `scripts/wiki/`  | Interpolated copy of [Template System](template-system.md) scripts |
-| `AGENTS.md`      | Agent instructions for maintaining this wiki                       |
+| `AGENTS.md`      | Repo-root pointer to [`wiki/AGENTS.md`](../AGENTS.md)              |
+| `wiki/AGENTS.md` | Full agent instructions for maintaining this wiki                  |
 
 Focus scope for this wiki: `src/` and `templates/` (set at init).
 

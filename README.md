@@ -24,7 +24,7 @@ scripts/wiki/
 ├── log.mjs            # Append operation entries to log.md
 └── sync-see-also.mjs  # Sync related: frontmatter to body links
 
-AGENTS.md              # Generic agent instructions (created or amended)
+AGENTS.md              # Repo-root pointer to wiki/AGENTS.md (created or amended)
 
 package.json           # wiki:* npm scripts added (when present)
 ```
@@ -97,7 +97,7 @@ You will be prompted for:
 After `init` completes:
 
 1. Open `wiki/schema.md` to review the conventions your agent will follow
-2. Share `AGENTS.md` with your LLM agent (or point it to the file)
+2. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
 3. Run `npm run wiki:lint` to confirm the scaffold is valid
 
 If your project has no `package.json`, use the raw script paths under `scripts/wiki/` instead (see [Managing the wiki](#managing-the-wiki)).
@@ -345,7 +345,7 @@ The compiled CLI entry point is `dist/bin/cli.js` (built from `bin/cli.ts`). The
 This repo dogfoods its own wiki workflow. Internal knowledge about `src/` and `templates/` lives in:
 
 - [`wiki/index.md`](wiki/index.md) — auto-generated page catalog
-- [`AGENTS.md`](AGENTS.md) — instructions for LLM agents maintaining the wiki
+- [`wiki/AGENTS.md`](wiki/AGENTS.md) — agent instructions (`AGENTS.md` at repo root points here)
 
 Run `npm run wiki:help` for wiki commands. CI and `release:check` run `wiki:lint` and `wiki:check`.
 

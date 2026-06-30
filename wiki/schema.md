@@ -49,7 +49,7 @@ When ingesting new source material or creating concept pages, prefer content tha
 
 ```
 wiki/
-├── AGENTS.md        ← agent entry point (read first; points to schema.md)
+├── AGENTS.md        ← agent entry point (read first; full rules for LLM agents)
 ├── README.md        ← human entry point (Obsidian onboarding, browsing)
 ├── schema.md        ← full frontmatter spec and conventions (this file)
 ├── index.md         ← auto-generated content catalog (never hand-edit tables)

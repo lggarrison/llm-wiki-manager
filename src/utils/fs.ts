@@ -31,12 +31,16 @@ export function interpolate(str: string, vars: Record<string, string>): string {
   return str.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? `{{${key}}}`);
 }
 
+function shouldInterpolateFile(name: string): boolean {
+  return /\.(md|mjs|js|json)$/.test(name) || name === '.entity-scopes';
+}
+
 function walkAndInterpolate(dir: string, vars: Record<string, string>): void {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
       walkAndInterpolate(full, vars);
-    } else if (/\.(md|mjs|js)$/.test(full)) {
+    } else if (shouldInterpolateFile(entry)) {
       const content = readFileSync(full, 'utf8');
       const updated = interpolate(content, vars);
       if (updated !== content) writeFileSync(full, updated, 'utf8');
@@ -50,6 +54,75 @@ export function copyTemplate(src: string, dest: string, vars: Record<string, str
   if (Object.keys(vars).length > 0) {
     walkAndInterpolate(dest, vars);
   }
+}
+
+/** Derive a flat entity scope slug from a focus directory path (e.g. src/ui/_app/ → app). */
+export function scopeSlugFromFocusDir(focusDir: string): string {
+  const normalized = focusDir.replace(/\\/g, '/').replace(/\/$/, '');
+  const base = normalized.split('/').pop() ?? normalized;
+  return base.replace(/^_/, '');
+}
+
+export function entityOverviewStub(slug: string, sourcePath: string, initDate: string): string {
+  const title = slug
+    .split('-')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+  const normalizedPath = sourcePath.replace(/\\/g, '/').replace(/\/$/, '');
+  return `---
+type: overview
+title: ${title}
+last_updated: ${initDate}
+tags: [${slug}]
+related: []
+status: draft
+summary: Overview stub for \`${normalizedPath}/\` — expand through day-to-day work.
+---
+
+# ${title} (\`${normalizedPath}/\`)
+
+> Stub entity overview. The first tag (\`${slug}\`) is the scope slug. Add content as you work in this area.
+
+`;
+}
+
+export const WIKI_EMPTY_DIRS = [
+  'concepts',
+  'sources',
+  'entities',
+  'archive',
+  'raw/articles',
+  'raw/prs',
+  'raw/tickets',
+  'raw/design-notes',
+  'raw/transcripts',
+  'raw/assets',
+] as const;
+
+export function scaffoldWikiEmptyDirs(wikiDest: string): void {
+  for (const sub of WIKI_EMPTY_DIRS) {
+    mkdirSync(join(wikiDest, sub), { recursive: true });
+    const keep = join(wikiDest, sub, '.gitkeep');
+    if (!existsSync(keep)) writeFileSync(keep, '');
+  }
+}
+
+export function scaffoldEntityOverviews(
+  wikiDest: string,
+  focusDirs: string[],
+  initDate: string,
+): string[] {
+  mkdirSync(join(wikiDest, 'entities'), { recursive: true });
+  const slugs: string[] = [];
+  for (const focusDir of focusDirs) {
+    const slug = scopeSlugFromFocusDir(focusDir);
+    slugs.push(slug);
+    const entityPath = join(wikiDest, 'entities', `${slug}.md`);
+    if (!existsSync(entityPath)) {
+      writeFileSync(entityPath, entityOverviewStub(slug, focusDir, initDate));
+    }
+  }
+  return slugs;
 }
 
 export const WIKI_SCRIPT_KEYS = [

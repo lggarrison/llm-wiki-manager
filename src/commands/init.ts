@@ -1,5 +1,5 @@
 import { intro, outro, text, isCancel, cancel, log } from '@clack/prompts';
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { basename, join, resolve } from 'path';
 import pc from 'picocolors';
 import {
@@ -8,6 +8,9 @@ import {
   amendFile,
   interpolate,
   mergePackageJsonScripts,
+  scopeSlugFromFocusDir,
+  scaffoldWikiEmptyDirs,
+  scaffoldEntityOverviews,
 } from '../utils/fs.js';
 
 export async function init(): Promise<void> {
@@ -57,11 +60,19 @@ export async function init(): Promise<void> {
     .map((s: string) => s.trim())
     .filter(Boolean);
 
+  const initDate = new Date().toISOString().slice(0, 10);
+  const entitySlugs = focusDirList.map((d: string) => scopeSlugFromFocusDir(d));
+  const entityScopeLines =
+    entitySlugs.length > 0
+      ? entitySlugs.join('\n')
+      : '# Add scope slugs below as you define documented source areas';
+
   const vars: Record<string, string> = {
     PROJECT_NAME: (projectName as string).trim(),
     WIKI_DIR: (wikiDir as string).trim(),
     SCRIPTS_DIR: (scriptsDir as string).trim(),
-    INIT_DATE: new Date().toISOString().slice(0, 10),
+    INIT_DATE: initDate,
+    ENTITY_SCOPE_LINES: entityScopeLines,
     FOCUS_DIRS:
       focusDirList.length > 0
         ? focusDirList.map((d: string) => `\`${d}/\``).join(', ')
@@ -80,22 +91,9 @@ export async function init(): Promise<void> {
   // 1. Scaffold wiki directory
   log.step('Scaffolding wiki directory…');
   copyTemplate(templatePath('wiki'), wikiDest, vars);
-  for (const sub of [
-    'concepts',
-    'sources',
-    'entities',
-    'archive',
-    'raw/articles',
-    'raw/prs',
-    'raw/tickets',
-    'raw/design-notes',
-    'raw/transcripts',
-    'raw/assets',
-  ]) {
-    mkdirSync(join(wikiDest, sub), { recursive: true });
-    // place a .gitkeep so the directory is tracked by git
-    const keep = join(wikiDest, sub, '.gitkeep');
-    if (!existsSync(keep)) writeFileSync(keep, '');
+  scaffoldWikiEmptyDirs(wikiDest);
+  if (focusDirList.length > 0) {
+    scaffoldEntityOverviews(wikiDest, focusDirList, initDate);
   }
 
   // 2. Scaffold management scripts
@@ -129,7 +127,7 @@ export async function init(): Promise<void> {
       `  • Run ${pc.bold('npm run wiki:help')} for a list of wiki commands\n` +
       `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
       `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
-      `  • See AGENTS.md for instructions to give your LLM agent\n` +
+      `  • Open ${pc.bold(join((wikiDir as string).trim(), 'README.md'))} (human entry) and ${pc.bold(join((wikiDir as string).trim(), 'AGENTS.md'))} (agent entry)\n` +
       `  • Optional:\n` +
       `            • add git hooks — see README "Optional git hooks"\n` +
       `            • add lint-staged — see README "Advanced: lint-staged"\n` +

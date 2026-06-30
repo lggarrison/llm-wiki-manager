@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * lint.mjs — validate wiki frontmatter, links, and structure
- * Usage: node {{SCRIPTS_DIR}}/lint.mjs [--warn-only] [--wiki-dir <path>]
+ * Usage: node {{SCRIPTS_DIR}}/lint.mjs [--warn-only] [--wiki-dir <path>] [--repo-root <path>]
  */
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join, resolve, relative, dirname, basename } from 'path';
@@ -11,13 +11,38 @@ import { join, resolve, relative, dirname, basename } from 'path';
 const args = process.argv.slice(2);
 const warnOnly = args.includes('--warn-only');
 const wikiDirFlag = args.indexOf('--wiki-dir');
+const repoRootFlag = args.indexOf('--repo-root');
 const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}}');
+const REPO_ROOT = resolve(repoRootFlag >= 0 ? args[repoRootFlag + 1] : process.cwd());
 
-const VALID_TYPES = new Set(['concept', 'source', 'overview', 'hub']);
-const VALID_STATUSES = new Set(['draft', 'stable', 'archived']);
-const REQUIRED_FIELDS = ['type', 'title', 'last_updated', 'tags', 'related', 'status'];
+const VALID_TYPES = new Set([
+  'overview',
+  'entity',
+  'comparison',
+  'deep-dive',
+  'concept',
+  'source',
+  'hub',
+]);
+const VALID_STATUSES = new Set(['active', 'deprecated', 'wip']);
+const REQUIRED_FIELDS = ['type', 'title', 'last_updated'];
+const ENTITY_TYPES = new Set(['overview', 'entity', 'comparison', 'deep-dive']);
+const HUB_PATHS = new Set(['README.md', 'index.md', 'raw/raw.md']);
+const KEBAB_MD = /^[a-z0-9]+(-[a-z0-9]+)*\.md$/;
+
+const TYPE_PLACEMENT = {
+  overview: /^entities\/[^/]+\.md$/,
+  entity: /^entities\/[^/]+\.md$/,
+  comparison: /^entities\/[^/]+\.md$/,
+  'deep-dive': /^entities\/[^/]+\.md$/,
+  concept: /^concepts\/[^/]+\.md$/,
+  source: /^sources\/[^/]+\.md$/,
+  hub: /^(README\.md|index\.md|raw\/raw\.md)$/,
+};
 
 const RAW_ARTIFACT_DIRS = ['articles', 'prs', 'tickets', 'design-notes', 'transcripts', 'assets'];
+
+const META_SKIP = new Set(['index.md', 'log.md', 'schema.md', 'README.md', 'AGENTS.md']);
 
 function shouldSkipWikiPath(full) {
   const rel = relative(WIKI_DIR, full).replace(/\\/g, '/');
@@ -27,6 +52,19 @@ function shouldSkipWikiPath(full) {
     if (rel.startsWith(`raw/${sub}/`) || rel === `raw/${sub}`) return true;
   }
   return false;
+}
+
+function isInsideWiki(absPath) {
+  const rel = relative(WIKI_DIR, absPath).replace(/\\/g, '/');
+  return rel && !rel.startsWith('..') && rel !== '..';
+}
+
+function findRawArtifact(slug) {
+  for (const sub of RAW_ARTIFACT_DIRS) {
+    const rel = `raw/${sub}/${slug}.md`;
+    if (existsSync(join(WIKI_DIR, rel))) return rel;
+  }
+  return null;
 }
 
 // ── Frontmatter parser ────────────────────────────────────────────────────────
@@ -67,7 +105,6 @@ function walkMd(dir) {
 
 function extractBodyLinks(content) {
   const links = [];
-  // skip frontmatter block
   const body = content.replace(/^---[\s\S]*?---\r?\n/, '');
   for (const match of body.matchAll(/\[([^\]]*)\]\(([^)]+)\)/g)) {
     const path = match[2];
@@ -78,6 +115,30 @@ function extractBodyLinks(content) {
 
 function extractWikilinks(content) {
   return [...content.matchAll(/\[\[([^\]]+)\]\]/g)].map(m => m[1]);
+}
+
+function allowsDirectoryLink(pageRel, link, target) {
+  if (pageRel !== 'raw/raw.md') return false;
+  const targetRel = relative(WIKI_DIR, target).replace(/\\/g, '/');
+  return targetRel.startsWith('raw/');
+}
+
+function describePlacement(type) {
+  switch (type) {
+    case 'overview':
+    case 'entity':
+    case 'comparison':
+    case 'deep-dive':
+      return 'entities/<slug>.md';
+    case 'concept':
+      return 'concepts/<slug>.md';
+    case 'source':
+      return 'sources/<slug>.md';
+    case 'hub':
+      return 'README.md, index.md, or raw/raw.md';
+    default:
+      return '(unknown)';
+  }
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
@@ -110,53 +171,55 @@ if (existsSync(scopesPath) && existsSync(entitiesDir)) {
     const target = join(entitiesDir, `${slug}.md`);
     if (!existsSync(target)) {
       err(scopesPath, `missing entity overview: entities/${slug}.md`);
+    } else {
+      const content = readFileSync(target, 'utf8');
+      const fm = parseFrontmatter(content);
+      if (fm?.type !== 'overview') {
+        err(target, `entities/${slug}.md must have type: overview (scope entry point)`);
+      }
     }
   }
 }
 
-// Build inbound-link map for orphan detection
 const inbound = new Map(pages.map(p => [p, 0]));
 
 for (const file of pages) {
   const content = readFileSync(file, 'utf8');
   const fm = parseFrontmatter(content);
   const fileDir = dirname(file);
-
-  // Skip non-wiki meta files
-  if (
-    file === join(WIKI_DIR, 'index.md') ||
-    file === join(WIKI_DIR, 'log.md') ||
-    file === join(WIKI_DIR, 'schema.md') ||
-    file === join(WIKI_DIR, 'README.md') ||
-    file === join(WIKI_DIR, 'AGENTS.md')
-  )
-    continue;
-
   const relPath = relative(WIKI_DIR, file).replace(/\\/g, '/');
+  const fileName = basename(file);
 
-  // Frontmatter presence
+  if (META_SKIP.has(fileName) && dirname(file) === WIKI_DIR) continue;
+
   if (!fm) {
     err(file, 'missing frontmatter');
     continue;
   }
 
-  // Required fields
   for (const field of REQUIRED_FIELDS) {
     if (fm[field] === undefined || fm[field] === '') {
       err(file, `missing required frontmatter field: ${field}`);
     }
   }
 
-  // Valid type
   if (fm.type && !VALID_TYPES.has(fm.type)) {
     err(file, `invalid type "${fm.type}" — must be one of: ${[...VALID_TYPES].join(', ')}`);
   }
 
-  if (fm.type === 'overview' && !relPath.startsWith('entities/')) {
-    err(file, 'overview pages must live in entities/<slug>.md');
+  if (fm.type && TYPE_PLACEMENT[fm.type] && !TYPE_PLACEMENT[fm.type].test(relPath)) {
+    err(file, `type "${fm.type}" must be placed at ${describePlacement(fm.type)}`);
   }
 
-  if (fm.type === 'overview' && dirname(file) === entitiesDir) {
+  if (fm.type === 'hub' && !HUB_PATHS.has(relPath)) {
+    err(file, 'hub pages are only allowed at README.md, index.md, or raw/raw.md');
+  }
+
+  if (!KEBAB_MD.test(fileName)) {
+    err(file, `filename must be lowercase kebab-case: ${fileName}`);
+  }
+
+  if (ENTITY_TYPES.has(fm.type) && dirname(file) === entitiesDir) {
     const slug = basename(file, '.md');
     const tags = Array.isArray(fm.tags) ? fm.tags : [];
     if (tags.length === 0 || tags[0] !== slug) {
@@ -164,17 +227,30 @@ for (const file of pages) {
     }
   }
 
-  // Valid status
   if (fm.status && !VALID_STATUSES.has(fm.status)) {
     err(file, `invalid status "${fm.status}" — must be one of: ${[...VALID_STATUSES].join(', ')}`);
   }
 
-  // last_updated format
   if (fm.last_updated && !/^\d{4}-\d{2}-\d{2}$/.test(fm.last_updated)) {
     err(file, `last_updated must be YYYY-MM-DD, got: ${fm.last_updated}`);
   }
 
-  // related: paths resolve
+  const codeRefs = Array.isArray(fm.code_refs) ? fm.code_refs : [];
+  for (const ref of codeRefs) {
+    const target = resolve(REPO_ROOT, ref);
+    if (!existsSync(target)) {
+      err(file, `code_refs: path does not exist: ${ref}`);
+    }
+  }
+
+  if (fm.type === 'source') {
+    const slug = basename(file, '.md');
+    const rawPath = findRawArtifact(slug);
+    if (!rawPath) {
+      err(file, `source page must pair with a raw artifact: raw/<category>/${slug}.md`);
+    }
+  }
+
   const related = Array.isArray(fm.related) ? fm.related : [];
   for (const rel of related) {
     const target = resolve(WIKI_DIR, rel);
@@ -185,27 +261,53 @@ for (const file of pages) {
     }
   }
 
-  // Body links resolve
   const bodyLinks = extractBodyLinks(content);
   for (const link of bodyLinks) {
     const target = resolve(fileDir, link);
+
+    if (!link.endsWith('.md')) {
+      if (existsSync(target) && allowsDirectoryLink(relPath, link, target)) continue;
+      err(file, `body link must target a wiki page (.md), not a code or directory path: ${link}`);
+      continue;
+    }
+
     if (!existsSync(target)) {
       err(file, `broken body link: ${link}`);
-    } else if (inbound.has(target)) {
+      continue;
+    }
+
+    if (!isInsideWiki(target)) {
+      err(file, `phantom-node link (outside vault): ${link}`);
+      continue;
+    }
+
+    if (statSync(target).isDirectory()) {
+      err(file, `phantom-node link (directory): ${link}`);
+      continue;
+    }
+
+    if (inbound.has(target)) {
       inbound.set(target, (inbound.get(target) ?? 0) + 1);
+    }
+
+    if (fm.type === 'source') {
+      const slug = basename(file, '.md');
+      const targetRel = relative(WIKI_DIR, target).replace(/\\/g, '/');
+      if (targetRel.startsWith('raw/') && basename(target, '.md') === slug) {
+        err(
+          file,
+          `self-loop link to raw artifact — list raw path in frontmatter, not body: ${link}`,
+        );
+      }
     }
   }
 
-  // Wikilinks are forbidden
   const wikilinks = extractWikilinks(content);
   for (const wl of wikilinks) {
     err(file, `wikilink [[${wl}]] found — use markdown links instead`);
   }
 
-  // related: entries should have a corresponding body link
-  const bodyLinkTargets = new Set(
-    bodyLinks.map(l => resolve(fileDir, l))
-  );
+  const bodyLinkTargets = new Set(bodyLinks.map(l => resolve(fileDir, l)));
   for (const rel of related) {
     const target = resolve(WIKI_DIR, rel);
     if (!bodyLinkTargets.has(target)) {
@@ -214,7 +316,6 @@ for (const file of pages) {
   }
 }
 
-// Orphan detection (skip hubs and overviews — they ARE the entry points)
 for (const [file, count] of inbound) {
   if (count === 0) {
     const content = readFileSync(file, 'utf8');
@@ -225,13 +326,12 @@ for (const [file, count] of inbound) {
   }
 }
 
-// Scan AGENTS.md for stale wiki references
-const agentsPath = resolve(process.cwd(), 'AGENTS.md');
+const agentsPath = resolve(REPO_ROOT, 'AGENTS.md');
 if (existsSync(agentsPath)) {
   const agentsContent = readFileSync(agentsPath, 'utf8');
   for (const match of agentsContent.matchAll(/\[([^\]]*)\]\(([^)]+\.md)\)/g)) {
     const link = match[2];
-    const target = resolve(process.cwd(), link);
+    const target = resolve(REPO_ROOT, link);
     if (!existsSync(target)) {
       warn(agentsPath, `stale wiki reference: ${link}`);
     }

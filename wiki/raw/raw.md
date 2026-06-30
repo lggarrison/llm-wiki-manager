@@ -4,7 +4,7 @@ title: Raw Sources
 last_updated: 2026-06-30
 tags: [raw]
 related: []
-status: stable
+status: active
 summary: Hub for immutable ingested artifacts under raw/.
 ---
 
@@ -21,4 +21,4 @@ Immutable ingested artifacts live here. **Never edit** files after ingestion.
 | [transcripts/](transcripts/)   | Meeting / chat transcripts                    |
 | [assets/](assets/)             | Images and diagrams (Obsidian attachments)    |
 
-After adding a raw file, create a matching summary in [sources/](../sources/) and log an ingest operation.
+After adding a raw file, create a matching summary in `sources/` and log an ingest operation.

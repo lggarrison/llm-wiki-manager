@@ -32,7 +32,7 @@ export function fm(fields: Record<string, string | string[]> = {}): string {
     last_updated: '2026-01-01',
     tags: [],
     related: [],
-    status: 'draft',
+    status: 'wip',
   };
   const merged = { ...defaults, ...fields };
   const lines = Object.entries(merged).map(([k, v]) => {

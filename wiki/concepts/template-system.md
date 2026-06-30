@@ -4,7 +4,7 @@ title: Template System
 last_updated: 2026-06-30
 tags: [templates, scaffold]
 related: [concepts/init-command.md, concepts/repo-layout.md, concepts/dogfooding.md]
-status: stable
+status: active
 summary: templates/ is the source of truth; init copies and interpolates placeholders into consumer projects.
 ---
 

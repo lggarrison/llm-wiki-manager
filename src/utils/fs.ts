@@ -59,6 +59,7 @@ export const WIKI_SCRIPT_KEYS = [
   'wiki:check',
   'wiki:sync',
   'wiki:log',
+  'wiki:setup:husky',
 ] as const;
 
 export type WikiScriptKey = (typeof WIKI_SCRIPT_KEYS)[number];
@@ -69,6 +70,7 @@ export const WIKI_TEMPLATE_SCRIPTS = [
   'build-index.mjs',
   'sync-see-also.mjs',
   'log.mjs',
+  'setup-husky.mjs',
 ] as const;
 
 export function wikiScriptCandidates(scriptsDir: string): Record<WikiScriptKey, string> {
@@ -79,6 +81,7 @@ export function wikiScriptCandidates(scriptsDir: string): Record<WikiScriptKey, 
     'wiki:check': `node ${scriptsDir}/build-index.mjs --check`,
     'wiki:sync': `node ${scriptsDir}/sync-see-also.mjs`,
     'wiki:log': `node ${scriptsDir}/log.mjs`,
+    'wiki:setup:husky': `node ${scriptsDir}/setup-husky.mjs`,
   };
 }
 

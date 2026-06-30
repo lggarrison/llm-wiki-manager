@@ -17,7 +17,7 @@ describe('help.mjs', () => {
       expect(out).toContain(cmd);
     }
     expect(out).toContain('Typical workflows');
-    expect(out).toContain('pre-commit');
-    expect(out).toContain('pre-push');
+    expect(out).toContain('wiki:setup:husky');
+    expect(out).toContain('npm install -D husky');
   });
 });

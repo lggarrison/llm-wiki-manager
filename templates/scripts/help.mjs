@@ -44,6 +44,12 @@ const commands = [
     when: 'After ingest, query, lint, or maintenance work — keeps an audit trail',
     example: 'npm run wiki:log -- add ingest "Title of source"',
   },
+  {
+    name: 'wiki:setup:husky',
+    summary: 'Wire wiki:lint and wiki:check into Husky pre-commit and pre-push hooks',
+    when: 'Once, after installing Husky — appends to existing hooks or creates them',
+    example: 'npm run wiki:setup:husky',
+  },
 ];
 
 console.log(`Wiki commands — ${WIKI_DIR}/\n`);
@@ -69,9 +75,9 @@ console.log('    npm run wiki:build');
 console.log('    npm run wiki:lint');
 console.log('');
 
-console.log('  Optional git hooks (see README):');
-console.log('    pre-commit: npm run wiki:lint');
-console.log('    pre-push:   npm run wiki:check');
+console.log('  Optional git hooks (requires Husky — see README):');
+console.log('    npm install -D husky');
+console.log('    npm run wiki:setup:husky');
 console.log('');
 
 console.log(`Scripts live in ${SCRIPTS_DIR}/. Without npm scripts, run node ${SCRIPTS_DIR}/<script>.mjs`);

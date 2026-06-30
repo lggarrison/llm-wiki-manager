@@ -121,8 +121,9 @@ describe('copyTemplate', () => {
 });
 
 describe('templatePath', () => {
-  it('resolves to a path under the package templates directory', () => {
+  it('resolves to an existing file under the package templates directory', () => {
     const p = templatePath('wiki', 'schema.md');
     expect(p.endsWith(join('templates', 'wiki', 'schema.md'))).toBe(true);
+    expect(existsSync(p)).toBe(true);
   });
 });

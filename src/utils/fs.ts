@@ -10,7 +10,18 @@ import {
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const PACKAGE_ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+function findPackageRoot(startFile: string): string {
+  let dir = dirname(startFile);
+  for (;;) {
+    if (existsSync(join(dir, 'package.json'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  throw new Error('llm-wiki-manager: could not locate package root');
+}
+
+const PACKAGE_ROOT = findPackageRoot(fileURLToPath(import.meta.url));
 
 export function templatePath(...parts: string[]): string {
   return join(PACKAGE_ROOT, 'templates', ...parts);

@@ -50,7 +50,7 @@ export function amendFile(filePath: string, section: string): boolean {
     const appendSection = section.replace(/^# /m, '## ');
     writeFileSync(filePath, `${existing.trimEnd()}\n\n${delimiter}\n${appendSection}\n`, 'utf8');
   } else {
-    writeFileSync(filePath, `${section}\n`, 'utf8');
+    writeFileSync(filePath, `${delimiter}\n${section}\n`, 'utf8');
   }
   return true;
 }

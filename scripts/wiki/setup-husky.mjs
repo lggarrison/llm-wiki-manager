@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * setup-husky.mjs — append wiki lint/check commands to Husky git hooks
+ * setup-husky.mjs — wire wiki:check into Husky pre-push; print lint-staged pre-commit guide
  * Usage: node scripts/wiki/setup-husky.mjs
  *
  * Requires Husky to be installed: npm install -D husky
@@ -10,9 +10,9 @@ import { join } from 'path';
 
 const MARKER = '# llm-wiki-manager';
 const HUSKY_DIR = '.husky';
+const WIKI_DIR = 'wiki';
 
 const HOOKS = {
-  'pre-commit': 'npm run wiki:lint',
   'pre-push': 'npm run wiki:check',
 };
 
@@ -30,6 +30,20 @@ function amendHook(hookName, command) {
 
   writeFileSync(hookPath, `${command}\n`, 'utf8');
   return 'created';
+}
+
+function printLintStagedRecommendation() {
+  console.log('\nRecommended pre-commit (Husky + lint-staged):\n');
+  console.log('  .husky/pre-commit');
+  console.log('    npx lint-staged\n');
+  console.log('  package.json → "lint-staged"');
+  console.log(`    "${WIKI_DIR}/**/*.md": [`);
+  console.log('      "npm run wiki:build",');
+  console.log('      "npm run wiki:lint",');
+  console.log('      "prettier --write"');
+  console.log('    ]\n');
+  console.log('  lint-staged re-stages regenerated index.md after wiki:build.');
+  console.log('  See README § Optional git hooks for the full pattern.');
 }
 
 if (!existsSync('.git')) {
@@ -62,4 +76,5 @@ for (const [hook, status] of Object.entries(results)) {
   console.log(`  ${hook}: ${label}`);
 }
 
-console.log('\nWiki hooks ready.');
+console.log('\nWiki pre-push hook ready.');
+printLintStagedRecommendation();

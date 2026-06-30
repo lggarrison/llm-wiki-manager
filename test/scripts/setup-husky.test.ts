@@ -1,14 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { spawnSync } from 'child_process';
-import {
-  cpSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from 'fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { scriptPath } from '../helpers/wiki.js';
@@ -71,7 +63,7 @@ describe('setup-husky.mjs', () => {
     expect(result.stderr).toContain('husky is not installed');
   });
 
-  it('creates pre-commit and pre-push when .husky does not exist', () => {
+  it('creates pre-push and prints lint-staged recommendation', () => {
     const projectDir = makeProjectDir();
     initGitRepo(projectDir);
     installFakeHusky(projectDir);
@@ -79,31 +71,29 @@ describe('setup-husky.mjs', () => {
     const result = runSetupHusky(projectDir);
     expect(result.status).toBe(0);
 
-    expect(readFileSync(join(projectDir, '.husky', 'pre-commit'), 'utf8')).toBe(
-      'npm run wiki:lint\n',
-    );
     expect(readFileSync(join(projectDir, '.husky', 'pre-push'), 'utf8')).toBe(
       'npm run wiki:check\n',
     );
-    expect(result.stdout).toContain('pre-commit: created');
     expect(result.stdout).toContain('pre-push: created');
+    expect(result.stdout).toContain('lint-staged');
+    expect(result.stdout).toContain('npm run wiki:build');
   });
 
-  it('appends to existing hooks without removing other commands', () => {
+  it('appends to existing pre-push without removing other commands', () => {
     const projectDir = makeProjectDir();
     initGitRepo(projectDir);
     installFakeHusky(projectDir);
     mkdirSync(join(projectDir, '.husky'), { recursive: true });
-    writeFileSync(join(projectDir, '.husky', 'pre-commit'), 'npx lint-staged\n');
+    writeFileSync(join(projectDir, '.husky', 'pre-push'), 'npm test\n');
 
     const result = runSetupHusky(projectDir);
     expect(result.status).toBe(0);
 
-    const preCommit = readFileSync(join(projectDir, '.husky', 'pre-commit'), 'utf8');
-    expect(preCommit).toContain('npx lint-staged');
-    expect(preCommit).toContain('# llm-wiki-manager');
-    expect(preCommit).toContain('npm run wiki:lint');
-    expect(result.stdout).toContain('pre-commit: appended to');
+    const prePush = readFileSync(join(projectDir, '.husky', 'pre-push'), 'utf8');
+    expect(prePush).toContain('npm test');
+    expect(prePush).toContain('# llm-wiki-manager');
+    expect(prePush).toContain('npm run wiki:check');
+    expect(result.stdout).toContain('pre-push: appended to');
   });
 
   it('is idempotent on re-run', () => {
@@ -112,28 +102,26 @@ describe('setup-husky.mjs', () => {
     installFakeHusky(projectDir);
 
     expect(runSetupHusky(projectDir).status).toBe(0);
-    const afterFirst = readFileSync(join(projectDir, '.husky', 'pre-commit'), 'utf8');
+    const afterFirst = readFileSync(join(projectDir, '.husky', 'pre-push'), 'utf8');
 
     const second = runSetupHusky(projectDir);
     expect(second.status).toBe(0);
-    expect(readFileSync(join(projectDir, '.husky', 'pre-commit'), 'utf8')).toBe(afterFirst);
+    expect(readFileSync(join(projectDir, '.husky', 'pre-push'), 'utf8')).toBe(afterFirst);
     expect(second.stdout).toContain('already configured');
   });
 
-  it('creates only the missing hook when one already exists', () => {
+  it('does not modify pre-push when already configured', () => {
     const projectDir = makeProjectDir();
     initGitRepo(projectDir);
     installFakeHusky(projectDir);
     mkdirSync(join(projectDir, '.husky'), { recursive: true });
     writeFileSync(
-      join(projectDir, '.husky', 'pre-commit'),
-      '# llm-wiki-manager\nnpm run wiki:lint\n',
+      join(projectDir, '.husky', 'pre-push'),
+      '# llm-wiki-manager\nnpm run wiki:check\n',
     );
 
     const result = runSetupHusky(projectDir);
     expect(result.status).toBe(0);
-    expect(existsSync(join(projectDir, '.husky', 'pre-push'))).toBe(true);
-    expect(result.stdout).toContain('pre-commit: already configured');
-    expect(result.stdout).toContain('pre-push: created');
+    expect(result.stdout).toContain('pre-push: already configured');
   });
 });

@@ -351,7 +351,14 @@ Issues and pull requests are welcome at [github.com/lggarrison/llm-wiki-manager]
 
 ### Releasing
 
-A release has two parts: a **GitHub release** (git tag + release notes on GitHub) and an **npm publish** (package on the npm registry). You can do both together or ship to GitHub first and publish to npm later.
+Day-to-day work happens on the **`develop`** branch; releases are cut from **`main`**. Releases are **automated** by a GitHub Actions workflow (`.github/workflows/release.yml`): when you push a `vX.Y.Z` tag whose commit is on `main`, the workflow runs the `release:check` gates and publishes a **GitHub Release** with auto-generated notes. You no longer run `gh release create` by hand.
+
+Today a release means a GitHub Release only (git tag + notes on GitHub). Publishing to the **npm registry** is a separate, manual step you can add later — see [Publishing to npm](#publishing-to-npm-optional).
+
+#### Branching model
+
+- **`develop`** — integration branch. Feature branches merge here.
+- **`main`** — release branch. Merge `develop` into `main` (via PR) when you are ready to ship, then tag.
 
 Users install from GitHub today with:
 
@@ -369,12 +376,11 @@ npx github:lggarrison/llm-wiki-manager#v0.1.1 init
 
 **GitHub**
 
-1. Install the [GitHub CLI](https://cli.github.com/) (`gh`) for terminal releases, or use the GitHub website (steps below).
-2. Authenticate once:
+The release workflow authenticates with the repository's built-in `GITHUB_TOKEN`, so no setup is required for the normal (tag-triggered) flow. The [GitHub CLI](https://cli.github.com/) (`gh`) is only needed for the manual fallback below:
 
-   ```bash
-   gh auth login
-   ```
+```bash
+gh auth login
+```
 
 **npm** (skip until you are ready to publish to the registry)
 
@@ -415,49 +421,48 @@ git pull
 npm run release:check
 ```
 
-`release:check` runs lint, format check, tests, and a production build — the same gates as CI (`pre-push` runs tests; lint/format are enforced on commit).
+`release:check` runs lint, format check, tests, and a production build. The release workflow runs this same command on the tagged commit, so running it locally first just gives you a faster signal — if it fails locally, the release run would fail too.
 
 Optionally add a `CHANGELOG.md` entry describing what changed since the last release. There is no changelog file yet; creating one before the first release is a good habit. You can paste that text into the GitHub Release notes.
 
-#### Release script (copy and adapt)
+#### Cutting a release (normal path)
 
-Replace `patch` with `minor` or `major` as needed. On Windows PowerShell 7+, `&&` works as shown; on older PowerShell, run each command on its own line.
+Replace `patch` with `minor` or `major` as needed. On Windows PowerShell, run each command on its own line.
 
 ```bash
-# 1. Verify everything passes
+# 1. Get main up to date with the changes you want to ship
+git checkout main
+git pull
+git merge --ff-only develop        # or merge develop -> main via a PR on GitHub
+
+# 2. (optional) Verify locally — the workflow runs this too
 npm run release:check
 
-# 2. Bump version — updates package.json + package-lock.json, commits, and tags (e.g. v0.1.1)
+# 3. Bump version: updates package.json + package-lock.json, commits "Release x.y.z", tags vX.Y.Z
 npm version patch -m "Release %s"
 
-# 3. Push the commit and tag to GitHub
-git push origin main
-git push origin --tags
-
-# 4. Create a GitHub Release from the tag (see "GitHub Release" below for the web UI alternative)
-gh release create v0.1.1 --title "v0.1.1" --generate-notes
-
-# 5. (When ready) Publish to npm — prepublishOnly runs `npm run build` automatically
-npm publish
+# 4. Push the commit AND the tag — pushing the tag triggers the Release workflow
+git push --follow-tags
 ```
 
-After the first npm publish, update the [Installation](#installation) section if you want to highlight the npm install path as the default.
+That's it. Open the **Actions** tab to watch the run; when it succeeds, the release appears on the [Releases page](https://github.com/lggarrison/llm-wiki-manager/releases) with auto-generated notes.
 
-#### GitHub Release
+#### What the release workflow does
 
-A **git tag** marks the exact commit for a version. A **GitHub Release** attaches human-readable notes to that tag on the [Releases page](https://github.com/lggarrison/llm-wiki-manager/releases). Step 2 (`npm version`) creates the tag locally; step 3 pushes it; step 4 publishes the release.
+Triggered by a pushed tag matching `v*.*.*`, the workflow:
 
-**Option A — GitHub CLI (recommended)**
+1. **Guards the release** — fails unless the tagged commit is on `main`, and unless the tag equals `v` + the `version` in `package.json` (so a forgotten `npm version` can't ship the wrong version).
+2. **Runs `npm run release:check`** — lint, format check, tests, and a production build.
+3. **Creates the GitHub Release** — `gh release create "$TAG" --generate-notes`, using the built-in `GITHUB_TOKEN`.
+
+#### Manual release (fallback)
+
+If you ever need to create a release without the workflow (for example, the tag already exists but no release was published), use the GitHub CLI or the website.
+
+**Option A — GitHub CLI**
 
 ```bash
-# Auto-generate notes from merged PRs since the last tag
 gh release create v0.1.1 --title "v0.1.1" --generate-notes
-
-# Or write notes yourself (opens your editor)
-gh release create v0.1.1 --title "v0.1.1" --notes "Brief summary of what changed."
-
-# Or pass a changelog file
-gh release create v0.1.1 --title "v0.1.1" --notes-file CHANGELOG.md
 ```
 
 Use the same version in the tag name as in `package.json` (with a `v` prefix).
@@ -481,9 +486,9 @@ gh release list
 npx github:lggarrison/llm-wiki-manager#v0.1.1 --help
 ```
 
-#### Publish to npm
+#### Publishing to npm (optional)
 
-Skip this section until you want the package on [npmjs.com](https://www.npmjs.com/). GitHub releases alone are enough for `npx github:...` installs.
+The release workflow does **not** publish to npm — it only creates the GitHub Release. Skip this section until you want the package on [npmjs.com](https://www.npmjs.com/); GitHub releases alone are enough for `npx github:...` installs. When you are ready, publish manually from the tagged commit:
 
 ```bash
 npm publish
@@ -506,13 +511,12 @@ npm pack
 
 #### What each step does
 
-| Step                     | What happens                                                                                                                                                                             |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm version patch`      | Sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 0.1.1`, and tags it `v0.1.1`. Use `minor` or `major` instead of `patch` when appropriate. |
-| `git push origin main`   | Pushes the version-bump commit to GitHub.                                                                                                                                                |
-| `git push origin --tags` | Uploads the `v0.1.1` tag so GitHub knows which commit to release.                                                                                                                        |
-| `gh release create`      | Creates the release on GitHub with notes; users can browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases) and install with `#v0.1.1`.                               |
-| `npm publish`            | Uploads the package to npm so users can run `npx llm-wiki-manager` without the `github:` prefix.                                                                                         |
+| Step                       | What happens                                                                                                                                                                                                                                                |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm version patch`        | Sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 0.1.1`, and tags it `v0.1.1`. Use `minor` or `major` instead of `patch` when appropriate.                                                                    |
+| `git push --follow-tags`   | Pushes the version-bump commit and the `v0.1.1` tag together. Pushing the tag triggers the Release workflow.                                                                                                                                                |
+| Release workflow           | Verifies the tag is on `main` and matches `package.json`, runs `release:check`, then creates the GitHub Release with auto-generated notes. Users can browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases) and install with `#v0.1.1`. |
+| `npm publish` _(optional)_ | Uploads the package to npm so users can run `npx llm-wiki-manager` without the `github:` prefix. Not run by the workflow.                                                                                                                                   |
 
 #### If something goes wrong
 
@@ -522,9 +526,10 @@ npm pack
 
 **After pushing to GitHub**
 
-- **Wrong tag, nobody has used it yet** — delete the remote tag (`git push origin --delete v0.1.1`), delete the GitHub Release (Releases page → release → Delete), fix locally, and re-run the release steps.
-- **Forgot the GitHub Release** — the tag still exists; create the release later with `gh release create v0.1.1` or the website.
-- **Tag pushed but forgot to publish to npm** — check out the tagged commit and run `npm publish`.
+- **Workflow failed (release:check or a guard)** — fix the issue on `main`, then either re-run the failed run from the **Actions** tab, or delete and re-push the tag: `git push origin --delete v0.1.1`, fix, re-tag, and `git push --follow-tags`.
+- **Wrong tag, nobody has used it yet** — delete the remote tag (`git push origin --delete v0.1.1`), delete the GitHub Release if one was created (Releases page → release → Delete), fix locally, and re-run the release steps.
+- **Tag exists but no GitHub Release** — re-run the workflow from the Actions tab, or create it manually with `gh release create v0.1.1 --generate-notes`.
+- **Want it on npm too** — check out the tagged commit and run `npm publish` (see [Publishing to npm](#publishing-to-npm-optional)).
 
 **npm-specific**
 

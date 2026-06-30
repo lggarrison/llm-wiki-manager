@@ -125,7 +125,10 @@ describe('setup-husky.mjs', () => {
     initGitRepo(projectDir);
     installFakeHusky(projectDir);
     mkdirSync(join(projectDir, '.husky'), { recursive: true });
-    writeFileSync(join(projectDir, '.husky', 'pre-commit'), 'npm run wiki:lint\n');
+    writeFileSync(
+      join(projectDir, '.husky', 'pre-commit'),
+      '# llm-wiki-manager\nnpm run wiki:lint\n',
+    );
 
     const result = runSetupHusky(projectDir);
     expect(result.status).toBe(0);

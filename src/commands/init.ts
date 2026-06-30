@@ -1,6 +1,6 @@
 import { intro, outro, text, isCancel, cancel, log } from '@clack/prompts';
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, resolve } from 'path';
+import { basename, join, resolve } from 'path';
 import pc from 'picocolors';
 import {
   templatePath,
@@ -15,7 +15,7 @@ export async function init(): Promise<void> {
 
   const projectName = await text({
     message: 'Project name (used in AGENTS.md and schema.md)',
-    placeholder: 'my-project',
+    initialValue: basename(process.cwd()),
     validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(projectName)) {

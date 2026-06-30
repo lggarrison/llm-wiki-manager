@@ -84,11 +84,11 @@ npx llm-wiki-manager init
 
 You will be prompted for:
 
-| Prompt | Default | Description |
-|---|---|---|
-| Project name | — | Used in AGENTS.md headings and schema.md |
-| Wiki directory | `wiki` | Where the wiki files are created |
-| Scripts directory | `scripts/wiki` | Where the management scripts are placed |
+| Prompt            | Default                   | Description                                     |
+| ----------------- | ------------------------- | ----------------------------------------------- |
+| Project name      | —                         | Used in AGENTS.md headings and schema.md        |
+| Wiki directory    | `wiki`                    | Where the wiki files are created                |
+| Scripts directory | `scripts/wiki`            | Where the management scripts are placed         |
 | Focus directories | _(blank = whole project)_ | Directories the wiki documents, e.g. `src, api` |
 
 After `init` completes:
@@ -143,6 +143,7 @@ node scripts/wiki/lint.mjs
 ```
 
 Checks for:
+
 - Missing or invalid frontmatter fields
 - `related:` paths that don't resolve to existing files
 - Broken markdown links in page bodies
@@ -152,6 +153,7 @@ Checks for:
 - Stale wiki references in AGENTS.md
 
 Options:
+
 ```bash
 node scripts/wiki/lint.mjs --warn-only          # report errors without exiting 1
 node scripts/wiki/lint.mjs --wiki-dir path/to/wiki
@@ -166,6 +168,7 @@ node scripts/wiki/build-index.mjs
 Walks all wiki pages, reads their frontmatter, and writes a fresh `index.md` grouped by page type (overview/hub → concepts → sources). Run this any time pages are added, removed, or renamed.
 
 Options:
+
 ```bash
 node scripts/wiki/build-index.mjs --wiki-dir path/to/wiki
 ```
@@ -179,6 +182,7 @@ node scripts/wiki/log.mjs add <op> "<title>"
 Operations: `ingest`, `query`, `lint`, `maintenance`
 
 Examples:
+
 ```bash
 node scripts/wiki/log.mjs add ingest "RFC 9110 HTTP Semantics"
 node scripts/wiki/log.mjs add query "How does auth token refresh work?"
@@ -190,6 +194,7 @@ node scripts/wiki/log.mjs add ingest "Old doc" --date=2025-01-15
 ```
 
 Options:
+
 ```bash
 node scripts/wiki/log.mjs add <op> "<title>" --wiki-dir path/to/wiki
 ```
@@ -203,6 +208,7 @@ node scripts/wiki/sync-see-also.mjs
 For every `related:` entry in a page's frontmatter that lacks a corresponding markdown link in the body, appends the missing link under a `## See also` section. This keeps the wiki graph consistent.
 
 Options:
+
 ```bash
 node scripts/wiki/sync-see-also.mjs --dry            # preview changes without writing
 node scripts/wiki/sync-see-also.mjs --wiki-dir path/to/wiki
@@ -216,12 +222,12 @@ Every wiki page must have YAML frontmatter:
 
 ```yaml
 ---
-type: concept          # concept | source | overview | hub
-title: "Page Title"
+type: concept # concept | source | overview | hub
+title: 'Page Title'
 last_updated: 2025-06-30
 tags: [auth, api]
-related: []            # relative paths from wiki root
-status: draft          # draft | stable | archived
+related: [] # relative paths from wiki root
+status: draft # draft | stable | archived
 ---
 ```
 
@@ -243,12 +249,25 @@ status: draft          # draft | stable | archived
 ```bash
 git clone https://github.com/lggarrison/llm-wiki-manager.git
 cd llm-wiki-manager
-npm install
-npm run build     # compile TypeScript to dist/
-npm test          # run the vitest suite
+npm install          # also sets up Husky git hooks and builds dist/
+npm run build        # compile TypeScript to dist/
+npm test             # run the vitest suite
+npm run lint         # check with ESLint
+npm run lint:fix     # auto-fix ESLint issues
+npm run format       # format with Prettier
+npm run format:check # verify formatting without writing
 ```
 
-The compiled CLI entry point is `dist/bin/cli.js` (built from `bin/cli.ts`). The `prepare` script runs the build automatically on install and before publishing, so `dist/` is always present in the published package.
+The compiled CLI entry point is `dist/bin/cli.js` (built from `bin/cli.ts`). The `prepare` script sets up Husky and runs the build automatically on install and before publishing, so `dist/` is always present in the published package.
+
+### Code quality & git hooks
+
+This repo uses [ESLint](https://eslint.org), [Prettier](https://prettier.io), and [Husky](https://typicode.github.io/husky/) with [lint-staged](https://github.com/lint-staged/lint-staged):
+
+- **pre-commit** — runs `lint-staged`, applying `eslint --fix` and `prettier --write` to staged files
+- **pre-push** — runs the full test suite (`npm test`)
+
+Husky is only installed in the local development repo; it is skipped automatically in CI, production installs, and when the package is consumed as a dependency.
 
 Issues and pull requests are welcome at [github.com/lggarrison/llm-wiki-manager](https://github.com/lggarrison/llm-wiki-manager/issues).
 

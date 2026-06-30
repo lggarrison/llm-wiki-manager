@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { spawnSync } from 'child_process';
 import { readFileSync } from 'fs';
-import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, scriptPath } from '../helpers/wiki.js';
 
 const dirs: string[] = [];
@@ -42,8 +41,7 @@ describe('sync-see-also.mjs', () => {
     const aPath = writePage(
       dir,
       'concepts/a.md',
-      fm({ related: ['concepts/b.md', 'concepts/c.md'] }) +
-        '\n## See also\n\n- [B Page](b.md)\n'
+      fm({ related: ['concepts/b.md', 'concepts/c.md'] }) + '\n## See also\n\n- [B Page](b.md)\n',
     );
 
     runSync(dir);
@@ -59,7 +57,7 @@ describe('sync-see-also.mjs', () => {
     const aPath = writePage(
       dir,
       'concepts/a.md',
-      fm({ related: ['concepts/b.md'] }) + '\nSee [B Page](b.md) for more.\n'
+      fm({ related: ['concepts/b.md'] }) + '\nSee [B Page](b.md) for more.\n',
     );
     const before = readFileSync(aPath, 'utf8');
 

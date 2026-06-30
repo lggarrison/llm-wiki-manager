@@ -10,7 +10,9 @@ const commands: Record<string, Command> = { init };
 
 if (!commands[command]) {
   console.error(pc.red(`Unknown command: ${command}`));
-  console.error(`Usage: llm-wiki-manager <command>\n\nCommands:\n  init    Scaffold a new LLM wiki`);
+  console.error(
+    `Usage: llm-wiki-manager <command>\n\nCommands:\n  init    Scaffold a new LLM wiki`,
+  );
   process.exit(1);
 }
 

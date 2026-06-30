@@ -10,29 +10,41 @@ export async function init(): Promise<void> {
   const projectName = await text({
     message: 'Project name (used in AGENTS.md and schema.md)',
     placeholder: 'my-project',
-    validate: (v) => v.trim().length === 0 ? 'Required' : undefined,
+    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
   });
-  if (isCancel(projectName)) { cancel('Cancelled'); process.exit(0); }
+  if (isCancel(projectName)) {
+    cancel('Cancelled');
+    process.exit(0);
+  }
 
   const wikiDir = await text({
     message: 'Wiki directory name',
     initialValue: 'wiki',
-    validate: (v) => v.trim().length === 0 ? 'Required' : undefined,
+    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
   });
-  if (isCancel(wikiDir)) { cancel('Cancelled'); process.exit(0); }
+  if (isCancel(wikiDir)) {
+    cancel('Cancelled');
+    process.exit(0);
+  }
 
   const scriptsDir = await text({
     message: 'Scripts directory',
     initialValue: 'scripts/wiki',
-    validate: (v) => v.trim().length === 0 ? 'Required' : undefined,
+    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
   });
-  if (isCancel(scriptsDir)) { cancel('Cancelled'); process.exit(0); }
+  if (isCancel(scriptsDir)) {
+    cancel('Cancelled');
+    process.exit(0);
+  }
 
   const focusDirs = await text({
     message: 'Directories this wiki should document (comma-separated, e.g. src, api)',
     placeholder: 'src',
   });
-  if (isCancel(focusDirs)) { cancel('Cancelled'); process.exit(0); }
+  if (isCancel(focusDirs)) {
+    cancel('Cancelled');
+    process.exit(0);
+  }
 
   const focusDirList = (focusDirs ?? '')
     .split(',')
@@ -44,12 +56,14 @@ export async function init(): Promise<void> {
     WIKI_DIR: (wikiDir as string).trim(),
     SCRIPTS_DIR: (scriptsDir as string).trim(),
     INIT_DATE: new Date().toISOString().slice(0, 10),
-    FOCUS_DIRS: focusDirList.length > 0
-      ? focusDirList.map((d: string) => `\`${d}/\``).join(', ')
-      : 'the entire project',
-    FOCUS_DIRS_LIST: focusDirList.length > 0
-      ? focusDirList.map((d: string) => `- \`${d}/\``).join('\n')
-      : '- _(whole project — no specific directory scope)_',
+    FOCUS_DIRS:
+      focusDirList.length > 0
+        ? focusDirList.map((d: string) => `\`${d}/\``).join(', ')
+        : 'the entire project',
+    FOCUS_DIRS_LIST:
+      focusDirList.length > 0
+        ? focusDirList.map((d: string) => `- \`${d}/\``).join('\n')
+        : '- _(whole project — no specific directory scope)_',
   };
 
   const cwd = process.cwd();
@@ -81,10 +95,12 @@ export async function init(): Promise<void> {
     log.warn('AGENTS.md already contains an llm-wiki-manager section — skipped.');
   }
 
-  outro(pc.green('Done!') + ' Next steps:\n' +
-    `  • Review ${pc.bold(join((wikiDir as string).trim(), 'schema.md'))} to understand wiki conventions\n` +
-    `  • Run ${pc.bold(`node ${(scriptsDir as string).trim()}/lint.mjs`)} to validate your wiki\n` +
-    `  • Run ${pc.bold(`node ${(scriptsDir as string).trim()}/build-index.mjs`)} to regenerate index.md\n` +
-    `  • See AGENTS.md for instructions to give your LLM agent`
+  outro(
+    pc.green('Done!') +
+      ' Next steps:\n' +
+      `  • Review ${pc.bold(join((wikiDir as string).trim(), 'schema.md'))} to understand wiki conventions\n` +
+      `  • Run ${pc.bold(`node ${(scriptsDir as string).trim()}/lint.mjs`)} to validate your wiki\n` +
+      `  • Run ${pc.bold(`node ${(scriptsDir as string).trim()}/build-index.mjs`)} to regenerate index.md\n` +
+      `  • See AGENTS.md for instructions to give your LLM agent`,
   );
 }

@@ -23,7 +23,7 @@ function runLog(wikiDir: string, args: string[]) {
 }
 
 describe('log.mjs', () => {
-  it('appends an entry with today\'s date by default', () => {
+  it("appends an entry with today's date by default", () => {
     const dir = newWikiDirWithLog();
     const result = runLog(dir, ['add', 'ingest', 'Test Source']);
     expect(result.status).toBe(0);

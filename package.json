@@ -1,6 +1,6 @@
 {
   "name": "llm-wiki-manager",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Scaffold and manage an LLM-maintained personal wiki",
   "type": "module",

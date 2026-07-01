@@ -4,24 +4,16 @@
  * Usage: node {{SCRIPTS_DIR}}/build-index.mjs [--wiki-dir <path>] [--check]
  */
 import { readdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'fs';
-import { join, resolve, relative } from 'path';
+import { join, relative } from 'path';
+import {
+  resolveWikiDir,
+  shouldSkipWikiPath,
+  isRootMetaFile,
+} from './_wiki-utils.mjs';
 
 const args = process.argv.slice(2);
 const checkOnly = args.includes('--check');
-const wikiDirFlag = args.indexOf('--wiki-dir');
-const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}}');
-
-const RAW_ARTIFACT_DIRS = ['articles', 'prs', 'tickets', 'design-notes', 'transcripts', 'assets'];
-
-function shouldSkipWikiPath(full) {
-  const rel = relative(WIKI_DIR, full).replace(/\\/g, '/');
-  if (rel.startsWith('archive/') || rel === 'archive') return true;
-  if (rel.includes('.obsidian')) return true;
-  for (const sub of RAW_ARTIFACT_DIRS) {
-    if (rel.startsWith(`raw/${sub}/`) || rel === `raw/${sub}`) return true;
-  }
-  return false;
-}
+const WIKI_DIR = resolveWikiDir(args);
 
 // ── Frontmatter parser ────────────────────────────────────────────────────────
 
@@ -50,7 +42,7 @@ function walkMd(dir) {
   if (!existsSync(dir)) return results;
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
-    if (shouldSkipWikiPath(full)) continue;
+    if (shouldSkipWikiPath(full, WIKI_DIR)) continue;
     if (statSync(full).isDirectory()) results.push(...walkMd(full));
     else if (entry.endsWith('.md')) results.push(full);
   }
@@ -59,9 +51,8 @@ function walkMd(dir) {
 
 // ── Collect pages ─────────────────────────────────────────────────────────────
 
-const SKIP = ['index.md', 'log.md', 'schema.md', 'README.md', 'AGENTS.md'];
 const pages = walkMd(WIKI_DIR)
-  .filter(f => !SKIP.some(s => f.endsWith(s)))
+  .filter(f => !isRootMetaFile(f, WIKI_DIR))
   .map(f => {
     const content = readFileSync(f, 'utf8');
     const fm = parseFrontmatter(content) ?? {};

@@ -5,11 +5,15 @@
  */
 import { readdirSync, readFileSync, writeFileSync, statSync, existsSync } from 'fs';
 import { join, resolve, relative, dirname } from 'path';
+import {
+  resolveWikiDir,
+  shouldSkipWikiPath,
+  isRootMetaFile,
+} from './_wiki-utils.mjs';
 
 const args = process.argv.slice(2);
 const dry = args.includes('--dry');
-const wikiDirFlag = args.indexOf('--wiki-dir');
-const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : '{{WIKI_DIR}}');
+const WIKI_DIR = resolveWikiDir(args);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -39,21 +43,36 @@ function extractBodyLinks(content) {
   );
 }
 
-function walkMd(dir, skip = []) {
+function walkMd(dir) {
   const results = [];
   if (!existsSync(dir)) return results;
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
-    if (skip.some(s => full.includes(s))) continue;
-    if (statSync(full).isDirectory()) results.push(...walkMd(full, skip));
+    if (shouldSkipWikiPath(full, WIKI_DIR)) continue;
+    if (statSync(full).isDirectory()) results.push(...walkMd(full));
     else if (entry.endsWith('.md')) results.push(full);
   }
   return results;
 }
 
+function appendToSeeAlso(content, missingLines) {
+  const headerRe = /^## See also\s*$/m;
+  if (!headerRe.test(content)) {
+    return `${content.trimEnd()}\n\n## See also\n\n${missingLines.join('\n')}\n`;
+  }
+  const headerMatch = content.match(headerRe);
+  const afterHeader = headerMatch.index + headerMatch[0].length;
+  const rest = content.slice(afterHeader);
+  const nextHeading = rest.search(/^## /m);
+  const insertAt = nextHeading >= 0 ? afterHeader + nextHeading : content.length;
+  const before = content.slice(0, insertAt).trimEnd();
+  const after = content.slice(insertAt);
+  return `${before}\n${missingLines.join('\n')}\n${after}`;
+}
+
 // Build title lookup: abs path → title
 const titleMap = new Map();
-for (const file of walkMd(WIKI_DIR, ['raw'])) {
+for (const file of walkMd(WIKI_DIR)) {
   const content = readFileSync(file, 'utf8');
   const fm = parseFrontmatter(content);
   if (fm?.title) titleMap.set(file, fm.title);
@@ -61,11 +80,10 @@ for (const file of walkMd(WIKI_DIR, ['raw'])) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-const SKIP = ['index.md', 'log.md'];
 let changed = 0;
 
-for (const file of walkMd(WIKI_DIR, ['raw'])) {
-  if (SKIP.some(s => file.endsWith(s))) continue;
+for (const file of walkMd(WIKI_DIR)) {
+  if (isRootMetaFile(file, WIKI_DIR)) continue;
 
   const content = readFileSync(file, 'utf8');
   const fm = parseFrontmatter(content);
@@ -96,13 +114,7 @@ for (const file of walkMd(WIKI_DIR, ['raw'])) {
     continue;
   }
 
-  // Append to existing "## See also" or create new section
-  let updated;
-  if (/^## See also/m.test(content)) {
-    updated = content.trimEnd() + '\n' + missing.join('\n') + '\n';
-  } else {
-    updated = content.trimEnd() + '\n\n## See also\n\n' + missing.join('\n') + '\n';
-  }
+  const updated = appendToSeeAlso(content, missing);
 
   writeFileSync(file, updated, 'utf8');
   console.log(`  ✓ ${relPath}: added ${missing.length} link(s)`);

@@ -1,17 +1,10 @@
-import {
-  cpSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-  existsSync,
-} from 'fs';
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 export const INSTALL_CONFIG_FILENAME = '.llm-wiki-manager.json';
 export const MANAGED_SECTION_DELIMITER = '<!-- llm-wiki-manager -->';
+export const MANAGED_SECTION_END_DELIMITER = '<!-- /llm-wiki-manager -->';
 
 export type InstallConfig = {
   version: string;
@@ -62,27 +55,6 @@ export function interpolate(str: string, vars: Record<string, string>): string {
 
 function shouldInterpolateFile(name: string): boolean {
   return /\.(md|mjs|js|json)$/.test(name) || name === '.entity-scopes';
-}
-
-function walkAndInterpolate(dir: string, vars: Record<string, string>): void {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
-      walkAndInterpolate(full, vars);
-    } else if (shouldInterpolateFile(entry)) {
-      const content = readFileSync(full, 'utf8');
-      const updated = interpolate(content, vars);
-      if (updated !== content) writeFileSync(full, updated, 'utf8');
-    }
-  }
-}
-
-export function copyTemplate(src: string, dest: string, vars: Record<string, string> = {}): void {
-  mkdirSync(dest, { recursive: true });
-  cpSync(src, dest, { recursive: true });
-  if (Object.keys(vars).length > 0) {
-    walkAndInterpolate(dest, vars);
-  }
 }
 
 export function getPackageVersion(): string {
@@ -442,22 +414,27 @@ export function mergePackageJsonScripts(
 
 export function amendFile(filePath: string, section: string): boolean {
   const delimiter = MANAGED_SECTION_DELIMITER;
+  const endDelimiter = MANAGED_SECTION_END_DELIMITER;
+  const managedBlock = `${delimiter}\n${section.trim()}\n${endDelimiter}\n`;
   if (existsSync(filePath)) {
     const existing = readFileSync(filePath, 'utf8');
     if (existing.includes(delimiter)) return false; // already amended
     // Downgrade top-level heading to second-level when appending
-    const appendSection = section.replace(/^# /m, '## ');
-    writeFileSync(filePath, `${existing.trimEnd()}\n\n${delimiter}\n${appendSection}\n`, 'utf8');
+    const appendSection = section.replace(/^# /m, '## ').trim();
+    const appendBlock = `${delimiter}\n${appendSection}\n${endDelimiter}\n`;
+    writeFileSync(filePath, `${existing.trimEnd()}\n\n${appendBlock}`, 'utf8');
   } else {
-    writeFileSync(filePath, `${delimiter}\n${section}\n`, 'utf8');
+    writeFileSync(filePath, managedBlock, 'utf8');
   }
   return true;
 }
 
 export function replaceManagedSection(filePath: string, section: string): boolean {
   const delimiter = MANAGED_SECTION_DELIMITER;
+  const endDelimiter = MANAGED_SECTION_END_DELIMITER;
+  const managedBlock = `${delimiter}\n${section.trim()}\n${endDelimiter}\n`;
   if (!existsSync(filePath)) {
-    writeFileSync(filePath, `${delimiter}\n${section}\n`, 'utf8');
+    writeFileSync(filePath, managedBlock, 'utf8');
     return true;
   }
 
@@ -466,13 +443,19 @@ export function replaceManagedSection(filePath: string, section: string): boolea
   if (start < 0) return false;
 
   const afterDelimiter = start + delimiter.length;
-  const nextMarker = existing.indexOf('<!--', afterDelimiter);
+  const endIdx = existing.indexOf(endDelimiter, afterDelimiter);
   const before = existing.slice(0, start).trimEnd();
-  const after = nextMarker >= 0 ? existing.slice(nextMarker).trimStart() : '';
-  const parts = [`${delimiter}\n${section.trim()}\n`];
+  const after =
+    endIdx >= 0
+      ? existing.slice(endIdx + endDelimiter.length).trimStart()
+      : (() => {
+          const nextMarker = existing.indexOf('<!--', afterDelimiter);
+          return nextMarker >= 0 ? existing.slice(nextMarker).trimStart() : '';
+        })();
+
   const out = before
-    ? `${before}\n\n${parts[0]}${after ? `\n${after}\n` : ''}`
-    : `${parts[0]}${after ? `\n${after}\n` : ''}`;
+    ? `${before}\n\n${managedBlock}${after ? `\n${after}\n` : ''}`
+    : `${managedBlock}${after ? `\n${after}\n` : ''}`;
   writeFileSync(filePath, out.endsWith('\n') ? out : `${out}\n`, 'utf8');
   return true;
 }

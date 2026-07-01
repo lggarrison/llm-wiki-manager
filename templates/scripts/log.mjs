@@ -7,6 +7,7 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, resolve } from 'path';
+import { readFlag } from './_wiki-utils.mjs';
 
 const VALID_OPS = new Set(['ingest', 'query', 'lint', 'maintenance']);
 
@@ -27,7 +28,7 @@ if (!VALID_OPS.has(op)) {
 }
 
 const wikiDirFlag = rest.indexOf('--wiki-dir');
-const WIKI_DIR = resolve(wikiDirFlag >= 0 ? rest[wikiDirFlag + 1] : '{{WIKI_DIR}}');
+const WIKI_DIR = resolve(readFlag(rest, '--wiki-dir', '{{WIKI_DIR}}'));
 
 const dateFlag = rest.find(a => a.startsWith('--date='));
 let date;

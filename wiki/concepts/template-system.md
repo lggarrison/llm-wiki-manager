@@ -23,7 +23,7 @@ templates/
 
 ## Interpolation
 
-`copyTemplate` recursively copies a template directory, then walks `.md`, `.mjs`, and `.js` files replacing `{{VAR}}` placeholders via `interpolate()`.
+`scaffoldWikiTemplates` and `scaffoldScripts` copy template files via `writeInterpolatedFile`, replacing `{{VAR}}` placeholders in `.md`, `.mjs`, `.js`, and `.entity-scopes` files via `interpolate()`.
 
 Common variables:
 

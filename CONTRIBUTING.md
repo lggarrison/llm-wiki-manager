@@ -60,7 +60,7 @@ This runs, in order: `lint`, `format:check`, `test`, `build`, `test:e2e`, `wiki:
 
 If you edited any file under `wiki/`, also run `npm run wiki:build` and commit the regenerated `index.md` so `wiki:check` stays green.
 
-Fill out the pull request template and keep changes focused. See the Releasing section of the [README](README.md#releasing) for how maintainers cut a release.
+Fill out the pull request template and keep changes focused. Maintainers: see [RELEASING.md](RELEASING.md) for how to cut a release.
 
 ## Reporting bugs and requesting features
 

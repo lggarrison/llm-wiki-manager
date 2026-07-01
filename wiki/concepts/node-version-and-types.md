@@ -1,10 +1,16 @@
 ---
 type: concept
 title: Node Version and @types/node Alignment
-last_updated: 2026-07-01T21:00:00Z
+last_updated: 2026-07-01T22:00:00Z
 tags: [toolchain, typescript, ci]
 related:
-  [concepts/repo-layout.md, concepts/dogfooding.md, concepts/unit-tests.md, concepts/e2e-tests.md]
+  [
+    concepts/repo-layout.md,
+    concepts/dogfooding.md,
+    concepts/unit-tests.md,
+    concepts/e2e-tests.md,
+    concepts/release.md,
+  ]
 code_refs:
   [
     .nvmrc,
@@ -97,3 +103,4 @@ When raising the **runtime floor** (`engines.node`), also remove the dropped maj
 - [Dogfooding](dogfooding.md)
 - [Unit Tests](unit-tests.md)
 - [E2E Tests](e2e-tests.md)
+- [Release](release.md)

@@ -18,3 +18,5 @@ Wiki scaffolded by llm-wiki-manager.
 ## [2026-07-01T20:26:55Z] maintenance | Document Node version and @types/node alignment
 
 ## [2026-07-01T21:01:40Z] maintenance | Align Node requirement to >=24 and document toolchain
+
+## [2026-07-01T23:40:39Z] maintenance | Refresh wiki pages; add concepts/release.md pointer to RELEASING.md

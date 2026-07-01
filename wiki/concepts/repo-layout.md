@@ -24,8 +24,9 @@ This repo is both the **llm-wiki-manager npm package** and a **dogfooded consume
 
 | Path                   | Role                                                                                                      |
 | ---------------------- | --------------------------------------------------------------------------------------------------------- |
-| `bin/cli.ts`           | CLI entry; compiled to `dist/bin/cli.js`                                                                  |
+| `bin/cli.ts`           | CLI entry; dispatches init, upgrade, and wiki subcommands; compiled to `dist/bin/cli.js`                  |
 | `src/commands/init.ts` | Init command implementation                                                                               |
+| `src/wiki/`            | Wiki lint, build, check, sync, log, help, setup-husky, migrate-pages implementations                      |
 | `src/utils/fs.ts`      | Template copy, interpolation, package.json merge, AGENTS.md amend                                         |
 | `templates/`           | Published scaffold templates (shipped in npm tarball)                                                     |
 | `test/`                | Vitest unit tests and e2e CLI workflow tests (see [Unit Tests](unit-tests.md), [E2E Tests](e2e-tests.md)) |
@@ -34,19 +35,18 @@ This repo is both the **llm-wiki-manager npm package** and a **dogfooded consume
 
 ## Dogfooded wiki (this repo)
 
-| Path             | Role                                                               |
-| ---------------- | ------------------------------------------------------------------ |
-| `wiki/`          | Internal LLM-maintained knowledge base                             |
-| `wiki/entities/` | Flat scope overviews (see [Dogfooding](dogfooding.md))             |
-| `scripts/wiki/`  | Interpolated copy of [Template System](template-system.md) scripts |
-| `AGENTS.md`      | Repo-root pointer to [`wiki/AGENTS.md`](../AGENTS.md)              |
-| `wiki/AGENTS.md` | Full agent instructions for maintaining this wiki                  |
+| Path             | Role                                                   |
+| ---------------- | ------------------------------------------------------ |
+| `wiki/`          | Internal LLM-maintained knowledge base                 |
+| `wiki/entities/` | Flat scope overviews (see [Dogfooding](dogfooding.md)) |
+| `AGENTS.md`      | Repo-root pointer to [`wiki/AGENTS.md`](../AGENTS.md)  |
+| `wiki/AGENTS.md` | Full agent instructions for maintaining this wiki      |
 
 Focus scope for this wiki: `src/` and `templates/` (set at init).
 
 ## Published vs committed
 
-Only `dist/` and `templates/` ship via npm (`"files"` allowlist). Dogfooded `wiki/`, `scripts/wiki/`, and `AGENTS.md` are repo-only — consumers run [Init Command](init-command.md) to create their own.
+Only `dist/` and `templates/` ship via npm (`"files"` allowlist). Dogfooded `wiki/` and `AGENTS.md` are repo-only — consumers run [Init Command](init-command.md) to create their own.
 
 ## Toolchain
 

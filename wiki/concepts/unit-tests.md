@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-01T20:30:00Z
+last_updated: 2026-07-01T00:00:00Z
 tags: [testing, vitest]
 related:
   [
@@ -18,10 +18,10 @@ code_refs:
     test/helpers/wiki.ts,
     test/scripts/lint.test.ts,
     test/commands/upgrade.test.ts,
-    test/scripts/dogfood-sync.test.ts,
+    test/e2e/tarball-smoke.test.ts,
   ]
 status: active
-summary: Vitest unit and integration tests for src/ utilities, CLI helpers, and wiki script behavior against templates/.
+summary: Vitest unit and integration tests for src/ utilities, CLI helpers, and wiki subcommand behavior.
 ---
 
 # Unit Tests
@@ -36,30 +36,30 @@ Configuration lives in `vitest.config.ts`: it includes `src/**/*.test.ts` and `t
 
 ## Layout
 
-| Path                                | Role                                                                                  |
-| ----------------------------------- | ------------------------------------------------------------------------------------- |
-| `src/utils/fs.test.ts`              | Template copy, interpolation, install config, scaffold and upgrade helpers in `fs.ts` |
-| `test/commands/upgrade.test.ts`     | Upgrade step orchestration, AGENTS.md managed section, page migration                 |
-| `test/scripts/*.test.ts`            | Behavior of each `templates/scripts/*.mjs` script via subprocess                      |
-| `test/scripts/dogfood-sync.test.ts` | Asserts `scripts/wiki/` matches interpolated `templates/scripts/`                     |
-| `test/helpers/wiki.ts`              | Temp wiki dirs, frontmatter fixtures, `scriptPath()` helper                           |
+| Path                             | Role                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `src/utils/fs.test.ts`           | Template copy, interpolation, install config, scaffold helpers in `fs.ts` |
+| `test/commands/upgrade.test.ts`  | Upgrade step orchestration, AGENTS.md managed section, page migration     |
+| `test/scripts/*.test.ts`         | Behavior of each `llm-wiki-manager` subcommand via built CLI              |
+| `test/helpers/wiki.ts`           | Temp wiki dirs, frontmatter fixtures, CLI helpers                         |
+| `test/e2e/tarball-smoke.test.ts` | Verifies subcommands work from an npm-packed install                      |
 
-Script tests invoke **template scripts** under `templates/scripts/` (not the dogfooded copy). That keeps tests aligned with what ships in the npm tarball. [Dogfooding](dogfooding.md) adds a separate sync test so the in-repo copy stays matched.
+Script tests invoke the **built CLI** (`dist/bin/cli.js`) so behavior matches what consumers run.
 
 ## Script test coverage
 
-Each wiki maintenance script has a dedicated test file under `test/scripts/`:
+Each wiki subcommand has a dedicated test file under `test/scripts/`:
 
-| Test file               | Script under test                                            |
-| ----------------------- | ------------------------------------------------------------ |
-| `lint.test.ts`          | `lint.mjs`                                                   |
-| `build-index.test.ts`   | `build-index.mjs`                                            |
-| `sync-see-also.test.ts` | `sync-see-also.mjs`                                          |
-| `log.test.ts`           | `log.mjs`                                                    |
-| `help.test.ts`          | `help.mjs`                                                   |
-| `setup-husky.test.ts`   | `setup-husky.mjs`                                            |
-| `migrate-pages.test.ts` | `migrate-pages.mjs`                                          |
-| `scripts.test.ts`       | Template inventory and smoke runs across all shipped scripts |
+| Test file               | CLI subcommand          |
+| ----------------------- | ----------------------- |
+| `lint.test.ts`          | `lint`                  |
+| `build-index.test.ts`   | `build`, `check`        |
+| `sync-see-also.test.ts` | `sync`                  |
+| `log.test.ts`           | `log`                   |
+| `help.test.ts`          | `help`                  |
+| `setup-husky.test.ts`   | `setup-husky`           |
+| `migrate-pages.test.ts` | `runMigrate` (internal) |
+| `scripts.test.ts`       | npm alias smoke tests   |
 
 Tests use temporary wiki directories created by `makeTmpWikiDir()` and tear them down in `afterEach` hooks.
 

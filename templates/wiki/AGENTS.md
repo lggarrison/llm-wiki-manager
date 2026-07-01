@@ -161,4 +161,4 @@ Create stub pages (`status: wip`) rather than leaving broken `related:` referenc
 - **Content catalog:** `{{WIKI_DIR}}/index.md`
 - **Event log:** `{{WIKI_DIR}}/log.md`
 - **Search setup & CLI:** `{{WIKI_DIR}}/concepts/wiki-search.md`
-- **Scripts:** `{{SCRIPTS_DIR}}/` (lint, build-index, log, sync-see-also, qmd-*)
+- **CLI:** `llm-wiki-manager` subcommands (lint, build, check, sync, log, help, setup-husky)

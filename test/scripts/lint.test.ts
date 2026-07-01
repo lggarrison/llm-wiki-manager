@@ -1,8 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { spawnSync } from 'child_process';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
-import { makeTmpWikiDir, cleanup, writePage, fm, scriptPath } from '../helpers/wiki.js';
+import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 
 const dirs: string[] = [];
 function newWikiDir(): string {
@@ -18,12 +17,10 @@ afterEach(() => {
 });
 
 function runLint(wikiDir: string, extraArgs: string[] = []) {
-  return spawnSync('node', [scriptPath('lint.mjs'), '--wiki-dir', wikiDir, ...extraArgs], {
-    encoding: 'utf8',
-  });
+  return runWikiCliWithWikiDir(wikiDir, 'lint', extraArgs);
 }
 
-describe('lint.mjs', () => {
+describe('lint command', () => {
   it('exits 0 for a wiki with no pages', () => {
     const dir = newWikiDir();
     const result = runLint(dir);
@@ -189,5 +186,31 @@ describe('lint.mjs', () => {
     writePage(dir, 'raw/articles/notes.md', 'not frontmatter, should be ignored');
     const result = runLint(dir);
     expect(result.status).toBe(0);
+  });
+
+  it('fails on block-style YAML lists in frontmatter', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'concept', title: 'B' }));
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01T00:00:00Z\nrelated:\n  - concepts/b.md\n---\n\n[B](b.md)\n',
+    );
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('block-style YAML list');
+  });
+
+  it('accepts Prettier-wrapped inline arrays in frontmatter', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'concept', title: 'B' }));
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01T00:00:00Z\nrelated:\n  [concepts/b.md]\n---\n\n[B](b.md)\n',
+    );
+    const result = runLint(dir);
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain('block-style YAML list');
   });
 });

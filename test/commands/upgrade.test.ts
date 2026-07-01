@@ -1,17 +1,15 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { spawnSync } from 'child_process';
 import {
   buildTemplateVars,
   scaffoldWikiTemplates,
   replaceManagedSection,
   interpolate,
   templatePath,
-  upgradeScripts,
 } from '../../src/utils/fs.js';
-import { runUpgradeSteps } from '../../src/utils/upgrade.js';
+import { runUpgradeSteps, runPostUpgradeScripts } from '../../src/utils/upgrade.js';
 import { fm, writePage } from '../helpers/wiki.js';
 
 const tmpDirs: string[] = [];
@@ -37,7 +35,6 @@ describe('upgrade helpers', () => {
     const content = interpolate(readFileSync(templatePath('AGENTS.md'), 'utf8'), {
       PROJECT_NAME: 'acme',
       WIKI_DIR: 'wiki',
-      SCRIPTS_DIR: 'scripts/wiki',
     });
     replaceManagedSection(agentsPath, content);
 
@@ -47,29 +44,23 @@ describe('upgrade helpers', () => {
     expect(updated).not.toContain('Stale pointer.');
   });
 
-  it('runUpgradeSteps overwrites scripts and wiki meta', () => {
+  it('runUpgradeSteps overwrites wiki meta templates', () => {
     const dir = makeTmpDir();
     const wikiDir = join(dir, 'wiki');
-    const scriptsDir = join(dir, 'scripts', 'wiki');
     mkdirSync(wikiDir, { recursive: true });
-    mkdirSync(scriptsDir, { recursive: true });
 
     writeFileSync(join(wikiDir, 'schema.md'), '# old schema\n');
-    writeFileSync(join(scriptsDir, 'lint.mjs'), '// old\n');
 
     const config = {
       version: '0.0.0',
       projectName: 'acme',
       wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
       focusDirs: ['src'],
     };
 
     runUpgradeSteps(dir, config);
 
     expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
-    expect(readFileSync(join(scriptsDir, 'lint.mjs'), 'utf8')).toContain('lint.mjs');
-    expect(existsSync(join(scriptsDir, 'migrate-pages.mjs'))).toBe(true);
   });
 });
 
@@ -79,7 +70,6 @@ describe('init safe re-run via scaffoldWikiTemplates', () => {
     const vars = buildTemplateVars({
       projectName: 'acme',
       wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
       focusDirs: [],
       initTimestamp: '2026-06-30T00:00:00Z',
     });
@@ -96,19 +86,21 @@ describe('init safe re-run via scaffoldWikiTemplates', () => {
   });
 });
 
-describe('migrate-pages.mjs', () => {
+describe('migrate-pages via upgrade', () => {
   it('remaps legacy status values', () => {
-    const wikiDir = makeTmpDir();
-    const scriptsDir = join(wikiDir, 'scripts', 'wiki');
-    mkdirSync(scriptsDir, { recursive: true });
-
-    const vars = buildTemplateVars({
-      projectName: 'acme',
-      wikiDir: '.',
-      scriptsDir: 'scripts/wiki',
-      focusDirs: [],
-    });
-    upgradeScripts(scriptsDir, vars);
+    const dir = makeTmpDir();
+    const wikiDir = join(dir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+    writeFileSync(
+      join(dir, '.llm-wiki-manager.json'),
+      JSON.stringify({
+        version: '0.0.0',
+        projectName: 'acme',
+        wikiDir: 'wiki',
+        focusDirs: [],
+      }) + '\n',
+    );
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
 
     writePage(
       wikiDir,
@@ -116,12 +108,12 @@ describe('migrate-pages.mjs', () => {
       fm({ status: 'draft', title: 'Legacy', type: 'concept' }) + '\n# Legacy\n',
     );
 
-    const script = join(scriptsDir, 'migrate-pages.mjs');
-    const result = spawnSync(process.execPath, [script, '--wiki-dir', wikiDir], {
-      cwd: wikiDir,
-      encoding: 'utf8',
+    runPostUpgradeScripts(dir, {
+      version: '0.0.0',
+      projectName: 'acme',
+      wikiDir: 'wiki',
+      focusDirs: [],
     });
-    expect(result.status).toBe(0);
 
     const content = readFileSync(join(wikiDir, 'concepts', 'legacy.md'), 'utf8');
     expect(content).toContain('status: wip');

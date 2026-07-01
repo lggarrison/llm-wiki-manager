@@ -2,7 +2,6 @@ dist
 node_modules
 coverage
 templates
-scripts/wiki
 wiki/index.md
 _references
 .husky/_

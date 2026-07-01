@@ -11,8 +11,6 @@ import {
   syncPackageJsonScripts,
   replaceManagedSection,
   scaffoldWikiTemplates,
-  scaffoldScripts,
-  upgradeScripts,
   buildTemplateVars,
   readInstallConfig,
   writeInstallConfig,
@@ -23,6 +21,7 @@ import {
   scopeSlugFromFocusDir,
   scaffoldEntityOverviews,
   scaffoldWikiEmptyDirs,
+  readJsonFile,
 } from './fs.js';
 
 const tmpDirs: string[] = [];
@@ -37,6 +36,15 @@ afterEach(async () => {
   for (const dir of tmpDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+describe('readJsonFile', () => {
+  it('parses JSON written with a UTF-8 BOM (as PowerShell and some editors produce)', () => {
+    const dir = makeTmpDir();
+    const path = join(dir, 'package.json');
+    writeFileSync(path, String.fromCharCode(0xfeff) + '{ "name": "bom-app" }', 'utf8');
+    expect(readJsonFile<{ name: string }>(path)).toEqual({ name: 'bom-app' });
+  });
 });
 
 describe('interpolate', () => {
@@ -192,7 +200,6 @@ describe('wiki template bundle', () => {
     copyTemplate(templatePath('wiki'), dest, {
       PROJECT_NAME: 'acme',
       WIKI_DIR: 'wiki',
-      SCRIPTS_DIR: 'scripts/wiki',
       INIT_TIMESTAMP: '2026-06-30T00:00:00Z',
       ENTITY_SCOPE_LINES: 'api',
       FOCUS_DIRS: '`src/`',
@@ -221,42 +228,32 @@ describe('mergePackageJsonScripts', () => {
     const dir = makeTmpDir();
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
 
-    const result = mergePackageJsonScripts(dir, 'scripts/wiki');
+    const result = mergePackageJsonScripts(dir);
     expect(result).toEqual({
       status: 'merged',
       added: [...WIKI_SCRIPT_KEYS],
     });
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    expect(pkg.scripts).toEqual(wikiScriptCandidates('scripts/wiki'));
-  });
-
-  it('uses a custom scripts directory in script paths', () => {
-    const dir = makeTmpDir();
-    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
-
-    mergePackageJsonScripts(dir, 'tools/wiki-scripts');
-
-    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    expect(pkg.scripts).toEqual(wikiScriptCandidates('tools/wiki-scripts'));
+    expect(pkg.scripts).toEqual(wikiScriptCandidates());
   });
 
   it('is idempotent when wiki scripts already exist', () => {
     const dir = makeTmpDir();
     const original = {
       name: 'acme',
-      scripts: { 'wiki:lint': 'node custom/lint.mjs' },
+      scripts: { 'wiki:lint': 'llm-wiki-manager lint' },
     };
     writeFileSync(join(dir, 'package.json'), JSON.stringify(original, null, 2) + '\n');
 
-    const result = mergePackageJsonScripts(dir, 'scripts/wiki');
+    const result = mergePackageJsonScripts(dir);
     expect(result).toEqual({
       status: 'merged',
       added: WIKI_SCRIPT_KEYS.filter((k) => k !== 'wiki:lint'),
     });
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    expect(pkg.scripts['wiki:lint']).toBe('node custom/lint.mjs');
+    expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
   });
 
   it('returns unchanged when all wiki scripts are already present', () => {
@@ -266,20 +263,20 @@ describe('mergePackageJsonScripts', () => {
       JSON.stringify(
         {
           name: 'acme',
-          scripts: wikiScriptCandidates('scripts/wiki'),
+          scripts: wikiScriptCandidates(),
         },
         null,
         2,
       ) + '\n',
     );
 
-    const result = mergePackageJsonScripts(dir, 'scripts/wiki');
+    const result = mergePackageJsonScripts(dir);
     expect(result).toEqual({ status: 'unchanged' });
   });
 
   it('returns no-package-json when package.json is missing', () => {
     const dir = makeTmpDir();
-    expect(mergePackageJsonScripts(dir, 'scripts/wiki')).toEqual({ status: 'no-package-json' });
+    expect(mergePackageJsonScripts(dir)).toEqual({ status: 'no-package-json' });
   });
 });
 
@@ -309,6 +306,48 @@ describe('replaceManagedSection', () => {
     writeFileSync(target, '# No delimiter here\n');
     expect(replaceManagedSection(target, '# Section')).toBe(false);
   });
+
+  it('preserves user content after the end marker', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    writeFileSync(
+      target,
+      '# My Project\n\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n<!-- /llm-wiki-manager -->\n\n## My own section\n\nHand-written notes, no HTML comment anywhere.\n',
+    );
+
+    const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh.');
+    expect(ok).toBe(true);
+
+    const content = readFileSync(target, 'utf8');
+    expect(content).toContain('# My Project');
+    expect(content).toContain('Fresh.');
+    expect(content).not.toContain('Stale.');
+    expect(content).toContain('## My own section');
+    expect(content).toContain('Hand-written notes, no HTML comment anywhere.');
+  });
+
+  it('upgrades a legacy block without an end marker and adds one', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    writeFileSync(target, '# My Project\n\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n');
+
+    const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh.');
+    expect(ok).toBe(true);
+
+    const content = readFileSync(target, 'utf8');
+    expect(content).toContain('Fresh.');
+    expect(content).not.toContain('Stale.');
+    expect(content).toContain('<!-- /llm-wiki-manager -->');
+  });
+
+  it('amendFile writes both start and end markers', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    amendFile(target, '# LLM Wiki\n\nInstructions.');
+    const content = readFileSync(target, 'utf8');
+    expect(content).toContain('<!-- llm-wiki-manager -->');
+    expect(content).toContain('<!-- /llm-wiki-manager -->');
+  });
 });
 
 describe('scaffoldWikiTemplates', () => {
@@ -317,7 +356,6 @@ describe('scaffoldWikiTemplates', () => {
     const vars = buildTemplateVars({
       projectName: 'acme',
       wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
       focusDirs: ['src'],
       initTimestamp: '2026-06-30T00:00:00Z',
     });
@@ -335,7 +373,6 @@ describe('scaffoldWikiTemplates', () => {
     const vars = buildTemplateVars({
       projectName: 'acme',
       wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
       focusDirs: [],
       initTimestamp: '2026-06-30T00:00:00Z',
     });
@@ -347,42 +384,6 @@ describe('scaffoldWikiTemplates', () => {
     scaffoldWikiTemplates(dest, vars, { overwrite: true });
     expect(readFileSync(schemaPath, 'utf8')).toContain('Wiki Schema — acme');
     expect(readFileSync(schemaPath, 'utf8')).not.toContain('# Old schema');
-  });
-});
-
-describe('scaffoldScripts', () => {
-  it('does not overwrite existing scripts on init', () => {
-    const dest = makeTmpDir();
-    mkdirSync(dest, { recursive: true });
-    writeFileSync(join(dest, 'lint.mjs'), '// custom lint\n');
-
-    const vars = buildTemplateVars({
-      projectName: 'acme',
-      wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
-      focusDirs: [],
-    });
-
-    const result = scaffoldScripts(dest, vars, { overwrite: false });
-    expect(result.skipped).toContain('lint.mjs');
-    expect(readFileSync(join(dest, 'lint.mjs'), 'utf8')).toBe('// custom lint\n');
-  });
-
-  it('overwrites scripts on upgrade', () => {
-    const dest = makeTmpDir();
-    mkdirSync(dest, { recursive: true });
-    writeFileSync(join(dest, 'help.mjs'), '// old help\n');
-
-    const vars = buildTemplateVars({
-      projectName: 'acme',
-      wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
-      focusDirs: [],
-    });
-
-    upgradeScripts(dest, vars);
-    expect(readFileSync(join(dest, 'help.mjs'), 'utf8')).toContain('help.mjs');
-    expect(readFileSync(join(dest, 'help.mjs'), 'utf8')).not.toBe('// old help\n');
   });
 });
 
@@ -398,14 +399,16 @@ describe('syncPackageJsonScripts', () => {
       ) + '\n',
     );
 
-    const result = syncPackageJsonScripts(dir, 'scripts/wiki');
+    const result = syncPackageJsonScripts(dir);
     expect(result.status).toBe('synced');
     if (result.status === 'synced') {
       expect(result.added).toContain('wiki:setup:husky');
+      expect(result.updated).toContain('wiki:lint');
     }
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    expect(pkg.scripts['wiki:setup:husky']).toBe('node scripts/wiki/setup-husky.mjs');
+    expect(pkg.scripts['wiki:setup:husky']).toBe('llm-wiki-manager setup-husky');
+    expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
   });
 
   it('updates changed wiki script commands', () => {
@@ -415,21 +418,21 @@ describe('syncPackageJsonScripts', () => {
       JSON.stringify(
         {
           name: 'acme',
-          scripts: wikiScriptCandidates('old/path'),
+          scripts: { 'wiki:lint': 'node old/path/lint.mjs' },
         },
         null,
         2,
       ) + '\n',
     );
 
-    const result = syncPackageJsonScripts(dir, 'scripts/wiki');
+    const result = syncPackageJsonScripts(dir);
     expect(result.status).toBe('synced');
     if (result.status === 'synced') {
-      expect(result.updated.length).toBeGreaterThan(0);
+      expect(result.updated).toContain('wiki:lint');
     }
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    expect(pkg.scripts['wiki:lint']).toBe('node scripts/wiki/lint.mjs');
+    expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
   });
 });
 
@@ -440,26 +443,15 @@ describe('install config', () => {
       version: '0.1.0',
       projectName: 'acme',
       wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
       focusDirs: ['src'],
     };
     writeInstallConfig(dir, config);
     expect(readInstallConfig(dir)).toEqual(config);
   });
 
-  it('infers paths from package.json and AGENTS.md', () => {
+  it('infers paths from AGENTS.md and schema.md', () => {
     const dir = makeTmpDir();
-    writeFileSync(
-      join(dir, 'package.json'),
-      JSON.stringify(
-        {
-          name: 'my-app',
-          scripts: { 'wiki:lint': 'node tools/wiki/lint.mjs' },
-        },
-        null,
-        2,
-      ) + '\n',
-    );
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n');
     writeFileSync(
       join(dir, 'AGENTS.md'),
       '<!-- llm-wiki-manager -->\nRead [`docs/AGENTS.md`](docs/AGENTS.md)\n',
@@ -468,7 +460,6 @@ describe('install config', () => {
     writeFileSync(join(dir, 'docs', 'schema.md'), '# schema\n');
 
     const inferred = inferInstallConfig(dir);
-    expect(inferred?.scriptsDir).toBe('tools/wiki');
     expect(inferred?.wikiDir).toBe('docs');
     expect(inferred?.projectName).toBe('my-app');
   });
@@ -487,7 +478,6 @@ describe('buildTemplateVars', () => {
     const vars = buildTemplateVars({
       projectName: 'acme',
       wikiDir: 'wiki',
-      scriptsDir: 'scripts/wiki',
       focusDirs: ['src/commands', 'templates'],
     });
     expect(vars.ENTITY_SCOPE_LINES).toBe('commands\ntemplates');

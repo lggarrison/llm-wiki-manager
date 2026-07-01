@@ -1,11 +1,11 @@
 ---
 type: concept
 title: Template System
-last_updated: 2026-06-30T00:00:00Z
+last_updated: 2026-07-01T00:00:00Z
 tags: [templates, scaffold]
 related: [concepts/init-command.md, concepts/repo-layout.md, concepts/dogfooding.md]
 status: active
-summary: templates/ is the source of truth; init copies and interpolates placeholders into consumer projects.
+summary: templates/ is the source of truth for wiki scaffold files; init copies and interpolates placeholders into consumer projects.
 ---
 
 # Template System
@@ -17,13 +17,14 @@ Published package contents include `templates/` (see `package.json` `"files"`). 
 ```
 templates/
 ├── wiki/       schema.md, index.md, log.md (scaffolded wiki skeleton)
-├── scripts/    lint, build-index, sync-see-also, log, help (.mjs)
 └── AGENTS.md   agent instructions template
 ```
 
+Wiki management logic (lint, build, sync, log, etc.) lives in `src/wiki/` and ships as compiled JavaScript in `dist/` — not as copied template scripts.
+
 ## Interpolation
 
-`copyTemplate` recursively copies a template directory, then walks `.md`, `.mjs`, and `.js` files replacing `{{VAR}}` placeholders via `interpolate()`.
+`copyTemplate` and scaffold helpers recursively copy template files, then walk `.md`, `.mjs`, and `.js` files replacing `{{VAR}}` placeholders via `interpolate()`.
 
 Common variables:
 
@@ -31,14 +32,13 @@ Common variables:
 | ----------------- | -------------------------- |
 | `PROJECT_NAME`    | `llm-wiki-manager`         |
 | `WIKI_DIR`        | `wiki`                     |
-| `SCRIPTS_DIR`     | `scripts/wiki`             |
 | `FOCUS_DIRS`      | `` `src/`, `templates/` `` |
 | `FOCUS_DIRS_LIST` | bullet list for schema.md  |
 | `INIT_TIMESTAMP`  | UTC ISO timestamp of init  |
 
-## Templates vs dogfooded output
+## Templates vs consumer output
 
-Consumers receive **copies** under their chosen wiki and scripts paths. In this repo, `scripts/wiki/` is the dogfooded copy of `templates/scripts/` (with placeholders already resolved). When editing templates, refresh the dogfooded copy so they stay in sync — see [Dogfooding](dogfooding.md).
+Consumers receive **copies** of wiki templates under their chosen wiki path. npm scripts invoke `llm-wiki-manager` subcommands — no script files are vendored into consumer repos.
 
 ## See also
 

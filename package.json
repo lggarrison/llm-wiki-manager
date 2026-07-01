@@ -1,6 +1,6 @@
 {
   "name": "llm-wiki-manager",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Scaffold and manage an LLM-maintained personal wiki",
   "type": "module",
@@ -12,7 +12,7 @@
     "templates"
   ],
   "engines": {
-    "node": ">=24"
+    "node": ">=20.12.0"
   },
   "repository": {
     "type": "git",
@@ -53,13 +53,13 @@
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "release:check": "npm run check:node-types && npm run lint && npm run format:check && npm test && npm run build && npm run test:e2e && npm run wiki:lint && npm run wiki:check",
-    "wiki:help": "node scripts/wiki/help.mjs",
-    "wiki:lint": "node scripts/wiki/lint.mjs",
-    "wiki:build": "node scripts/wiki/build-index.mjs",
-    "wiki:check": "node scripts/wiki/build-index.mjs --check",
-    "wiki:sync": "node scripts/wiki/sync-see-also.mjs",
-    "wiki:log": "node scripts/wiki/log.mjs",
-    "wiki:setup:husky": "node scripts/wiki/setup-husky.mjs"
+    "wiki:help": "node dist/bin/cli.js help",
+    "wiki:lint": "node dist/bin/cli.js lint",
+    "wiki:build": "node dist/bin/cli.js build",
+    "wiki:check": "node dist/bin/cli.js check",
+    "wiki:sync": "node dist/bin/cli.js sync",
+    "wiki:log": "node dist/bin/cli.js log",
+    "wiki:setup:husky": "node dist/bin/cli.js setup-husky"
   },
   "lint-staged": {
     "*.{ts,js,mjs,cjs}": [

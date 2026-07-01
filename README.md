@@ -2,7 +2,11 @@
 
 [![CI](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D24-brightgreen.svg)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen.svg)](https://nodejs.org)
+
+<p align="center">
+  <img src="docs/assets/init-demo.svg" alt="llm-wiki-manager init scaffolding a wiki, followed by doctor reporting a healthy install" width="760">
+</p>
 
 ## What this is, in one paragraph
 
@@ -25,16 +29,9 @@ wiki/
 ├── sources/           # Summaries of ingested source documents
 └── raw/               # Immutable source documents (never edited by the agent)
 
-scripts/wiki/
-├── lint.mjs           # Validate frontmatter, links, and structure
-├── build-index.mjs    # Regenerate index.md from page frontmatter
-├── help.mjs           # List wiki commands and when to run them
-├── log.mjs            # Append operation entries to log.md
-└── sync-see-also.mjs  # Sync related: frontmatter to body links
-
 AGENTS.md              # Repo-root pointer to wiki/AGENTS.md (created or amended)
 
-package.json           # wiki:* npm scripts added (when present)
+package.json           # wiki:* npm scripts added (when present; invoke llm-wiki-manager)
 ```
 
 ---
@@ -99,7 +96,6 @@ You will be prompted for:
 | ----------------- | -------------------------- | ----------------------------------------------- |
 | Project name      | _(current directory name)_ | Used in AGENTS.md headings and schema.md        |
 | Wiki directory    | `wiki`                     | Where the wiki files are created                |
-| Scripts directory | `scripts/wiki`             | Where the management scripts are placed         |
 | Focus directories | _(blank = whole project)_  | Directories the wiki documents, e.g. `src, api` |
 
 To skip prompts (CI, scripts, or non-interactive shells), pass `--project-name` and optionally the other flags:
@@ -108,11 +104,10 @@ To skip prompts (CI, scripts, or non-interactive shells), pass `--project-name` 
 npx llm-wiki-manager init \
   --project-name my-app \
   --wiki-dir wiki \
-  --scripts-dir scripts/wiki \
   --focus-dirs src,api
 ```
 
-`--project-name` is required to skip prompts. `--wiki-dir`, `--scripts-dir`, and `--focus-dirs` default to the values in the table above.
+`--project-name` is required to skip prompts. `--wiki-dir` and `--focus-dirs` default to the values in the table above.
 
 After `init` completes:
 
@@ -120,9 +115,9 @@ After `init` completes:
 2. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
 3. Run `npm run wiki:lint` to confirm the scaffold is valid
 
-If your project has no `package.json`, use the raw script paths under `scripts/wiki/` instead (see [Managing the wiki](#managing-the-wiki)).
+If your project has no `package.json`, invoke the CLI directly (see [Managing the wiki](#managing-the-wiki)).
 
-Re-running `init` on an existing project is safe: it only creates missing scaffold files and does not overwrite your wiki content or `log.md`. To refresh template files (scripts, `schema.md`, `wiki/AGENTS.md`, root `AGENTS.md`) after updating the package, use **upgrade**:
+Re-running `init` on an existing project is safe: it only creates missing scaffold files and does not overwrite your wiki content or `log.md`. To refresh wiki templates (`schema.md`, `wiki/AGENTS.md`, root `AGENTS.md`) and sync npm scripts after updating the package, use **upgrade**:
 
 ```bash
 npx llm-wiki-manager upgrade
@@ -172,15 +167,17 @@ npm run wiki:log -- add query "Summary of the question"
 
 When `init` finds a `package.json`, it adds these npm scripts. Run `npm run wiki:help` anytime for a quick reference.
 
-| Script             | Command                                     | Purpose                                           |
-| ------------------ | ------------------------------------------- | ------------------------------------------------- |
-| `wiki:help`        | `node scripts/wiki/help.mjs`                | List commands, usage, and when to run them        |
-| `wiki:lint`        | `node scripts/wiki/lint.mjs`                | Validate frontmatter, links, and structure        |
-| `wiki:build`       | `node scripts/wiki/build-index.mjs`         | Regenerate `index.md`                             |
-| `wiki:check`       | `node scripts/wiki/build-index.mjs --check` | Verify `index.md` is up to date (read-only)       |
-| `wiki:sync`        | `node scripts/wiki/sync-see-also.mjs`       | Sync `related:` frontmatter to body links         |
-| `wiki:log`         | `node scripts/wiki/log.mjs`                 | Append operation entries to `log.md`              |
-| `wiki:setup:husky` | `node scripts/wiki/setup-husky.mjs`         | Wire pre-push wiki:check; print lint-staged guide |
+| Script             | Command                        | Purpose                                           |
+| ------------------ | ------------------------------ | ------------------------------------------------- |
+| `wiki:help`        | `llm-wiki-manager help`        | List commands, usage, and when to run them        |
+| `wiki:lint`        | `llm-wiki-manager lint`        | Validate frontmatter, links, and structure        |
+| `wiki:build`       | `llm-wiki-manager build`       | Regenerate `index.md`                             |
+| `wiki:check`       | `llm-wiki-manager check`       | Verify `index.md` is up to date (read-only)       |
+| `wiki:sync`        | `llm-wiki-manager sync`        | Sync `related:` frontmatter to body links         |
+| `wiki:log`         | `llm-wiki-manager log`         | Append operation entries to `log.md`              |
+| `wiki:setup:husky` | `llm-wiki-manager setup-husky` | Wire pre-push wiki:check; print lint-staged guide |
+
+Two more subcommands are available directly (not as npm scripts): `npx llm-wiki-manager doctor` (scaffold health check, see below) and `npx llm-wiki-manager upgrade` (refresh templates after a package update).
 
 ### Lint — validate structure
 
@@ -201,8 +198,8 @@ Checks for:
 Options:
 
 ```bash
-node scripts/wiki/lint.mjs --warn-only          # report errors without exiting 1
-node scripts/wiki/lint.mjs --wiki-dir path/to/wiki
+llm-wiki-manager lint --warn-only          # report errors without exiting 1
+llm-wiki-manager lint --wiki-dir path/to/wiki
 ```
 
 ### Build index — regenerate index.md
@@ -217,7 +214,7 @@ Options:
 
 ```bash
 npm run wiki:build -- --wiki-dir path/to/wiki
-node scripts/wiki/build-index.mjs --wiki-dir path/to/wiki   # without npm scripts
+llm-wiki-manager build --wiki-dir path/to/wiki   # without npm scripts
 ```
 
 ### Check index — verify index.md is current
@@ -258,8 +255,16 @@ Options:
 
 ```bash
 npm run wiki:log -- add <op> "<title>" --wiki-dir path/to/wiki
-node scripts/wiki/log.mjs add <op> "<title>" --wiki-dir path/to/wiki   # without npm scripts
+llm-wiki-manager log add <op> "<title>" --wiki-dir path/to/wiki   # without npm scripts
 ```
+
+### Doctor — check scaffold health
+
+```bash
+npx llm-wiki-manager doctor
+```
+
+Read-only health check for an installed scaffold. Verifies the install config exists, the scaffold version matches the installed package (suggesting `upgrade` when behind), the wiki meta files are present, the root `AGENTS.md` still has its managed section, the `wiki:*` npm scripts are in sync, and `index.md` is up to date. Exits 1 if any problem is found — useful before an `upgrade` or when something feels off.
 
 ### Sync see-also — fix missing body links
 
@@ -274,7 +279,7 @@ Options:
 ```bash
 npm run wiki:sync -- --dry            # preview changes without writing
 npm run wiki:sync -- --wiki-dir path/to/wiki
-node scripts/wiki/sync-see-also.mjs --wiki-dir path/to/wiki   # without npm scripts
+llm-wiki-manager sync --wiki-dir path/to/wiki   # without npm scripts
 ```
 
 ---
@@ -285,17 +290,18 @@ Every wiki page must have YAML frontmatter:
 
 ```yaml
 ---
-type: concept # concept | source | overview | hub
+type: concept # overview | entity | comparison | deep-dive | concept | source | hub
 title: 'Page Title'
 last_updated: 2025-06-30T00:00:00Z
 tags: [auth, api]
-related: [] # relative paths from wiki root
-status: draft # draft | stable | archived
+related: [] # relative paths from wiki root — inline arrays only, not "- item" lists
+status: wip # active | wip | deprecated
 ---
 ```
 
-- Place pages in the directory matching their type: `concepts/`, `sources/`, or wiki root (overview/hub)
+- Place pages in the directory matching their type: `concepts/`, `sources/`, `entities/` (overview/entity/comparison/deep-dive), or hub pages at `README.md`, `index.md`, and `raw/raw.md`
 - Use markdown links `[Title](path.md)` — never wikilinks `[[...]]`
+- Write frontmatter arrays inline (`related: [a.md, b.md]`); block-style `- item` lists are rejected by lint
 - Every path in `related:` must also appear as a body link (run `npm run wiki:sync` to auto-add)
 - See `wiki/schema.md` for the full specification
 
@@ -360,7 +366,8 @@ Run `npm run wiki:setup:husky` for pre-push only. Before committing wiki changes
 
 ## Requirements
 
-- Node.js 24 or later — use [`.nvmrc`](.nvmrc) (`nvm use` / `fnm use`)
+- Node.js **20.12 or later** to run the CLI (CI tests Node 20 and 24 on Linux and Windows)
+- For development on this repo, Node 24 — use [`.nvmrc`](.nvmrc) (`nvm use` / `fnm use`)
 
 For Node toolchain policy, `@types/node` alignment, and Dependabot/CI guardrails, see [wiki/concepts/node-version-and-types.md](wiki/concepts/node-version-and-types.md).
 
@@ -390,22 +397,9 @@ This repo dogfoods its own wiki workflow. Internal knowledge about `src/` and `t
 - [`wiki/index.md`](wiki/index.md) — auto-generated page catalog
 - [`wiki/AGENTS.md`](wiki/AGENTS.md) — agent instructions (`AGENTS.md` at repo root points here)
 
-Run `npm run wiki:help` for wiki commands. CI and `release:check` run `wiki:lint` and `wiki:check`.
+Run `npm run wiki:help` for wiki commands. CI and `release:check` run `wiki:lint` and `wiki:check`. Wiki operations are implemented as `llm-wiki-manager` subcommands in `src/wiki/` — no scripts are copied into consumer projects.
 
-### Refreshing dogfooded scaffold
-
-When you change files under `templates/scripts/`, refresh the dogfooded copy and verify sync:
-
-```bash
-npm run build
-node scripts/bootstrap-dogfood.mjs
-npm test                    # includes templates/scripts ↔ scripts/wiki sync test
-npm run wiki:lint
-npm run wiki:build
-npm run wiki:check
-```
-
-The bootstrap script copies `templates/scripts/` into `scripts/wiki/` with placeholders resolved. It does not overwrite wiki content pages.
+Note: this repo's own `wiki:*` npm scripts call `node dist/bin/cli.js` directly, because npm does not link a package's own `bin` into its own `node_modules/.bin`. Consumer projects get the `llm-wiki-manager <command>` form. Run `npm run build` before the `wiki:*` scripts after changing `src/`, and don't run `upgrade` against this repo (it would rewrite the scripts to the consumer form).
 
 ### Code quality & git hooks
 
@@ -423,7 +417,7 @@ Issues and pull requests are welcome at [github.com/lggarrison/llm-wiki-manager]
 Version tags are published as [GitHub Releases](https://github.com/lggarrison/llm-wiki-manager/releases). Pin a specific version:
 
 ```bash
-npx github:lggarrison/llm-wiki-manager#v0.1.1 init
+npx github:lggarrison/llm-wiki-manager#v1.0.0 init
 ```
 
 Release history is in [CHANGELOG.md](CHANGELOG.md). Maintainers: see [RELEASING.md](RELEASING.md) for the full cut-a-release runbook.

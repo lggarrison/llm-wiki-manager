@@ -49,5 +49,8 @@ body:
     id: logs
     attributes:
       label: Relevant output
-      description: Paste any error output or logs. This will be rendered as code.
+      description: >-
+        Paste any error output or logs. If the CLI failed, re-run the command with the
+        DEBUG environment variable set (e.g. `DEBUG=1 npx llm-wiki-manager upgrade`, or
+        `$env:DEBUG=1` first on PowerShell) and paste the full stack trace.
       render: shell

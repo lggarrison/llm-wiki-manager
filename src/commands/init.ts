@@ -10,18 +10,18 @@ import {
   scaffoldWikiEmptyDirs,
   scaffoldEntityOverviews,
   scaffoldWikiTemplates,
-  scaffoldScripts,
   buildTemplateVars,
   writeInstallConfig,
   getPackageVersion,
   isExistingInstall,
   readInstallConfig,
 } from '../utils/fs.js';
+import { resolveWikiContext } from '../wiki/context.js';
+import { runBuild } from '../wiki/build-index.js';
 
 type InitFlagValues = {
   projectName: string;
   wikiDir: string;
-  scriptsDir: string;
   focusDirs: string;
 };
 
@@ -45,7 +45,6 @@ function parseInitArgs(argv: string[]): InitFlagValues | null {
   return {
     projectName,
     wikiDir: readFlag('--wiki-dir', 'wiki'),
-    scriptsDir: readFlag('--scripts-dir', 'scripts/wiki'),
     focusDirs: readFlag('--focus-dirs', ''),
   };
 }
@@ -71,16 +70,6 @@ async function promptInitValues(): Promise<InitFlagValues> {
     process.exit(0);
   }
 
-  const scriptsDir = await text({
-    message: 'Scripts directory',
-    initialValue: 'scripts/wiki',
-    validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
-  });
-  if (isCancel(scriptsDir)) {
-    cancel('Cancelled');
-    process.exit(0);
-  }
-
   const focusDirs = await text({
     message: 'Directories this wiki should document (comma-separated, e.g. src, api)',
     placeholder: 'src',
@@ -93,7 +82,6 @@ async function promptInitValues(): Promise<InitFlagValues> {
   return {
     projectName: (projectName as string).trim(),
     wikiDir: (wikiDir as string).trim(),
-    scriptsDir: (scriptsDir as string).trim(),
     focusDirs: typeof focusDirs === 'string' ? focusDirs.trim() : '',
   };
 }
@@ -110,21 +98,18 @@ export async function init(): Promise<void> {
     .filter(Boolean);
 
   const wikiDirStr = values.wikiDir;
-  const scriptsDirStr = values.scriptsDir;
   const projectNameStr = values.projectName;
   const initTimestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
   const vars = buildTemplateVars({
     projectName: projectNameStr,
     wikiDir: wikiDirStr,
-    scriptsDir: scriptsDirStr,
     focusDirs: focusDirList,
     initTimestamp,
   });
 
   const cwd = process.cwd();
   const wikiDest = resolve(cwd, wikiDirStr);
-  const scriptsDest = resolve(cwd, scriptsDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
   const reInit = isExistingInstall(cwd, wikiDirStr);
 
@@ -133,7 +118,6 @@ export async function init(): Promise<void> {
     log.info(`To refresh templates, run ${pc.bold('npx llm-wiki-manager upgrade')}.`);
   }
 
-  // 1. Scaffold wiki directory (create-if-missing)
   log.step('Scaffolding wiki directory…');
   const wikiResult = scaffoldWikiTemplates(wikiDest, vars, { overwrite: false });
   if (wikiResult.created.length > 0) {
@@ -147,15 +131,11 @@ export async function init(): Promise<void> {
     scaffoldEntityOverviews(wikiDest, focusDirList, initTimestamp);
   }
 
-  // 2. Scaffold management scripts (create-if-missing)
-  log.step('Installing management scripts…');
-  const scriptsResult = scaffoldScripts(scriptsDest, vars, { overwrite: false });
-  if (scriptsResult.created.length > 0) {
-    log.info(`Created: ${scriptsResult.created.join(', ')}`);
-  }
+  // Generate index.md from the scaffolded pages so wiki:check passes immediately
+  log.step('Building index.md…');
+  runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr }));
 
-  // 3. Add npm scripts to package.json (when present)
-  const pkgResult = mergePackageJsonScripts(cwd, vars.SCRIPTS_DIR);
+  const pkgResult = mergePackageJsonScripts(cwd);
   if (pkgResult.status === 'merged') {
     log.step(`Adding npm scripts to package.json (${pkgResult.added.join(', ')})…`);
   } else if (pkgResult.status === 'no-package-json') {
@@ -164,7 +144,6 @@ export async function init(): Promise<void> {
     log.warn('package.json already has wiki scripts — skipped.');
   }
 
-  // 4. Create or amend AGENTS.md
   log.step('Writing AGENTS.md…');
   const agentsTemplate = readFileSync(templatePath('AGENTS.md'), 'utf8');
   const agentsContent = interpolate(agentsTemplate, vars);
@@ -181,7 +160,6 @@ export async function init(): Promise<void> {
     version: getPackageVersion(),
     projectName: projectNameStr,
     wikiDir: wikiDirStr,
-    scriptsDir: scriptsDirStr,
     focusDirs: focusDirList.length > 0 ? focusDirList : (existingConfig?.focusDirs ?? []),
   });
 

@@ -4,7 +4,7 @@ Thanks for your interest in contributing! This project is a small Node.js CLI wr
 
 ## Prerequisites
 
-- Node.js 24 or later (see [`.nvmrc`](.nvmrc) and `engines.node` in `package.json`; run `nvm use` or `fnm use` after clone)
+- Node.js 24 for development (see [`.nvmrc`](.nvmrc); run `nvm use` or `fnm use` after clone). The published CLI supports Node >=20.12 (`engines.node`), and CI tests both 20 and 24 on Linux and Windows.
 - npm (bundled with Node)
 
 ## Setup

@@ -135,7 +135,7 @@ Answer a question using the wiki:
 
 ### Lint
 Periodic health check:
-1. Run `npm run wiki:lint` (or `node {{SCRIPTS_DIR}}/lint.mjs` if npm scripts are unavailable)
+1. Run `npm run wiki:lint` (or `llm-wiki-manager lint` if npm scripts are unavailable)
 2. Resolve any errors before adding new content
 3. Log: `npm run wiki:log -- add lint "health check"`
 

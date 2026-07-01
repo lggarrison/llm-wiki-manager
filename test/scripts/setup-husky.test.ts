@@ -1,14 +1,16 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { spawnSync } from 'child_process';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { scriptPath } from '../helpers/wiki.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const tmpDirs: string[] = [];
 
-function makeProjectDir(): string {
+function makeProjectDir(withPackageJson = true): string {
   const dir = mkdtempSync(join(tmpdir(), 'llm-wiki-husky-test-'));
+  if (withPackageJson) {
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+  }
   tmpDirs.push(dir);
   return dir;
 }
@@ -29,22 +31,15 @@ function installFakeHusky(projectDir: string): void {
   writeFileSync(join(huskyDir, 'index.js'), 'export default function husky() {}\n');
 }
 
-function installSetupScript(projectDir: string): string {
-  const dest = join(projectDir, 'setup-husky.mjs');
-  cpSync(scriptPath('setup-husky.mjs'), dest);
-  return dest;
-}
-
-function runSetupHusky(projectDir: string): ReturnType<typeof spawnSync> {
-  const script = installSetupScript(projectDir);
-  return spawnSync('node', [script], { cwd: projectDir, encoding: 'utf8' });
+function runSetupHusky(projectDir: string): ReturnType<typeof runBuiltCli> {
+  return runBuiltCli(projectDir, ['setup-husky']);
 }
 
 function initGitRepo(projectDir: string): void {
   mkdirSync(join(projectDir, '.git'), { recursive: true });
 }
 
-describe('setup-husky.mjs', () => {
+describe('setup-husky command', () => {
   it('exits 1 when .git is missing', () => {
     const projectDir = makeProjectDir();
     installFakeHusky(projectDir);
@@ -55,7 +50,7 @@ describe('setup-husky.mjs', () => {
   });
 
   it('exits 1 when husky is not installed', () => {
-    const projectDir = makeProjectDir();
+    const projectDir = makeProjectDir(true);
     initGitRepo(projectDir);
 
     const result = runSetupHusky(projectDir);
@@ -67,6 +62,11 @@ describe('setup-husky.mjs', () => {
     const projectDir = makeProjectDir();
     initGitRepo(projectDir);
     installFakeHusky(projectDir);
+    writeFileSync(
+      join(projectDir, '.llm-wiki-manager.json'),
+      JSON.stringify({ version: '0.1.0', projectName: 'acme', wikiDir: 'wiki', focusDirs: [] }) +
+        '\n',
+    );
 
     const result = runSetupHusky(projectDir);
     expect(result.status).toBe(0);

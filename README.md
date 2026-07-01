@@ -1,5 +1,24 @@
 # llm-wiki-manager
 
+[![CI](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/llm-wiki-manager.svg)](https://www.npmjs.com/package/llm-wiki-manager)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen.svg)](https://nodejs.org)
+
+<p align="center">
+  <img src="docs/assets/init-demo.svg" alt="llm-wiki-manager init scaffolding a wiki, followed by doctor reporting a healthy install" width="760">
+</p>
+
+## A Structured Repo Context for AI Coding Tools
+
+- Better retrieval (an agent's context search finds the right doc because frontmatter/links are consistent and un-broken)
+- A single reliable entry point (an index file that gives an agent a map of the repo it wouldn't otherwise infer)
+- Enforced structure reducing noise (lint catching drift means an agent isn't reading stale or contradictory docs)
+
+## What this is, in one paragraph
+
+The wiki implements Karpathy's LLM-Wiki pattern: a persistent, compounding knowledge base that an LLM agent owns and maintains, sitting between the team and the raw sources. It is plain markdown, doubles as an Obsidian vault, and is wired into the repo's tooling (npm scripts, a pre-commit hook, and tool-specific discovery shims) so it stays current as the code changes. Code in your app's source code remains the source of truth for behavior; wiki pages describe and cite code (via `code_refs:` frontmatter) but never duplicate it.
+
 Scaffold and manage a persistent, LLM-maintained wiki for your project. Rather than relying on retrieval-augmented generation (RAG), this tool sets up a structured knowledge base that an LLM agent incrementally builds, cross-references, and synthesizes over time.
 
 ---
@@ -10,56 +29,78 @@ Running `init` scaffolds the following into your project:
 
 ```
 wiki/
+├── AGENTS.md          # Agent entry point (full instructions)
 ├── schema.md          # LLM conventions: frontmatter spec, operations, link rules
+├── README.md          # Human entry point
 ├── index.md           # Auto-generated content catalog
 ├── log.md             # Append-only operation log
-├── concepts/          # Synthesized knowledge pages
+├── .entity-scopes     # Required entity overview slugs (one per line)
+├── entities/          # Flat — scope entry points and entity-family pages
+├── concepts/          # Cross-cutting synthesized knowledge
 ├── sources/           # Summaries of ingested source documents
-└── raw/               # Immutable source documents (never edited by the agent)
+├── archive/           # Deprecated pages (optional)
+└── raw/
+    ├── raw.md         # Hub for immutable ingested artifacts
+    └── articles/, prs/, tickets/, design-notes/, transcripts/, assets/
 
-scripts/wiki/
-├── lint.mjs           # Validate frontmatter, links, and structure
-├── build-index.mjs    # Regenerate index.md from page frontmatter
-├── help.mjs           # List wiki commands and when to run them
-├── log.mjs            # Append operation entries to log.md
-└── sync-see-also.mjs  # Sync related: frontmatter to body links
+AGENTS.md              # Repo-root pointer to wiki/AGENTS.md (created or amended)
+.llm-wiki-manager.json # Install metadata (version, wiki dir, focus dirs)
 
-AGENTS.md              # Generic agent instructions (created or amended)
-
-package.json           # wiki:* npm scripts added (when present)
+package.json           # wiki:* npm scripts added (when present; invoke llm-wiki-manager)
 ```
 
 ---
 
 ## Installation
 
-The source lives at [github.com/lggarrison/llm-wiki-manager](https://github.com/lggarrison/llm-wiki-manager).
+Install from [npm](https://www.npmjs.com/package/llm-wiki-manager) or [GitHub](https://github.com/lggarrison/llm-wiki-manager).
 
-### From GitHub (recommended for now)
+### From npm (recommended)
 
-Run directly without installing — npm builds the package from source on install:
+Run without adding a dependency:
+
+```bash
+npx llm-wiki-manager init
+```
+
+Or add it as a dev dependency in your project:
+
+```bash
+npm install --save-dev llm-wiki-manager
+npx llm-wiki-manager init
+```
+
+Pin a specific version:
+
+```bash
+npx llm-wiki-manager@1.0.0 init
+```
+
+### From GitHub
+
+Useful when you want to install directly from the repository (for example, before a version hits npm, or to test a branch):
 
 ```bash
 npx github:lggarrison/llm-wiki-manager init
 ```
 
-Or add it as a dev dependency in your project:
+Or add it as a dev dependency:
 
 ```bash
 npm install --save-dev github:lggarrison/llm-wiki-manager
 npx llm-wiki-manager init
 ```
 
+Pin a release tag:
+
+```bash
+npx github:lggarrison/llm-wiki-manager#v1.0.0 init
+```
+
 If your machine is set up with a GitHub SSH key, you can use the SSH form instead:
 
 ```bash
 npm install --save-dev git+ssh://git@github.com/lggarrison/llm-wiki-manager.git
-```
-
-### From npm (once published)
-
-```bash
-npx llm-wiki-manager init
 ```
 
 ### From a local clone
@@ -87,20 +128,40 @@ npx llm-wiki-manager init
 
 You will be prompted for:
 
-| Prompt            | Default                   | Description                                     |
-| ----------------- | ------------------------- | ----------------------------------------------- |
-| Project name      | —                         | Used in AGENTS.md headings and schema.md        |
-| Wiki directory    | `wiki`                    | Where the wiki files are created                |
-| Scripts directory | `scripts/wiki`            | Where the management scripts are placed         |
-| Focus directories | _(blank = whole project)_ | Directories the wiki documents, e.g. `src, api` |
+| Prompt            | Default                    | Description                                     |
+| ----------------- | -------------------------- | ----------------------------------------------- |
+| Project name      | _(current directory name)_ | Used in AGENTS.md headings and schema.md        |
+| Wiki directory    | `wiki`                     | Where the wiki files are created                |
+| Focus directories | _(blank = whole project)_  | Directories the wiki documents, e.g. `src, api` |
+
+To skip prompts (CI, scripts, or non-interactive shells), pass `--project-name` and optionally the other flags:
+
+```bash
+npx llm-wiki-manager init \
+  --project-name my-app \
+  --wiki-dir wiki \
+  --focus-dirs src,api
+```
+
+`--project-name` is required to skip prompts. `--wiki-dir` and `--focus-dirs` default to the values in the table above.
 
 After `init` completes:
 
 1. Open `wiki/schema.md` to review the conventions your agent will follow
-2. Share `AGENTS.md` with your LLM agent (or point it to the file)
-3. Run `npm run wiki:lint` to confirm the scaffold is valid
+2. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
+3. Run `npx llm-wiki-manager doctor` (or `npm run wiki:check`) to confirm the scaffold is healthy — `init` generates a fresh `index.md`, so `wiki:check` should pass immediately
+4. Run `npm run wiki:lint` to validate page structure
 
-If your project has no `package.json`, use the raw script paths under `scripts/wiki/` instead (see [Managing the wiki](#managing-the-wiki)).
+If your project has no `package.json`, invoke the CLI directly (see [Managing the wiki](#managing-the-wiki)).
+
+Re-running `init` on an existing project is safe: it only creates missing scaffold files and does not overwrite your wiki content or `log.md`. To refresh wiki templates (`schema.md`, `wiki/AGENTS.md`, root `AGENTS.md`) and sync npm scripts after updating the package, use **upgrade**:
+
+```bash
+npx llm-wiki-manager upgrade
+npx llm-wiki-manager upgrade --dry-run   # preview changes
+```
+
+Install metadata is stored in `.llm-wiki-manager.json` at the project root.
 
 ---
 
@@ -125,7 +186,7 @@ npm run wiki:log -- add ingest "Title of source"
 
 ### Querying the wiki
 
-Ask your agent a question. It will read `wiki/index.md` to locate relevant pages, then synthesize an answer with citations. If the query reveals a gap, the agent should create a stub page (`status: draft`) to track it.
+Ask your agent a question. It will read `wiki/index.md` to locate relevant pages, then synthesize an answer with citations. If the query reveals a gap, the agent should create a stub page (`status: wip`) to track it.
 
 ```bash
 npm run wiki:log -- add query "Summary of the question"
@@ -141,16 +202,47 @@ npm run wiki:log -- add query "Summary of the question"
 
 ## Managing the wiki
 
-When `init` finds a `package.json`, it adds these npm scripts. Run `npm run wiki:help` anytime for a quick reference.
+All commands are subcommands of `llm-wiki-manager`. Run `npm run wiki:help` (or `npx llm-wiki-manager help`) anytime for a quick reference with typical workflows.
 
-| Script       | Command                                     | Purpose                                     |
-| ------------ | ------------------------------------------- | ------------------------------------------- |
-| `wiki:help`  | `node scripts/wiki/help.mjs`                | List commands, usage, and when to run them  |
-| `wiki:lint`  | `node scripts/wiki/lint.mjs`                | Validate frontmatter, links, and structure  |
-| `wiki:build` | `node scripts/wiki/build-index.mjs`         | Regenerate `index.md`                       |
-| `wiki:check` | `node scripts/wiki/build-index.mjs --check` | Verify `index.md` is up to date (read-only) |
-| `wiki:sync`  | `node scripts/wiki/sync-see-also.mjs`       | Sync `related:` frontmatter to body links   |
-| `wiki:log`   | `node scripts/wiki/log.mjs`                 | Append operation entries to `log.md`        |
+Global options (work with any command):
+
+```bash
+llm-wiki-manager --help      # list all subcommands
+llm-wiki-manager --version   # print installed package version
+DEBUG=1 llm-wiki-manager …   # print a full stack trace on errors (useful for bug reports)
+```
+
+When `init` finds a `package.json`, it adds the `wiki:*` npm scripts below. Project lifecycle commands (`init`, `upgrade`, `doctor`) are invoked directly — they are not npm scripts.
+
+| Command       | npm script         | Purpose                                                                    |
+| ------------- | ------------------ | -------------------------------------------------------------------------- |
+| `init`        | —                  | Scaffold a new wiki (see [Initializing](#initializing-the-wiki))           |
+| `upgrade`     | —                  | Refresh templates and migrate pages after a package update                 |
+| `doctor`      | —                  | Read-only scaffold health check                                            |
+| `help`        | `wiki:help`        | List wiki npm scripts with usage, when-to-run hints, and typical workflows |
+| `lint`        | `wiki:lint`        | Validate frontmatter, links, and structure                                 |
+| `build`       | `wiki:build`       | Regenerate `index.md`                                                      |
+| `check`       | `wiki:check`       | Verify `index.md` is up to date (read-only)                                |
+| `sync`        | `wiki:sync`        | Sync `related:` frontmatter to body links                                  |
+| `log`         | `wiki:log`         | Append operation entries to `log.md`                                       |
+| `setup-husky` | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide                        |
+
+Wiki subcommands (`lint`, `build`, `check`, `sync`, `log`) accept `--wiki-dir path/to/wiki` when the wiki is not at the default location. `--repo-root` is also available for advanced layouts.
+
+### Help — wiki command reference
+
+```bash
+npm run wiki:help
+# or: npx llm-wiki-manager help
+```
+
+Prints every `wiki:*` npm script with a one-line summary, when to run it, and an example command. Also lists typical workflows (ingest, edit pages, git hooks, package upgrades). This is the day-to-day reference for wiki maintenance.
+
+For the full CLI surface — including `init`, `upgrade`, and `doctor` — use top-level help:
+
+```bash
+llm-wiki-manager --help
+```
 
 ### Lint — validate structure
 
@@ -161,6 +253,7 @@ npm run wiki:lint
 Checks for:
 
 - Missing or invalid frontmatter fields
+- Block-style `- item` YAML lists in frontmatter (use inline arrays instead)
 - `related:` paths that don't resolve to existing files
 - Broken markdown links in page bodies
 - Wikilinks (`[[...]]`) that should be markdown links
@@ -171,8 +264,8 @@ Checks for:
 Options:
 
 ```bash
-node scripts/wiki/lint.mjs --warn-only          # report errors without exiting 1
-node scripts/wiki/lint.mjs --wiki-dir path/to/wiki
+llm-wiki-manager lint --warn-only          # report errors without exiting 1
+llm-wiki-manager lint --wiki-dir path/to/wiki
 ```
 
 ### Build index — regenerate index.md
@@ -187,7 +280,7 @@ Options:
 
 ```bash
 npm run wiki:build -- --wiki-dir path/to/wiki
-node scripts/wiki/build-index.mjs --wiki-dir path/to/wiki   # without npm scripts
+llm-wiki-manager build --wiki-dir path/to/wiki   # without npm scripts
 ```
 
 ### Check index — verify index.md is current
@@ -228,8 +321,41 @@ Options:
 
 ```bash
 npm run wiki:log -- add <op> "<title>" --wiki-dir path/to/wiki
-node scripts/wiki/log.mjs add <op> "<title>" --wiki-dir path/to/wiki   # without npm scripts
+llm-wiki-manager log add <op> "<title>" --wiki-dir path/to/wiki   # without npm scripts
 ```
+
+### Doctor — check scaffold health
+
+```bash
+npx llm-wiki-manager doctor
+```
+
+Read-only health check for an installed scaffold. Verifies the install config exists, the scaffold version matches the installed package (suggesting `upgrade` when behind), the wiki meta files are present, the root `AGENTS.md` still has its managed section, the `wiki:*` npm scripts are in sync, and `index.md` is up to date. Exits 1 if any problem is found — useful after `init`, before an `upgrade`, or when something feels off.
+
+### Upgrade — refresh templates after a package update
+
+```bash
+npx llm-wiki-manager upgrade
+```
+
+Refreshes wiki meta templates (`schema.md`, `wiki/AGENTS.md`, `wiki/README.md`), the root `AGENTS.md` managed section, and `wiki:*` npm scripts. Runs page migration (legacy frontmatter values), sync, build, and lint as post-upgrade steps. User-owned wiki pages and `log.md` are preserved.
+
+Options:
+
+```bash
+npx llm-wiki-manager upgrade --dry-run    # preview changes without writing files
+npx llm-wiki-manager upgrade --skip-pages # refresh templates only; skip migrate/sync/build/lint on pages
+```
+
+Re-running `init` only creates missing scaffold files; use `upgrade` to pick up template changes from a newer package version. Run `doctor` first to see what needs attention.
+
+### Setup Husky — wire pre-push wiki:check
+
+```bash
+npm run wiki:setup:husky
+```
+
+Activates Husky (if installed), creates `.husky/` when needed, and adds `npm run wiki:check` to `.husky/pre-push`. Re-running is safe — it skips hooks that are already configured. Also prints a lint-staged pre-commit guide. See [Optional git hooks](#optional-git-hooks) for the full Husky + lint-staged setup.
 
 ### Sync see-also — fix missing body links
 
@@ -244,7 +370,7 @@ Options:
 ```bash
 npm run wiki:sync -- --dry            # preview changes without writing
 npm run wiki:sync -- --wiki-dir path/to/wiki
-node scripts/wiki/sync-see-also.mjs --wiki-dir path/to/wiki   # without npm scripts
+llm-wiki-manager sync --wiki-dir path/to/wiki   # without npm scripts
 ```
 
 ---
@@ -255,17 +381,18 @@ Every wiki page must have YAML frontmatter:
 
 ```yaml
 ---
-type: concept # concept | source | overview | hub
+type: concept # overview | entity | comparison | deep-dive | concept | source | hub
 title: 'Page Title'
-last_updated: 2025-06-30
+last_updated: 2025-06-30T00:00:00Z
 tags: [auth, api]
-related: [] # relative paths from wiki root
-status: draft # draft | stable | archived
+related: [] # relative paths from wiki root — inline arrays only, not "- item" lists
+status: wip # active | wip | deprecated
 ---
 ```
 
-- Place pages in the directory matching their type: `concepts/`, `sources/`, or wiki root (overview/hub)
+- Place pages in the directory matching their type: `concepts/`, `sources/`, `entities/` (overview/entity/comparison/deep-dive), or hub pages at `README.md`, `index.md`, and `raw/raw.md`
 - Use markdown links `[Title](path.md)` — never wikilinks `[[...]]`
+- Write frontmatter arrays inline (`related: [a.md, b.md]`); block-style `- item` lists are rejected by lint
 - Every path in `related:` must also appear as a body link (run `npm run wiki:sync` to auto-add)
 - See `wiki/schema.md` for the full specification
 
@@ -275,50 +402,65 @@ status: draft # draft | stable | archived
 
 `init` does not install git hooks in your project — it only adds npm scripts when `package.json` exists. You can wire up hooks yourself if you want automated wiki checks.
 
-**Recommended pattern:** lint on commit (read-only), check index on push (read-only).
+### Recommended setup (Husky + lint-staged)
 
-| Hook       | Command              | Why                                                           |
-| ---------- | -------------------- | ------------------------------------------------------------- |
-| pre-commit | `npm run wiki:lint`  | Catch broken links and invalid frontmatter before commit      |
-| pre-push   | `npm run wiki:check` | Ensure `index.md` matches current pages without writing files |
+| Hook       | Command              | Why                                                               |
+| ---------- | -------------------- | ----------------------------------------------------------------- |
+| pre-push   | `npm run wiki:check` | Verify `index.md` is current (read-only; does not modify files)   |
+| pre-commit | `npx lint-staged`    | Run wiki build/lint only when staged files include `wiki/**/*.md` |
 
-Run `npm run wiki:build` manually (or via your agent workflow) after adding, removing, or renaming pages — it writes `index.md`, so it belongs in the edit workflow rather than as a silent pre-commit step.
+**1. Install dependencies**
 
-### Scoped pre-commit (only when wiki files change)
-
-Append to an existing `.husky/pre-commit` (or equivalent):
-
-```sh
-git diff --cached --name-only --diff-filter=ACM | grep -q '^wiki/' && npm run wiki:lint
+```bash
+npm install -D husky lint-staged prettier
 ```
 
-Replace `^wiki/` with your wiki directory if you chose a non-default name at init.
+**2. Pre-push — initialize Husky and wire `wiki:check`**
 
-### Pre-push index check
+```bash
+npm run wiki:setup:husky
+```
 
-Append to an existing `.husky/pre-push`:
+This activates Husky, creates `.husky/` if needed, and adds `npm run wiki:check` to `.husky/pre-push` (or appends it when the hook already exists). Re-running is safe — it skips hooks that are already configured.
+
+If you prefer to do it by hand, create `.husky/pre-push` with:
 
 ```sh
 npm run wiki:check
 ```
 
-These snippets use npm scripts and work cross-platform (including Windows/PowerShell).
-
-### Advanced: lint-staged
-
-If your project already uses [lint-staged](https://github.com/lint-staged/lint-staged), you can optionally add:
+**3. Pre-commit — add lint-staged config to `package.json`**
 
 ```json
-"wiki/**/*.md": ["npm run wiki:build", "npm run wiki:lint"]
+"lint-staged": {
+  "wiki/**/*.md": [
+    "npm run wiki:build",
+    "npm run wiki:lint",
+    "prettier --write"
+  ]
+}
 ```
 
-lint-staged re-stages any files modified by these tasks (including regenerated `index.md`).
+Adjust the glob if your wiki directory is not `wiki/`. lint-staged re-stages any files modified by these tasks (including regenerated `wiki/index.md`).
+
+**4. Pre-commit — create `.husky/pre-commit`**
+
+```sh
+npx lint-staged
+```
+
+### Minimal setup (no lint-staged)
+
+Run `npm run wiki:setup:husky` for pre-push only. Before committing wiki changes, run `npm run wiki:build` and `npm run wiki:lint` manually instead of using lint-staged.
 
 ---
 
 ## Requirements
 
-- Node.js 18 or later
+- Node.js **20.12 or later** to run the CLI (CI tests Node 20 and 24 on Linux and Windows)
+- For development on this repo, Node 24 — use [`.nvmrc`](.nvmrc) (`nvm use` / `fnm use`)
+
+For Node toolchain policy, `@types/node` alignment, and Dependabot/CI guardrails, see [wiki/concepts/node-version-and-types.md](wiki/concepts/node-version-and-types.md).
 
 ---
 
@@ -327,9 +469,12 @@ lint-staged re-stages any files modified by these tasks (including regenerated `
 ```bash
 git clone https://github.com/lggarrison/llm-wiki-manager.git
 cd llm-wiki-manager
+nvm use              # or: fnm use  (Node 24 — see .nvmrc)
 npm install          # also sets up Husky git hooks and builds dist/
 npm run build        # compile TypeScript to dist/
 npm test             # run the vitest suite
+npm run test:e2e     # end-to-end CLI workflow tests (builds dist/ first)
+npm run release:check # full gate: lint, format, tests, e2e, wiki:lint, wiki:check
 npm run lint         # check with ESLint
 npm run lint:fix     # auto-fix ESLint issues
 npm run format       # format with Prettier
@@ -338,200 +483,46 @@ npm run format:check # verify formatting without writing
 
 The compiled CLI entry point is `dist/bin/cli.js` (built from `bin/cli.ts`). The `prepare` script sets up Husky and runs the build automatically on install and before publishing, so `dist/` is always present in the published package.
 
+### Internal wiki
+
+This repo dogfoods its own wiki workflow. Internal knowledge about `src/` and `templates/` lives in:
+
+- [`wiki/index.md`](wiki/index.md) — auto-generated page catalog
+- [`wiki/AGENTS.md`](wiki/AGENTS.md) — agent instructions (`AGENTS.md` at repo root points here)
+
+Run `npm run wiki:help` for wiki commands. CI and `release:check` run `wiki:lint` and `wiki:check`. Wiki operations are implemented as `llm-wiki-manager` subcommands in `src/wiki/` — no scripts are copied into consumer projects.
+
+Note: this repo's own `wiki:*` npm scripts call `node dist/bin/cli.js` directly, because npm does not link a package's own `bin` into its own `node_modules/.bin`. Consumer projects get the `llm-wiki-manager <command>` form. Run `npm run build` before the `wiki:*` scripts after changing `src/`, and don't run `upgrade` against this repo (it would rewrite the scripts to the consumer form).
+
 ### Code quality & git hooks
 
 This repo uses [ESLint](https://eslint.org), [Prettier](https://prettier.io), and [Husky](https://typicode.github.io/husky/) with [lint-staged](https://github.com/lint-staged/lint-staged):
 
-- **pre-commit** — runs `lint-staged`, applying `eslint --fix` and `prettier --write` to staged files
-- **pre-push** — runs the full test suite (`npm test`)
+- **pre-commit** — `npx lint-staged` (wiki pages run `wiki:build`, `wiki:lint`, and Prettier via `package.json`)
+- **pre-push** — `npm run release:check` (lint, format, tests, build, and wiki checks)
 
 Husky is only installed in the local development repo; it is skipped automatically in CI, production installs, and when the package is consumed as a dependency.
 
 Issues and pull requests are welcome at [github.com/lggarrison/llm-wiki-manager](https://github.com/lggarrison/llm-wiki-manager/issues).
 
-### Releasing
+### Releases
 
-A release has two parts: a **GitHub release** (git tag + release notes on GitHub) and an **npm publish** (package on the npm registry). You can do both together or ship to GitHub first and publish to npm later.
-
-Users install from GitHub today with:
+Every version tag is published to [npm](https://www.npmjs.com/package/llm-wiki-manager) and as a [GitHub Release](https://github.com/lggarrison/llm-wiki-manager/releases) at the same time. Pin a specific version:
 
 ```bash
-npx github:lggarrison/llm-wiki-manager init
+npx llm-wiki-manager@1.0.0 init
+# or from GitHub:
+npx github:lggarrison/llm-wiki-manager#v1.0.0 init
 ```
 
-After you tag a release, they can pin a version:
-
-```bash
-npx github:lggarrison/llm-wiki-manager#v0.1.1 init
-```
-
-#### One-time setup
-
-**GitHub**
-
-1. Install the [GitHub CLI](https://cli.github.com/) (`gh`) for terminal releases, or use the GitHub website (steps below).
-2. Authenticate once:
-
-   ```bash
-   gh auth login
-   ```
-
-**npm** (skip until you are ready to publish to the registry)
-
-1. Create an [npm account](https://www.npmjs.com/signup) if you do not have one.
-2. Log in from your machine:
-
-   ```bash
-   npm login
-   ```
-
-3. Confirm you are logged in as the account that should own the package:
-
-   ```bash
-   npm whoami
-   ```
-
-#### Version numbers (semver)
-
-Use [semantic versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
-
-| Bump  | When to use it                                      | Example           |
-| ----- | --------------------------------------------------- | ----------------- |
-| patch | Bug fixes, docs, internal changes — no new behavior | `0.1.0` → `0.1.1` |
-| minor | New features that stay backward compatible          | `0.1.0` → `0.2.0` |
-| major | Breaking changes (CLI flags, output, file layout)   | `0.1.0` → `1.0.0` |
-
-While the package is `0.x.y`, treat **minor** bumps as the place for breaking changes if you prefer not to jump to `1.0.0` yet.
-
-Tags use a `v` prefix to match npm convention: `v0.1.1` for version `0.1.1`.
-
-#### Pre-release checklist
-
-Run this on a clean `main` branch with all changes merged:
-
-```bash
-git checkout main
-git pull
-npm run release:check
-```
-
-`release:check` runs lint, format check, tests, and a production build — the same gates as CI (`pre-push` runs tests; lint/format are enforced on commit).
-
-Optionally add a `CHANGELOG.md` entry describing what changed since the last release. There is no changelog file yet; creating one before the first release is a good habit. You can paste that text into the GitHub Release notes.
-
-#### Release script (copy and adapt)
-
-Replace `patch` with `minor` or `major` as needed. On Windows PowerShell 7+, `&&` works as shown; on older PowerShell, run each command on its own line.
-
-```bash
-# 1. Verify everything passes
-npm run release:check
-
-# 2. Bump version — updates package.json + package-lock.json, commits, and tags (e.g. v0.1.1)
-npm version patch -m "Release %s"
-
-# 3. Push the commit and tag to GitHub
-git push origin main
-git push origin --tags
-
-# 4. Create a GitHub Release from the tag (see "GitHub Release" below for the web UI alternative)
-gh release create v0.1.1 --title "v0.1.1" --generate-notes
-
-# 5. (When ready) Publish to npm — prepublishOnly runs `npm run build` automatically
-npm publish
-```
-
-After the first npm publish, update the [Installation](#installation) section if you want to highlight the npm install path as the default.
-
-#### GitHub Release
-
-A **git tag** marks the exact commit for a version. A **GitHub Release** attaches human-readable notes to that tag on the [Releases page](https://github.com/lggarrison/llm-wiki-manager/releases). Step 2 (`npm version`) creates the tag locally; step 3 pushes it; step 4 publishes the release.
-
-**Option A — GitHub CLI (recommended)**
-
-```bash
-# Auto-generate notes from merged PRs since the last tag
-gh release create v0.1.1 --title "v0.1.1" --generate-notes
-
-# Or write notes yourself (opens your editor)
-gh release create v0.1.1 --title "v0.1.1" --notes "Brief summary of what changed."
-
-# Or pass a changelog file
-gh release create v0.1.1 --title "v0.1.1" --notes-file CHANGELOG.md
-```
-
-Use the same version in the tag name as in `package.json` (with a `v` prefix).
-
-**Option B — GitHub website**
-
-1. Open [github.com/lggarrison/llm-wiki-manager/releases](https://github.com/lggarrison/llm-wiki-manager/releases).
-2. Click **Draft a new release**.
-3. Click **Choose a tag**, type `v0.1.1` (match `package.json`), and select **Create new tag on publish** if the tag is not listed yet. Target branch: `main`.
-4. Set the release title to `v0.1.1`.
-5. Click **Generate release notes** or write a short summary of changes.
-6. Click **Publish release**.
-
-**Verify the GitHub release**
-
-```bash
-# List releases
-gh release list
-
-# Install the tagged version (smoke test)
-npx github:lggarrison/llm-wiki-manager#v0.1.1 --help
-```
-
-#### Publish to npm
-
-Skip this section until you want the package on [npmjs.com](https://www.npmjs.com/). GitHub releases alone are enough for `npx github:...` installs.
-
-```bash
-npm publish
-```
-
-`prepublishOnly` rebuilds `dist/` before upload. Only `dist/` and `templates/` are published (see `"files"` in `package.json`).
-
-**Dry run** — see what would be uploaded without publishing:
-
-```bash
-npm pack --dry-run
-```
-
-You can also generate the tarball locally:
-
-```bash
-npm pack
-# produces llm-wiki-manager-0.1.0.tgz — delete it when done inspecting
-```
-
-#### What each step does
-
-| Step                     | What happens                                                                                                                                                                             |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm version patch`      | Sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 0.1.1`, and tags it `v0.1.1`. Use `minor` or `major` instead of `patch` when appropriate. |
-| `git push origin main`   | Pushes the version-bump commit to GitHub.                                                                                                                                                |
-| `git push origin --tags` | Uploads the `v0.1.1` tag so GitHub knows which commit to release.                                                                                                                        |
-| `gh release create`      | Creates the release on GitHub with notes; users can browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases) and install with `#v0.1.1`.                               |
-| `npm publish`            | Uploads the package to npm so users can run `npx llm-wiki-manager` without the `github:` prefix.                                                                                         |
-
-#### If something goes wrong
-
-**Before pushing**
-
-- Undo the version bump locally: `git tag -d v0.1.1` then `git reset --hard HEAD~1`.
-
-**After pushing to GitHub**
-
-- **Wrong tag, nobody has used it yet** — delete the remote tag (`git push origin --delete v0.1.1`), delete the GitHub Release (Releases page → release → Delete), fix locally, and re-run the release steps.
-- **Forgot the GitHub Release** — the tag still exists; create the release later with `gh release create v0.1.1` or the website.
-- **Tag pushed but forgot to publish to npm** — check out the tagged commit and run `npm publish`.
-
-**npm-specific**
-
-- **Published the wrong version** — npm does not allow re-publishing the same version number. Bump to a new patch (e.g. `0.1.2`), fix the issue, and publish again. Use `npm unpublish` only in rare cases within 72 hours and only if you are sure no one depends on that version ([npm unpublish policy](https://docs.npmjs.com/policies/unpublish)).
+Release history is in [CHANGELOG.md](CHANGELOG.md). Maintainers: see [RELEASING.md](RELEASING.md) for the full cut-a-release runbook.
 
 ---
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, the branch model, and how to open a pull request. Release history is in [CHANGELOG.md](CHANGELOG.md); maintainers see [RELEASING.md](RELEASING.md). To report a security issue privately, see [SECURITY.md](SECURITY.md).

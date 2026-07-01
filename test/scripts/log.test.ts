@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { spawnSync } from 'child_process';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
-import { makeTmpWikiDir, cleanup, scriptPath } from '../helpers/wiki.js';
+import { tmpdir } from 'os';
+import { makeTmpWikiDir, cleanup } from '../helpers/wiki.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const dirs: string[] = [];
 function newWikiDirWithLog(): string {
@@ -13,31 +14,39 @@ function newWikiDirWithLog(): string {
 }
 
 afterEach(() => {
-  for (const dir of dirs.splice(0)) cleanup(dir);
+  for (const dir of dirs.splice(0)) {
+    if (dir.includes('llm-wiki-log-test-')) rmSync(dir, { recursive: true, force: true });
+    else cleanup(dir);
+  }
 });
 
 function runLog(wikiDir: string, args: string[]) {
-  return spawnSync('node', [scriptPath('log.mjs'), ...args, '--wiki-dir', wikiDir], {
-    encoding: 'utf8',
-  });
+  return runBuiltCli(wikiDir, ['log', ...args, '--wiki-dir', wikiDir]);
 }
 
-describe('log.mjs', () => {
-  it("appends an entry with today's date by default", () => {
+describe('log command', () => {
+  it('appends an entry with a UTC ISO timestamp by default', () => {
     const dir = newWikiDirWithLog();
     const result = runLog(dir, ['add', 'ingest', 'Test Source']);
     expect(result.status).toBe(0);
     const log = readFileSync(join(dir, 'log.md'), 'utf8');
-    const today = new Date().toISOString().slice(0, 10);
-    expect(log).toContain(`## [${today}] ingest | Test Source`);
+    expect(log).toMatch(/## \[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\] ingest \| Test Source/);
   });
 
-  it('honors an explicit --date flag', () => {
+  it('normalizes a bare --date to a UTC ISO timestamp', () => {
     const dir = newWikiDirWithLog();
     const result = runLog(dir, ['add', 'query', 'Old question', '--date=2025-01-15']);
     expect(result.status).toBe(0);
     const log = readFileSync(join(dir, 'log.md'), 'utf8');
-    expect(log).toContain('## [2025-01-15] query | Old question');
+    expect(log).toContain('## [2025-01-15T00:00:00Z] query | Old question');
+  });
+
+  it('honors a full ISO timestamp --date flag', () => {
+    const dir = newWikiDirWithLog();
+    const result = runLog(dir, ['add', 'query', 'Precise', '--date=2025-01-15T09:30:00Z']);
+    expect(result.status).toBe(0);
+    const log = readFileSync(join(dir, 'log.md'), 'utf8');
+    expect(log).toContain('## [2025-01-15T09:30:00Z] query | Precise');
   });
 
   it('accepts all valid operations', () => {
@@ -70,6 +79,23 @@ describe('log.mjs', () => {
     const result = runLog(dir, ['add', 'ingest']);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('Title is required');
+  });
+
+  it('resolves wiki dir from install config when --wiki-dir is omitted', () => {
+    const projectDir = mkdtempSync(join(tmpdir(), 'llm-wiki-log-test-'));
+    dirs.push(projectDir);
+    const wikiDir = join(projectDir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+    writeFileSync(join(wikiDir, 'log.md'), '# Log\n');
+    writeFileSync(
+      join(projectDir, '.llm-wiki-manager.json'),
+      JSON.stringify({ version: '0.1.0', projectName: 'acme', wikiDir: 'wiki', focusDirs: [] }) +
+        '\n',
+    );
+    const result = runBuiltCli(projectDir, ['log', 'add', 'ingest', 'No wiki dir flag']);
+    expect(result.status).toBe(0);
+    const log = readFileSync(join(wikiDir, 'log.md'), 'utf8');
+    expect(log).toContain('ingest | No wiki dir flag');
   });
 
   it('fails when log.md does not exist', () => {

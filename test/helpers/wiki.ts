@@ -1,14 +1,14 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { join, dirname } from 'path';
 import { tmpdir } from 'os';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { runBuiltCli } from './cli.js';
+import { PACKAGE_ROOT } from './paths.js';
 
-export const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+export { PACKAGE_ROOT };
 
 export function makeTmpWikiDir(): string {
   const dir = mkdtempSync(join(tmpdir(), 'llm-wiki-test-'));
-  for (const sub of ['concepts', 'sources', 'raw']) {
+  for (const sub of ['concepts', 'sources', 'entities', 'raw/articles']) {
     mkdirSync(join(dir, sub), { recursive: true });
   }
   return dir;
@@ -29,10 +29,10 @@ export function fm(fields: Record<string, string | string[]> = {}): string {
   const defaults: Record<string, string | string[]> = {
     type: 'concept',
     title: 'Test Page',
-    last_updated: '2026-01-01',
+    last_updated: '2026-01-01T00:00:00Z',
     tags: [],
     related: [],
-    status: 'draft',
+    status: 'wip',
   };
   const merged = { ...defaults, ...fields };
   const lines = Object.entries(merged).map(([k, v]) => {
@@ -42,6 +42,18 @@ export function fm(fields: Record<string, string | string[]> = {}): string {
   return `---\n${lines.join('\n')}\n---\n`;
 }
 
-export function scriptPath(name: string): string {
-  return join(PACKAGE_ROOT, 'templates', 'scripts', name);
+export function runWikiCli(
+  cwd: string,
+  command: string,
+  args: string[] = [],
+): ReturnType<typeof runBuiltCli> {
+  return runBuiltCli(cwd, [command, '--wiki-dir', cwd, ...args]);
+}
+
+export function runWikiCliWithWikiDir(
+  wikiDir: string,
+  command: string,
+  args: string[] = [],
+): ReturnType<typeof runBuiltCli> {
+  return runBuiltCli(wikiDir, [command, '--wiki-dir', wikiDir, ...args]);
 }

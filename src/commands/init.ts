@@ -1,22 +1,59 @@
 import { intro, outro, text, isCancel, cancel, log } from '@clack/prompts';
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { basename, join, resolve } from 'path';
 import pc from 'picocolors';
 import {
   templatePath,
-  copyTemplate,
   amendFile,
   interpolate,
   mergePackageJsonScripts,
+  scaffoldWikiEmptyDirs,
+  scaffoldEntityOverviews,
+  scaffoldWikiTemplates,
+  buildTemplateVars,
+  writeInstallConfig,
+  getPackageVersion,
+  isExistingInstall,
+  readInstallConfig,
 } from '../utils/fs.js';
+import { resolveWikiContext } from '../wiki/context.js';
+import { runBuild } from '../wiki/build-index.js';
 
-export async function init(): Promise<void> {
-  intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
+type InitFlagValues = {
+  projectName: string;
+  wikiDir: string;
+  focusDirs: string;
+};
 
+function parseInitArgs(argv: string[]): InitFlagValues | null {
+  const flagIndex = argv.indexOf('--project-name');
+  if (flagIndex === -1) return null;
+
+  const projectName = argv[flagIndex + 1]?.trim();
+  if (!projectName) {
+    throw new Error('--project-name requires a value');
+  }
+
+  const readFlag = (name: string, fallback: string): string => {
+    const idx = argv.indexOf(name);
+    if (idx === -1) return fallback;
+    const value = argv[idx + 1]?.trim();
+    if (!value) throw new Error(`${name} requires a value`);
+    return value;
+  };
+
+  return {
+    projectName,
+    wikiDir: readFlag('--wiki-dir', 'wiki'),
+    focusDirs: readFlag('--focus-dirs', ''),
+  };
+}
+
+async function promptInitValues(): Promise<InitFlagValues> {
   const projectName = await text({
     message: 'Project name (used in AGENTS.md and schema.md)',
     initialValue: basename(process.cwd()),
-    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
+    validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(projectName)) {
     cancel('Cancelled');
@@ -26,19 +63,9 @@ export async function init(): Promise<void> {
   const wikiDir = await text({
     message: 'Wiki directory name',
     initialValue: 'wiki',
-    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
+    validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(wikiDir)) {
-    cancel('Cancelled');
-    process.exit(0);
-  }
-
-  const scriptsDir = await text({
-    message: 'Scripts directory',
-    initialValue: 'scripts/wiki',
-    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
-  });
-  if (isCancel(scriptsDir)) {
     cancel('Cancelled');
     process.exit(0);
   }
@@ -52,47 +79,63 @@ export async function init(): Promise<void> {
     process.exit(0);
   }
 
-  const focusDirList = (focusDirs ?? '')
+  return {
+    projectName: (projectName as string).trim(),
+    wikiDir: (wikiDir as string).trim(),
+    focusDirs: typeof focusDirs === 'string' ? focusDirs.trim() : '',
+  };
+}
+
+export async function init(): Promise<void> {
+  intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
+
+  const fromFlags = parseInitArgs(process.argv.slice(3));
+  const values = fromFlags ?? (await promptInitValues());
+
+  const focusDirList = values.focusDirs
     .split(',')
-    .map((s: string) => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 
-  const vars: Record<string, string> = {
-    PROJECT_NAME: (projectName as string).trim(),
-    WIKI_DIR: (wikiDir as string).trim(),
-    SCRIPTS_DIR: (scriptsDir as string).trim(),
-    INIT_DATE: new Date().toISOString().slice(0, 10),
-    FOCUS_DIRS:
-      focusDirList.length > 0
-        ? focusDirList.map((d: string) => `\`${d}/\``).join(', ')
-        : 'the entire project',
-    FOCUS_DIRS_LIST:
-      focusDirList.length > 0
-        ? focusDirList.map((d: string) => `- \`${d}/\``).join('\n')
-        : '- _(whole project — no specific directory scope)_',
-  };
+  const wikiDirStr = values.wikiDir;
+  const projectNameStr = values.projectName;
+  const initTimestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+  const vars = buildTemplateVars({
+    projectName: projectNameStr,
+    wikiDir: wikiDirStr,
+    focusDirs: focusDirList,
+    initTimestamp,
+  });
 
   const cwd = process.cwd();
-  const wikiDest = resolve(cwd, (wikiDir as string).trim());
-  const scriptsDest = resolve(cwd, (scriptsDir as string).trim());
+  const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
+  const reInit = isExistingInstall(cwd, wikiDirStr);
 
-  // 1. Scaffold wiki directory
-  log.step('Scaffolding wiki directory…');
-  copyTemplate(templatePath('wiki'), wikiDest, vars);
-  for (const sub of ['concepts', 'sources', 'raw']) {
-    mkdirSync(join(wikiDest, sub), { recursive: true });
-    // place a .gitkeep so the directory is tracked by git
-    const keep = join(wikiDest, sub, '.gitkeep');
-    if (!existsSync(keep)) writeFileSync(keep, '');
+  if (reInit) {
+    log.warn('Existing wiki detected — only missing scaffold files will be created.');
+    log.info(`To refresh templates, run ${pc.bold('npx llm-wiki-manager upgrade')}.`);
   }
 
-  // 2. Scaffold management scripts
-  log.step('Installing management scripts…');
-  copyTemplate(templatePath('scripts'), scriptsDest, vars);
+  log.step('Scaffolding wiki directory…');
+  const wikiResult = scaffoldWikiTemplates(wikiDest, vars, { overwrite: false });
+  if (wikiResult.created.length > 0) {
+    log.info(`Created: ${wikiResult.created.join(', ')}`);
+  }
+  if (reInit && wikiResult.skipped.length > 0) {
+    log.info(`Skipped existing: ${wikiResult.skipped.length} template file(s)`);
+  }
+  scaffoldWikiEmptyDirs(wikiDest);
+  if (focusDirList.length > 0) {
+    scaffoldEntityOverviews(wikiDest, focusDirList, initTimestamp);
+  }
 
-  // 3. Add npm scripts to package.json (when present)
-  const pkgResult = mergePackageJsonScripts(cwd, vars.SCRIPTS_DIR);
+  // Generate index.md from the scaffolded pages so wiki:check passes immediately
+  log.step('Building index.md…');
+  runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr }));
+
+  const pkgResult = mergePackageJsonScripts(cwd);
   if (pkgResult.status === 'merged') {
     log.step(`Adding npm scripts to package.json (${pkgResult.added.join(', ')})…`);
   } else if (pkgResult.status === 'no-package-json') {
@@ -101,24 +144,37 @@ export async function init(): Promise<void> {
     log.warn('package.json already has wiki scripts — skipped.');
   }
 
-  // 4. Create or amend AGENTS.md
   log.step('Writing AGENTS.md…');
   const agentsTemplate = readFileSync(templatePath('AGENTS.md'), 'utf8');
   const agentsContent = interpolate(agentsTemplate, vars);
 
   const amended = amendFile(agentsDest, agentsContent);
   if (!amended) {
-    log.warn('AGENTS.md already contains an llm-wiki-manager section — skipped.');
+    log.warn(
+      'AGENTS.md already contains an llm-wiki-manager section — skipped. Run upgrade to refresh.',
+    );
   }
+
+  const existingConfig = readInstallConfig(cwd);
+  writeInstallConfig(cwd, {
+    version: getPackageVersion(),
+    projectName: projectNameStr,
+    wikiDir: wikiDirStr,
+    focusDirs: focusDirList.length > 0 ? focusDirList : (existingConfig?.focusDirs ?? []),
+  });
 
   outro(
     pc.green('Done!') +
       ' Next steps:\n' +
-      `  • Review ${pc.bold(join((wikiDir as string).trim(), 'schema.md'))} to understand wiki conventions\n` +
+      `  • Review ${pc.bold(join(wikiDirStr, 'schema.md'))} to understand wiki conventions\n` +
       `  • Run ${pc.bold('npm run wiki:help')} for a list of wiki commands\n` +
       `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
       `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
-      `  • See AGENTS.md for instructions to give your LLM agent\n` +
-      `  • Optional: add git hooks — see README "Optional git hooks"`,
+      `  • Open ${pc.bold(join(wikiDirStr, 'README.md'))} (human entry) and ${pc.bold(join(wikiDirStr, 'AGENTS.md'))} (agent entry)\n` +
+      (reInit
+        ? `  • Run ${pc.bold('npx llm-wiki-manager upgrade')} to refresh template files\n`
+        : '') +
+      `  • Optional git hooks (Husky + lint-staged) — see README "Optional git hooks"\n` +
+      `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n`,
   );
 }

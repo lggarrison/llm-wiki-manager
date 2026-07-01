@@ -1,6 +1,6 @@
 {
   "name": "llm-wiki-manager",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Scaffold and manage an LLM-maintained personal wiki",
   "type": "module",
   "bin": {
@@ -11,7 +11,7 @@
     "templates"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20.12.0"
   },
   "repository": {
     "type": "git",
@@ -23,21 +23,23 @@
   },
   "author": "lggarrison",
   "dependencies": {
-    "@clack/prompts": "^0.9.1",
+    "@clack/prompts": "^1.6.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.0",
+    "check-node-types": "^1.0.0",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.7.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.4.0",
+    "lint-staged": "^17.0.8",
+    "npm-run-all2": "^9.0.2",
     "prettier": "^3.9.4",
-    "typescript": "^5.5.0",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.9"
   },
   "scripts": {
     "build": "tsc",
@@ -47,12 +49,26 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check:node-types": "check-node-types --source nvmrc",
     "test": "vitest run",
-    "release:check": "npm run lint && npm run format:check && npm test && npm run build"
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "release:check": "run-s check:node-types lint format:check test build test:e2e wiki:lint wiki:check",
+    "wiki:help": "node dist/bin/cli.js help",
+    "wiki:lint": "node dist/bin/cli.js lint",
+    "wiki:build": "node dist/bin/cli.js build",
+    "wiki:check": "node dist/bin/cli.js check",
+    "wiki:sync": "node dist/bin/cli.js sync",
+    "wiki:log": "node dist/bin/cli.js log",
+    "wiki:setup:husky": "node dist/bin/cli.js setup-husky"
   },
   "lint-staged": {
     "*.{ts,js,mjs,cjs}": [
       "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "wiki/**/*.md": [
+      "npm run wiki:build",
+      "npm run wiki:lint",
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [

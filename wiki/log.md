@@ -10,3 +10,5 @@ Managed by `node scripts/wiki/log.mjs`.
 Wiki scaffolded by llm-wiki-manager.
 
 ## [2026-06-30] maintenance | seed initial concept pages
+
+## [2026-07-01] maintenance | Upgraded llm-wiki-manager to v0.1.0

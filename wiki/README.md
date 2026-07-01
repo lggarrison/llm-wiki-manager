@@ -19,3 +19,5 @@ Human entry point for browsing this vault in Obsidian (or any markdown viewer).
 - **`raw/`** — immutable inputs ([raw.md](raw/raw.md) hub → `articles/`, `prs/`, etc.)
 
 Open this folder as an Obsidian vault. Vault settings live in `.obsidian/` (committed).
+
+Content in `entities/`, `concepts/`, and `sources/` grows through your day-to-day work — the scaffold only creates empty structure and scope stubs.

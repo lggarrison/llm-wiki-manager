@@ -8,7 +8,7 @@
 
 | Title | Status | Updated |
 | --- | --- | --- |
-| [Raw Sources](raw/raw.md) | active | 2026-06-30 |
+| [Raw Sources](raw/raw.md) | active | 2026-07-01 |
 
 ## Entities
 
@@ -24,9 +24,11 @@
 | Title | Tags | Status | Updated |
 | --- | --- | --- | --- |
 | [Dogfooding](concepts/dogfooding.md) | dogfooding, architecture | active | 2026-06-30 |
+| [E2E Tests](concepts/e2e-tests.md) | testing, vitest, cli | active | 2026-06-30 |
 | [Init Command](concepts/init-command.md) | cli, scaffold | active | 2026-06-30 |
 | [Repository Layout](concepts/repo-layout.md) | architecture | active | 2026-06-30 |
 | [Template System](concepts/template-system.md) | templates, scaffold | active | 2026-06-30 |
+| [Unit Tests](concepts/unit-tests.md) | testing, vitest | active | 2026-06-30 |
 | [Wiki Management Scripts](concepts/wiki-scripts.md) | scripts, lint, maintenance | active | 2026-06-30 |
 
 ## Sources

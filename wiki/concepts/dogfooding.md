@@ -3,7 +3,7 @@ type: concept
 title: Dogfooding
 last_updated: 2026-06-30
 tags: [dogfooding, architecture]
-related: [concepts/repo-layout.md, concepts/template-system.md]
+related: [concepts/repo-layout.md, concepts/template-system.md, concepts/unit-tests.md]
 status: active
 summary: How llm-wiki-manager uses its own wiki workflow internally — scaffold, validation, and template refresh.
 ---
@@ -38,11 +38,15 @@ Dogfooding is enforced, not decorative:
 
 - **`release:check`** and **CI** run `wiki:lint` and `wiki:check`
 - **pre-commit** runs `wiki:lint` when staged files include `wiki/`
-- **`test/scripts/dogfood-sync.test.ts`** asserts `scripts/wiki/` matches interpolated `templates/scripts/`
+- **`test/scripts/dogfood-sync.test.ts`** asserts `scripts/wiki/` matches interpolated `templates/scripts/` (see [Unit Tests](unit-tests.md))
 
 ## Refreshing after template changes
 
-When editing `templates/scripts/`, refresh the dogfooded copy:
+Two workflows apply depending on what changed.
+
+### Scripts only (`templates/scripts/`)
+
+When editing wiki maintenance scripts, refresh the dogfooded copy:
 
 ```bash
 npm run build
@@ -55,6 +59,34 @@ npm run wiki:check
 
 The bootstrap script copies `templates/scripts/` → `scripts/wiki/` with placeholders resolved. It does **not** overwrite wiki content pages.
 
+### Full upgrade (wiki meta, root AGENTS.md, migrations)
+
+When `templates/wiki/` or `templates/AGENTS.md` change — or you want the same end-to-end refresh a consumer gets after updating the package — run **upgrade** from the **repo root**:
+
+```bash
+npm run build
+node dist/bin/cli.js upgrade
+```
+
+Preview changes first:
+
+```bash
+node dist/bin/cli.js upgrade --dry-run
+```
+
+Upgrade refreshes scaffold files without touching wiki content:
+
+| Refreshed                          | Preserved                                         |
+| ---------------------------------- | ------------------------------------------------- |
+| `scripts/wiki/`                    | `wiki/entities/`, `concepts/`, `sources/`, `raw/` |
+| `wiki/schema.md`, `wiki/AGENTS.md` | `wiki/log.md` (appended to, not overwritten)      |
+| Root `AGENTS.md` managed section   |                                                   |
+| `package.json` `wiki:*` scripts    |                                                   |
+
+It also runs post-upgrade scripts (page migration, sync, build, warn-only lint) and appends an entry to `wiki/log.md`. Paths are read from `.llm-wiki-manager.json` when present; otherwise inferred from `wiki/schema.md`, root `AGENTS.md`, and `package.json`.
+
+Optional flags: `--skip-scripts`, `--skip-pages`.
+
 See [Template System](template-system.md) for how interpolation works.
 
 ## See also
@@ -63,3 +95,4 @@ See [Template System](template-system.md) for how interpolation works.
 - [Template System](template-system.md)
 - [Init Command](init-command.md)
 - [Wiki Management Scripts](wiki-scripts.md)
+- [Unit Tests](unit-tests.md)

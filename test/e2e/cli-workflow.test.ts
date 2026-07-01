@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli, runNodeScript } from '../helpers/cli.js';
-import { fm, writePage } from '../helpers/wiki.js';
+import { fm, writePage, PACKAGE_ROOT } from '../helpers/wiki.js';
 
 const tmpDirs: string[] = [];
 
@@ -126,5 +126,35 @@ describe('CLI e2e workflow', () => {
     const content = readFileSync(join(dir, 'wiki', 'concepts', 'legacy.md'), 'utf8');
     expect(content).toContain('status: wip');
     expect(content).not.toContain('status: draft');
+  });
+});
+
+describe('CLI meta flags', () => {
+  const packageVersion = (
+    JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as { version: string }
+  ).version;
+
+  it('--version prints the package version and exits 0', () => {
+    const dir = makeTmpProject();
+    const result = runBuiltCli(dir, ['--version']);
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toBe(packageVersion);
+  });
+
+  it('--help prints usage listing both commands and exits 0', () => {
+    const dir = makeTmpProject();
+    const result = runBuiltCli(dir, ['--help']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Usage: llm-wiki-manager');
+    expect(result.stdout).toContain('init');
+    expect(result.stdout).toContain('upgrade');
+  });
+
+  it('an unknown command exits 1 with usage on stderr', () => {
+    const dir = makeTmpProject();
+    const result = runBuiltCli(dir, ['bogus']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Unknown command: bogus');
+    expect(result.stderr).toContain('Usage: llm-wiki-manager');
   });
 });

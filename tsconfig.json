@@ -12,5 +12,5 @@
     "sourceMap": true
   },
   "include": ["bin", "src"],
-  "exclude": ["node_modules", "dist", "templates"]
+  "exclude": ["node_modules", "dist", "templates", "**/*.test.ts"]
 }

@@ -1,5 +1,7 @@
 # LLM Wiki — Agent Entry
 
+The wiki implements Karpathy's LLM-Wiki pattern: a persistent, compounding knowledge base that an LLM agent owns and maintains, sitting between the team and the raw sources. It is plain markdown, doubles as an Obsidian vault, and is wired into the repo's tooling (npm scripts, a pre-commit hook, and tool-specific discovery shims) so it stays current as the code changes. Code in your app's source code remains the source of truth for behavior; wiki pages describe and cite code (via `code_refs:` frontmatter) but never duplicate it.
+
 Read **`schema.md`** first for the full specification. This file is the quick orientation for agents maintaining this vault.
 
 **Documentation scope** — the entire project

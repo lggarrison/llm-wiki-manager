@@ -363,6 +363,8 @@ Run `npm run wiki:setup:husky` for pre-push only. Before committing wiki changes
 - Node.js 18 or later (to run the CLI and wiki scripts)
 - Node.js 24 for local development — use [`.nvmrc`](.nvmrc) (`nvm use` / `fnm use`)
 
+For why `@types/node` must match `.nvmrc` and how Dependabot/CI enforce it, see [wiki/concepts/node-version-and-types.md](wiki/concepts/node-version-and-types.md).
+
 ---
 
 ## Development

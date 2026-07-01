@@ -1,9 +1,15 @@
 ---
 type: concept
 title: Dogfooding
-last_updated: 2026-06-30T00:00:00Z
+last_updated: 2026-07-01T20:30:00Z
 tags: [dogfooding, architecture]
-related: [concepts/repo-layout.md, concepts/template-system.md, concepts/unit-tests.md]
+related:
+  [
+    concepts/repo-layout.md,
+    concepts/node-version-and-types.md,
+    concepts/template-system.md,
+    concepts/unit-tests.md,
+  ]
 status: active
 summary: How llm-wiki-manager uses its own wiki workflow internally — scaffold, validation, and template refresh.
 ---
@@ -37,7 +43,7 @@ Do not migrate install docs into the wiki. Add concept pages when design decisio
 
 Dogfooding is enforced, not decorative:
 
-- **`release:check`** and **CI** run `wiki:lint` and `wiki:check`
+- **`release:check`** and **CI** run `check:node-types`, then `wiki:lint` and `wiki:check` (see [Node Version and @types/node Alignment](node-version-and-types.md))
 - **pre-commit** runs `wiki:lint` when staged files include `wiki/`
 - **`test/scripts/dogfood-sync.test.ts`** asserts `scripts/wiki/` matches interpolated `templates/scripts/` (see [Unit Tests](unit-tests.md))
 
@@ -93,6 +99,7 @@ See [Template System](template-system.md) for how interpolation works.
 ## See also
 
 - [Repository Layout](repo-layout.md)
+- [Node Version and @types/node Alignment](node-version-and-types.md)
 - [Template System](template-system.md)
 - [Init Command](init-command.md)
 - [Wiki Management Scripts](wiki-scripts.md)

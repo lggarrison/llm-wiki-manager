@@ -61,6 +61,11 @@ export function runHelp(cwd: string = process.cwd()): number {
 
   console.log('Typical workflows\n');
 
+  console.log('  First-time setup:');
+  console.log('    npx llm-wiki-manager init');
+  console.log('    npx llm-wiki-manager doctor');
+  console.log('');
+
   console.log('  After ingesting a source:');
   console.log('    npm run wiki:sync');
   console.log('    npm run wiki:build');
@@ -86,6 +91,9 @@ export function runHelp(cwd: string = process.cwd()): number {
   console.log('');
 
   console.log('Without npm scripts, run llm-wiki-manager <command> (e.g. llm-wiki-manager lint)');
+  console.log(
+    'For the full subcommand list (init, upgrade, doctor, …), run: llm-wiki-manager --help',
+  );
 
   return 0;
 }

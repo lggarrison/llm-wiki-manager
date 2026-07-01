@@ -17,7 +17,7 @@ const USAGE = `Usage: llm-wiki-manager <command> [options]
 Commands:
   init          Scaffold a new LLM wiki
   upgrade       Refresh template files and migrate pages
-  help          List wiki commands and when to run them
+  help          List wiki npm scripts and when to run them
   lint          Validate frontmatter, links, and structure
   build         Regenerate index.md from page frontmatter
   check         Verify index.md is up to date (read-only)

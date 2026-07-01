@@ -36,6 +36,7 @@ wiki/
 └── raw/               # Immutable source documents (never edited by the agent)
 
 AGENTS.md              # Repo-root pointer to wiki/AGENTS.md (created or amended)
+.llm-wiki-manager.json # Install metadata (version, wiki dir, focus dirs)
 
 package.json           # wiki:* npm scripts added (when present; invoke llm-wiki-manager)
 ```
@@ -119,7 +120,8 @@ After `init` completes:
 
 1. Open `wiki/schema.md` to review the conventions your agent will follow
 2. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
-3. Run `npm run wiki:lint` to confirm the scaffold is valid
+3. Run `npx llm-wiki-manager doctor` (or `npm run wiki:check`) to confirm the scaffold is healthy — `init` generates a fresh `index.md`, so `wiki:check` should pass immediately
+4. Run `npm run wiki:lint` to validate page structure
 
 If your project has no `package.json`, invoke the CLI directly (see [Managing the wiki](#managing-the-wiki)).
 
@@ -155,7 +157,7 @@ npm run wiki:log -- add ingest "Title of source"
 
 ### Querying the wiki
 
-Ask your agent a question. It will read `wiki/index.md` to locate relevant pages, then synthesize an answer with citations. If the query reveals a gap, the agent should create a stub page (`status: draft`) to track it.
+Ask your agent a question. It will read `wiki/index.md` to locate relevant pages, then synthesize an answer with citations. If the query reveals a gap, the agent should create a stub page (`status: wip`) to track it.
 
 ```bash
 npm run wiki:log -- add query "Summary of the question"
@@ -171,19 +173,47 @@ npm run wiki:log -- add query "Summary of the question"
 
 ## Managing the wiki
 
-When `init` finds a `package.json`, it adds these npm scripts. Run `npm run wiki:help` anytime for a quick reference.
+All commands are subcommands of `llm-wiki-manager`. Run `npm run wiki:help` (or `npx llm-wiki-manager help`) anytime for a quick reference with typical workflows.
 
-| Script             | Command                        | Purpose                                           |
-| ------------------ | ------------------------------ | ------------------------------------------------- |
-| `wiki:help`        | `llm-wiki-manager help`        | List commands, usage, and when to run them        |
-| `wiki:lint`        | `llm-wiki-manager lint`        | Validate frontmatter, links, and structure        |
-| `wiki:build`       | `llm-wiki-manager build`       | Regenerate `index.md`                             |
-| `wiki:check`       | `llm-wiki-manager check`       | Verify `index.md` is up to date (read-only)       |
-| `wiki:sync`        | `llm-wiki-manager sync`        | Sync `related:` frontmatter to body links         |
-| `wiki:log`         | `llm-wiki-manager log`         | Append operation entries to `log.md`              |
-| `wiki:setup:husky` | `llm-wiki-manager setup-husky` | Wire pre-push wiki:check; print lint-staged guide |
+Global options (work with any command):
 
-Two more subcommands are available directly (not as npm scripts): `npx llm-wiki-manager doctor` (scaffold health check, see below) and `npx llm-wiki-manager upgrade` (refresh templates after a package update).
+```bash
+llm-wiki-manager --help      # list all subcommands
+llm-wiki-manager --version   # print installed package version
+DEBUG=1 llm-wiki-manager …   # print a full stack trace on errors (useful for bug reports)
+```
+
+When `init` finds a `package.json`, it adds the `wiki:*` npm scripts below. Project lifecycle commands (`init`, `upgrade`, `doctor`) are invoked directly — they are not npm scripts.
+
+| Command       | npm script         | Purpose                                                                    |
+| ------------- | ------------------ | -------------------------------------------------------------------------- |
+| `init`        | —                  | Scaffold a new wiki (see [Initializing](#initializing-the-wiki))           |
+| `upgrade`     | —                  | Refresh templates and migrate pages after a package update                 |
+| `doctor`      | —                  | Read-only scaffold health check                                            |
+| `help`        | `wiki:help`        | List wiki npm scripts with usage, when-to-run hints, and typical workflows |
+| `lint`        | `wiki:lint`        | Validate frontmatter, links, and structure                                 |
+| `build`       | `wiki:build`       | Regenerate `index.md`                                                      |
+| `check`       | `wiki:check`       | Verify `index.md` is up to date (read-only)                                |
+| `sync`        | `wiki:sync`        | Sync `related:` frontmatter to body links                                  |
+| `log`         | `wiki:log`         | Append operation entries to `log.md`                                       |
+| `setup-husky` | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide                        |
+
+Wiki subcommands (`lint`, `build`, `check`, `sync`, `log`) accept `--wiki-dir path/to/wiki` when the wiki is not at the default location. `--repo-root` is also available for advanced layouts.
+
+### Help — wiki command reference
+
+```bash
+npm run wiki:help
+# or: npx llm-wiki-manager help
+```
+
+Prints every `wiki:*` npm script with a one-line summary, when to run it, and an example command. Also lists typical workflows (ingest, edit pages, git hooks, package upgrades). This is the day-to-day reference for wiki maintenance.
+
+For the full CLI surface — including `init`, `upgrade`, and `doctor` — use top-level help:
+
+```bash
+llm-wiki-manager --help
+```
 
 ### Lint — validate structure
 
@@ -194,6 +224,7 @@ npm run wiki:lint
 Checks for:
 
 - Missing or invalid frontmatter fields
+- Block-style `- item` YAML lists in frontmatter (use inline arrays instead)
 - `related:` paths that don't resolve to existing files
 - Broken markdown links in page bodies
 - Wikilinks (`[[...]]`) that should be markdown links
@@ -270,7 +301,32 @@ llm-wiki-manager log add <op> "<title>" --wiki-dir path/to/wiki   # without npm 
 npx llm-wiki-manager doctor
 ```
 
-Read-only health check for an installed scaffold. Verifies the install config exists, the scaffold version matches the installed package (suggesting `upgrade` when behind), the wiki meta files are present, the root `AGENTS.md` still has its managed section, the `wiki:*` npm scripts are in sync, and `index.md` is up to date. Exits 1 if any problem is found — useful before an `upgrade` or when something feels off.
+Read-only health check for an installed scaffold. Verifies the install config exists, the scaffold version matches the installed package (suggesting `upgrade` when behind), the wiki meta files are present, the root `AGENTS.md` still has its managed section, the `wiki:*` npm scripts are in sync, and `index.md` is up to date. Exits 1 if any problem is found — useful after `init`, before an `upgrade`, or when something feels off.
+
+### Upgrade — refresh templates after a package update
+
+```bash
+npx llm-wiki-manager upgrade
+```
+
+Refreshes wiki meta templates (`schema.md`, `wiki/AGENTS.md`, `wiki/README.md`), the root `AGENTS.md` managed section, and `wiki:*` npm scripts. Runs page migration (legacy frontmatter values), sync, build, and lint as post-upgrade steps. User-owned wiki pages and `log.md` are preserved.
+
+Options:
+
+```bash
+npx llm-wiki-manager upgrade --dry-run    # preview changes without writing files
+npx llm-wiki-manager upgrade --skip-pages # refresh templates only; skip migrate/sync/build/lint on pages
+```
+
+Re-running `init` only creates missing scaffold files; use `upgrade` to pick up template changes from a newer package version. Run `doctor` first to see what needs attention.
+
+### Setup Husky — wire pre-push wiki:check
+
+```bash
+npm run wiki:setup:husky
+```
+
+Activates Husky (if installed), creates `.husky/` when needed, and adds `npm run wiki:check` to `.husky/pre-push`. Re-running is safe — it skips hooks that are already configured. Also prints a lint-staged pre-commit guide. See [Optional git hooks](#optional-git-hooks) for the full Husky + lint-staged setup.
 
 ### Sync see-also — fix missing body links
 
@@ -388,6 +444,8 @@ nvm use              # or: fnm use  (Node 24 — see .nvmrc)
 npm install          # also sets up Husky git hooks and builds dist/
 npm run build        # compile TypeScript to dist/
 npm test             # run the vitest suite
+npm run test:e2e     # end-to-end CLI workflow tests (builds dist/ first)
+npm run release:check # full gate: lint, format, tests, e2e, wiki:lint, wiki:check
 npm run lint         # check with ESLint
 npm run lint:fix     # auto-fix ESLint issues
 npm run format       # format with Prettier

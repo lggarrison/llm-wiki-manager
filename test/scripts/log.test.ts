@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { spawnSync } from 'child_process';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { makeTmpWikiDir, cleanup, scriptPath, PACKAGE_ROOT } from '../helpers/wiki.js';
+import { makeTmpWikiDir, cleanup } from '../helpers/wiki.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const dirs: string[] = [];
 function newWikiDirWithLog(): string {
@@ -21,12 +21,10 @@ afterEach(() => {
 });
 
 function runLog(wikiDir: string, args: string[]) {
-  return spawnSync('node', [scriptPath('log.mjs'), ...args, '--wiki-dir', wikiDir], {
-    encoding: 'utf8',
-  });
+  return runBuiltCli(wikiDir, ['log', ...args, '--wiki-dir', wikiDir]);
 }
 
-describe('log.mjs', () => {
+describe('log command', () => {
   it('appends an entry with a UTC ISO timestamp by default', () => {
     const dir = newWikiDirWithLog();
     const result = runLog(dir, ['add', 'ingest', 'Test Source']);
@@ -83,17 +81,18 @@ describe('log.mjs', () => {
     expect(result.stderr).toContain('Title is required');
   });
 
-  it('parses title without --wiki-dir flag', () => {
+  it('resolves wiki dir from install config when --wiki-dir is omitted', () => {
     const projectDir = mkdtempSync(join(tmpdir(), 'llm-wiki-log-test-'));
     dirs.push(projectDir);
     const wikiDir = join(projectDir, 'wiki');
     mkdirSync(wikiDir, { recursive: true });
     writeFileSync(join(wikiDir, 'log.md'), '# Log\n');
-    const result = spawnSync(
-      'node',
-      [join(PACKAGE_ROOT, 'scripts/wiki/log.mjs'), 'add', 'ingest', 'No wiki dir flag'],
-      { encoding: 'utf8', cwd: projectDir },
+    writeFileSync(
+      join(projectDir, '.llm-wiki-manager.json'),
+      JSON.stringify({ version: '0.1.0', projectName: 'acme', wikiDir: 'wiki', focusDirs: [] }) +
+        '\n',
     );
+    const result = runBuiltCli(projectDir, ['log', 'add', 'ingest', 'No wiki dir flag']);
     expect(result.status).toBe(0);
     const log = readFileSync(join(wikiDir, 'log.md'), 'utf8');
     expect(log).toContain('ingest | No wiki dir flag');

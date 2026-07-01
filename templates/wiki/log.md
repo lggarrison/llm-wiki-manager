@@ -1,7 +1,7 @@
 # Wiki Log — {{PROJECT_NAME}}
 
 Append-only chronological record of wiki operations.
-Managed by `node {{SCRIPTS_DIR}}/log.mjs`.
+Managed by `llm-wiki-manager log`.
 
 ---
 

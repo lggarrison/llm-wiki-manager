@@ -15,31 +15,28 @@ code_refs:
     .github/workflows/release.yml,
   ]
 status: active
-summary: Node >=24 everywhere — .nvmrc, engines.node, @types/node, and CI aligned; with guardrails and a deferred multi-version test plan.
+summary: Runtime floor is Node >=20.12 (tested by a CI matrix on 20 and 24, Linux and Windows); development is pinned to Node 24 via .nvmrc with @types/node aligned.
 ---
 
 # Node Version and @types/node Alignment
 
-This repo requires **Node.js 24+** everywhere. There is no separate “consumer floor” vs “dev pin” — what we document, what npm declares, and what CI runs are the same policy.
+This repo distinguishes a **runtime floor** (what consumers of the published CLI need) from the **development pin** (what maintainers and CI primarily use). Both are tested.
 
 ## Current policy
 
-| Signal              | Location                      | Value              | Purpose                                                       |
-| ------------------- | ----------------------------- | ------------------ | ------------------------------------------------------------- |
-| Version manager pin | `.nvmrc`                      | `24`               | `nvm use` / `fnm use`; GitHub Actions `node-version-file`     |
-| npm engines         | `package.json` `engines.node` | `>=24`             | Declared minimum for installs and published package consumers |
-| TypeScript types    | `package.json` `@types/node`  | `^24`              | Compile-time API surface for Node 24                          |
-| CI / release        | `.github/workflows/*.yml`     | Node from `.nvmrc` | All tests run on the pinned major                             |
+| Signal              | Location                        | Value                         | Purpose                                                           |
+| ------------------- | ------------------------------- | ----------------------------- | ----------------------------------------------------------------- |
+| Version manager pin | `.nvmrc`                        | `24`                          | Development pin: `nvm use` / `fnm use`; release workflow Node     |
+| npm engines         | `package.json` `engines.node`   | `>=20.12.0`                   | Runtime floor for consumers (set by `@clack/prompts` `>=20.12.0`) |
+| TypeScript types    | `package.json` `@types/node`    | `^24`                         | Compile-time API surface, aligned to `.nvmrc`                     |
+| CI matrix           | `.github/workflows/ci.yml`      | Node 20 + 24, Linux + Windows | Every gate runs on the floor and the pin, on both OSes            |
+| Release workflow    | `.github/workflows/release.yml` | Node from `.nvmrc`            | Releases build on the development pin                             |
 
-## Why we require Node 24 (not >=18)
+## Why the floor is >=20.12 (not >=24)
 
-The project previously declared `engines.node: ">=18"` but only ever tested on Node 24. That was misleading:
+Node 22 is in LTS well into 2027, and the CLI only uses `fs`, `path`, `url`, and `child_process` APIs available since Node 20. Requiring `>=24` cut off a large share of potential users for no technical reason. The floor is `20.12.0` because the runtime dependency `@clack/prompts` requires `>= 20.12.0`.
 
-- CI has a single Node version (from `.nvmrc`), not a matrix
-- Runtime dependency `@clack/prompts` already requires `>= 20.12.0`
-- As a personal project, widening support without testing adds maintenance cost with no benefit
-
-Aligning everything to `>=24` makes documentation honest and matches actual practice.
+The earlier `>=24` policy existed because CI only tested one Node version, and claiming untested support would have been dishonest. That objection is resolved: the CI matrix now runs the full gate (lint, tests, e2e including the packed-tarball smoke test, wiki checks) on Node 20 and 24, on both Ubuntu and Windows.
 
 ## @types/node alignment
 
@@ -51,6 +48,8 @@ Aligning everything to `>=24` makes documentation honest and matches actual prac
 | ----------------------------------- | ------------------------------------------------------------ |
 | `@types/node@26` with `.nvmrc` `24` | TypeScript accepts Node 26 APIs that do not exist at runtime |
 | `@types/node@22` with `.nvmrc` `24` | Missing types for Node 24 APIs you may legitimately use      |
+
+Because types track the development pin (24) while the floor is 20, TypeScript alone will not catch use of a Node-24-only API. The Node 20 legs of the CI matrix are the guardrail: code that calls an API missing on Node 20 fails there at test time.
 
 TypeScript loads these types via `tsconfig.json` (`"types": ["node"]`).
 
@@ -70,7 +69,7 @@ It reads `.nvmrc` and `@types/node` from `package.json`, then exits non-zero on 
 | Context                  | Command chain                                                       |
 | ------------------------ | ------------------------------------------------------------------- |
 | Local release validation | `npm run release:check` (first step)                                |
-| CI                       | `.github/workflows/ci.yml` — after `npm ci`, before lint            |
+| CI                       | `.github/workflows/ci.yml` — after `npm ci`, before lint (all legs) |
 | Release workflow         | `.github/workflows/release.yml` uses the same Node pin via `.nvmrc` |
 
 ## Dependabot
@@ -79,31 +78,18 @@ Dependabot **cannot read `.nvmrc`** when choosing npm version bumps. Without gua
 
 `.github/dependabot.yml` ignores semver-major updates for `@types/node`. Patch and minor updates within the current major still flow through normally.
 
-## Upgrading Node
+## Raising the floor or the pin
 
-When intentionally moving to a new Node major:
+When intentionally moving to a new development Node major:
 
 1. Bump `.nvmrc`
-2. Bump `engines.node` in `package.json` (e.g. `>=26`)
-3. Bump `@types/node` to the matching major (e.g. `^26.0.0`)
+2. Bump `@types/node` to the matching major (e.g. `^26.0.0`)
+3. Add the new major to the CI matrix in `.github/workflows/ci.yml`
 4. Run `npm install` to refresh the lockfile
 5. Update README and CONTRIBUTING
 6. Run `npm run check:node-types` and `npm run release:check`
 
-Do steps 1–3 in the same change so types, engines, and runtime never drift.
-
-## Future: Node support matrix (deferred)
-
-> **Status:** Not planned while this remains a personal project. Revisit if the package gains external users who need broader Node support.
-
-When multi-version support becomes worthwhile:
-
-1. **CI matrix** — add jobs for each supported major (e.g. 24, next LTS) in `.github/workflows/ci.yml`
-2. **Widen `engines.node`** only after matrix jobs pass — e.g. `>=20` if 20 and 24 are both tested
-3. **Keep `@types/node` on the lowest tested major** or adopt per-version type checking — `check-node-types` can use `--source engines` instead of `nvmrc` if `engines` becomes the canonical floor
-4. **Document the matrix** in this page and README Requirements
-
-Until then, single-version testing on `.nvmrc` is sufficient.
+When raising the **runtime floor** (`engines.node`), also remove the dropped major from the CI matrix, and confirm dependency engines (`@clack/prompts`) still fit the new floor. Raising the floor is a **breaking change for consumers** — bump the major version.
 
 ## See also
 

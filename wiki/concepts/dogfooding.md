@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Dogfooding
-last_updated: 2026-07-01T20:30:00Z
+last_updated: 2026-07-01T00:00:00Z
 tags: [dogfooding, architecture]
 related:
   [
@@ -20,12 +20,11 @@ This repository is a **consumer of its own tool**. Running `init` against the re
 
 ## What is dogfooded
 
-| Artifact           | Path                                                       | Role                                                                     |
-| ------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Wiki               | `wiki/`                                                    | Internal, agent-maintained knowledge about `src/` and `templates/`       |
-| Scripts            | `scripts/wiki/`                                            | Interpolated copy of `templates/scripts/` (what consumers get from init) |
-| Agent instructions | `AGENTS.md` (repo root) → [`wiki/AGENTS.md`](../AGENTS.md) | Repo root pointer; vault holds full agent rules                          |
-| npm scripts        | `wiki:*` in `package.json`                                 | Lint, build, sync, check, and log commands                               |
+| Artifact           | Path                                                       | Role                                                               |
+| ------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| Wiki               | `wiki/`                                                    | Internal, agent-maintained knowledge about `src/` and `templates/` |
+| Agent instructions | `AGENTS.md` (repo root) → [`wiki/AGENTS.md`](../AGENTS.md) | Repo root pointer; vault holds full agent rules                    |
+| npm scripts        | `wiki:*` in `package.json`                                 | Invoke `llm-wiki-manager` lint, build, sync, check, and log        |
 
 These paths are **committed to git** but **not published** to npm. Consumers run [Init Command](init-command.md) to scaffold their own.
 
@@ -45,28 +44,10 @@ Dogfooding is enforced, not decorative:
 
 - **`release:check`** and **CI** run `check:node-types`, then `wiki:lint` and `wiki:check` (see [Node Version and @types/node Alignment](node-version-and-types.md))
 - **pre-commit** runs `wiki:lint` when staged files include `wiki/`
-- **`test/scripts/dogfood-sync.test.ts`** asserts `scripts/wiki/` matches interpolated `templates/scripts/` (see [Unit Tests](unit-tests.md))
+- **`test/scripts/*.test.ts`** exercise CLI subcommands via the built `dist/bin/cli.js`
+- **`test/e2e/tarball-smoke.test.ts`** verifies subcommands work from an npm-packed install
 
 ## Refreshing after template changes
-
-Two workflows apply depending on what changed.
-
-### Scripts only (`templates/scripts/`)
-
-When editing wiki maintenance scripts, refresh the dogfooded copy:
-
-```bash
-npm run build
-node scripts/bootstrap-dogfood.mjs
-npm test
-npm run wiki:lint
-npm run wiki:build
-npm run wiki:check
-```
-
-The bootstrap script copies `templates/scripts/` → `scripts/wiki/` with placeholders resolved. It does **not** overwrite wiki content pages.
-
-### Full upgrade (wiki meta, root AGENTS.md, migrations)
 
 When `templates/wiki/` or `templates/AGENTS.md` change — or you want the same end-to-end refresh a consumer gets after updating the package — run **upgrade** from the **repo root**:
 
@@ -85,14 +66,15 @@ Upgrade refreshes scaffold files without touching wiki content:
 
 | Refreshed                          | Preserved                                         |
 | ---------------------------------- | ------------------------------------------------- |
-| `scripts/wiki/`                    | `wiki/entities/`, `concepts/`, `sources/`, `raw/` |
-| `wiki/schema.md`, `wiki/AGENTS.md` | `wiki/log.md` (appended to, not overwritten)      |
-| Root `AGENTS.md` managed section   |                                                   |
+| `wiki/schema.md`, `wiki/AGENTS.md` | `wiki/entities/`, `concepts/`, `sources/`, `raw/` |
+| Root `AGENTS.md` managed section   | `wiki/log.md` (appended to, not overwritten)      |
 | `package.json` `wiki:*` scripts    |                                                   |
 
-It also runs post-upgrade scripts (page migration, sync, build, warn-only lint) and appends an entry to `wiki/log.md`. Paths are read from `.llm-wiki-manager.json` when present; otherwise inferred from `wiki/schema.md`, root `AGENTS.md`, and `package.json`.
+It also runs post-upgrade steps (page migration, sync, build, warn-only lint) and appends an entry to `wiki/log.md`. Paths are read from `.llm-wiki-manager.json` when present; otherwise inferred from `wiki/schema.md`, root `AGENTS.md`, and `package.json`.
 
-Optional flags: `--skip-scripts`, `--skip-pages`.
+Optional flag: `--skip-pages`.
+
+Package updates for wiki logic itself happen via `npm update llm-wiki-manager` — no script vendoring step.
 
 See [Template System](template-system.md) for how interpolation works.
 

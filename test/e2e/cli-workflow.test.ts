@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { runBuiltCli, runNodeScript } from '../helpers/cli.js';
+import { runBuiltCli } from '../helpers/cli.js';
 import { fm, writePage, PACKAGE_ROOT } from '../helpers/wiki.js';
 
 const tmpDirs: string[] = [];
@@ -21,16 +21,7 @@ function makeTmpProject(): string {
 }
 
 function initProject(dir: string, extraArgs: string[] = []): ReturnType<typeof runBuiltCli> {
-  return runBuiltCli(dir, [
-    'init',
-    '--project-name',
-    'acme',
-    '--wiki-dir',
-    'wiki',
-    '--scripts-dir',
-    'scripts/wiki',
-    ...extraArgs,
-  ]);
+  return runBuiltCli(dir, ['init', '--project-name', 'acme', '--wiki-dir', 'wiki', ...extraArgs]);
 }
 
 afterEach(() => {
@@ -40,7 +31,7 @@ afterEach(() => {
 });
 
 describe('CLI e2e workflow', () => {
-  it('init scaffolds wiki, scripts, AGENTS.md, and install config', () => {
+  it('init scaffolds wiki, AGENTS.md, install config, and CLI npm scripts', () => {
     const dir = makeTmpProject();
     const result = initProject(dir);
 
@@ -48,7 +39,7 @@ describe('CLI e2e workflow', () => {
 
     expect(existsSync(join(dir, 'wiki', 'schema.md'))).toBe(true);
     expect(existsSync(join(dir, 'wiki', 'index.md'))).toBe(true);
-    expect(existsSync(join(dir, 'scripts', 'wiki', 'lint.mjs'))).toBe(true);
+    expect(existsSync(join(dir, 'scripts', 'wiki', 'lint.mjs'))).toBe(false);
     expect(existsSync(join(dir, 'AGENTS.md'))).toBe(true);
     expect(existsSync(join(dir, '.llm-wiki-manager.json'))).toBe(true);
 
@@ -58,11 +49,11 @@ describe('CLI e2e workflow', () => {
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
     };
-    expect(pkg.scripts['wiki:lint']).toContain('scripts/wiki/lint.mjs');
-    expect(pkg.scripts['wiki:check']).toContain('--check');
+    expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
+    expect(pkg.scripts['wiki:check']).toBe('llm-wiki-manager check');
   });
 
-  it('wiki scripts lint, build, and check after init', () => {
+  it('wiki CLI lint, build, and check after init', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
 
@@ -72,24 +63,14 @@ describe('CLI e2e workflow', () => {
       fm({ type: 'concept', title: 'Hello' }) + '\nIntro body.\n',
     );
 
-    const lint = runNodeScript(dir, join(dir, 'scripts', 'wiki', 'lint.mjs'), [
-      '--wiki-dir',
-      'wiki',
-    ]);
+    const lint = runBuiltCli(dir, ['lint', '--wiki-dir', 'wiki']);
     expect(lint.status).toBe(0);
 
-    const build = runNodeScript(dir, join(dir, 'scripts', 'wiki', 'build-index.mjs'), [
-      '--wiki-dir',
-      'wiki',
-    ]);
+    const build = runBuiltCli(dir, ['build', '--wiki-dir', 'wiki']);
     expect(build.status).toBe(0);
     expect(readFileSync(join(dir, 'wiki', 'index.md'), 'utf8')).toContain('Hello');
 
-    const check = runNodeScript(dir, join(dir, 'scripts', 'wiki', 'build-index.mjs'), [
-      '--wiki-dir',
-      'wiki',
-      '--check',
-    ]);
+    const check = runBuiltCli(dir, ['check', '--wiki-dir', 'wiki']);
     expect(check.status).toBe(0);
   });
 
@@ -106,12 +87,10 @@ describe('CLI e2e workflow', () => {
     const userContentBefore = readFileSync(userPage, 'utf8');
 
     writeFileSync(join(dir, 'wiki', 'schema.md'), '# stale schema\n');
-    rmSync(join(dir, 'scripts', 'wiki', 'migrate-pages.mjs'));
 
     const upgrade = runBuiltCli(dir, ['upgrade']);
     expect(upgrade.status).toBe(0);
 
-    expect(existsSync(join(dir, 'scripts', 'wiki', 'migrate-pages.mjs'))).toBe(true);
     expect(readFileSync(join(dir, 'wiki', 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
     expect(readFileSync(userPage, 'utf8')).toBe(userContentBefore);
   });
@@ -140,7 +119,6 @@ describe('CLI e2e workflow', () => {
 
     expect(result.status).toBe(0);
     expect(existsSync(join(dir, 'wiki', 'schema.md'))).toBe(true);
-    expect(existsSync(join(dir, 'scripts', 'wiki', 'lint.mjs'))).toBe(true);
     expect(existsSync(join(dir, 'AGENTS.md'))).toBe(true);
     expect(existsSync(join(dir, 'package.json'))).toBe(false);
     expect(existsSync(join(dir, '.llm-wiki-manager.json'))).toBe(true);
@@ -175,6 +153,52 @@ describe('CLI e2e workflow', () => {
     expect(readFileSync(schemaPath, 'utf8')).toBe('# stale schema\n');
     expect(readFileSync(configPath, 'utf8')).toBe(configBefore);
   });
+
+  it('init leaves index.md fresh so check passes without a manual build', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const check = runBuiltCli(dir, ['check', '--wiki-dir', 'wiki']);
+    expect(check.status).toBe(0);
+    expect(check.stdout).toContain('up to date');
+  });
+
+  it('upgrade preserves user content after the managed section end marker', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const agentsPath = join(dir, 'AGENTS.md');
+    const agentsBefore = readFileSync(agentsPath, 'utf8');
+    writeFileSync(
+      agentsPath,
+      `${agentsBefore.trimEnd()}\n\n## Custom notes\n\nUser-owned content.\n`,
+    );
+
+    writeFileSync(join(dir, 'wiki', 'schema.md'), '# stale schema\n');
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+    expect(upgrade.status).toBe(0);
+
+    const agentsAfter = readFileSync(agentsPath, 'utf8');
+    expect(agentsAfter).toContain('## Custom notes');
+    expect(agentsAfter).toContain('User-owned content.');
+    expect(agentsAfter).toContain('[`wiki/AGENTS.md`](wiki/AGENTS.md)');
+  });
+
+  it('init succeeds when package.json has a UTF-8 BOM', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      String.fromCharCode(0xfeff) + JSON.stringify({ name: 'acme' }, null, 2) + '\n',
+      'utf8',
+    );
+
+    expect(initProject(dir).status).toBe(0);
+
+    const doctor = runBuiltCli(dir, ['doctor']);
+    expect(doctor.status).toBe(0);
+    expect(doctor.stdout).toContain('No problems found');
+  });
 });
 
 describe('CLI meta flags', () => {
@@ -189,13 +213,15 @@ describe('CLI meta flags', () => {
     expect(result.stdout.trim()).toBe(packageVersion);
   });
 
-  it('--help prints usage listing both commands and exits 0', () => {
+  it('--help prints usage listing commands and exits 0', () => {
     const dir = makeTmpProject();
     const result = runBuiltCli(dir, ['--help']);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Usage: llm-wiki-manager');
     expect(result.stdout).toContain('init');
     expect(result.stdout).toContain('upgrade');
+    expect(result.stdout).toContain('lint');
+    expect(result.stdout).toContain('doctor');
   });
 
   it('an unknown command exits 1 with usage on stderr', () => {

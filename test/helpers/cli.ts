@@ -1,6 +1,6 @@
 import { spawnSync } from 'child_process';
 import { join } from 'path';
-import { PACKAGE_ROOT } from './wiki.js';
+import { PACKAGE_ROOT } from './paths.js';
 
 const CLI_PATH = join(PACKAGE_ROOT, 'dist', 'bin', 'cli.js');
 

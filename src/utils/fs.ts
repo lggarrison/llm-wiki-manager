@@ -1,16 +1,23 @@
-import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync, existsSync } from 'fs';
+import {
+  cpSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+  existsSync,
+} from 'fs';
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
 export const INSTALL_CONFIG_FILENAME = '.llm-wiki-manager.json';
 export const MANAGED_SECTION_DELIMITER = '<!-- llm-wiki-manager -->';
-export const MANAGED_SECTION_END_DELIMITER = '<!-- /llm-wiki-manager -->';
+export const MANAGED_SECTION_END = '<!-- /llm-wiki-manager -->';
 
 export type InstallConfig = {
   version: string;
   projectName: string;
   wikiDir: string;
-  scriptsDir: string;
   focusDirs: string[];
 };
 
@@ -57,17 +64,42 @@ function shouldInterpolateFile(name: string): boolean {
   return /\.(md|mjs|js|json)$/.test(name) || name === '.entity-scopes';
 }
 
+function walkAndInterpolate(dir: string, vars: Record<string, string>): void {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      walkAndInterpolate(full, vars);
+    } else if (shouldInterpolateFile(entry)) {
+      const content = readFileSync(full, 'utf8');
+      const updated = interpolate(content, vars);
+      if (updated !== content) writeFileSync(full, updated, 'utf8');
+    }
+  }
+}
+
+export function copyTemplate(src: string, dest: string, vars: Record<string, string> = {}): void {
+  mkdirSync(dest, { recursive: true });
+  cpSync(src, dest, { recursive: true });
+  if (Object.keys(vars).length > 0) {
+    walkAndInterpolate(dest, vars);
+  }
+}
+
+/** Read and parse JSON, tolerating a UTF-8 BOM (npm does; Windows editors write them). */
+export function readJsonFile<T>(path: string): T {
+  let raw = readFileSync(path, 'utf8');
+  if (raw.charCodeAt(0) === 0xfeff) raw = raw.slice(1);
+  return JSON.parse(raw) as T;
+}
+
 export function getPackageVersion(): string {
-  const pkg = JSON.parse(readFileSync(join(PACKAGE_ROOT, 'package.json'), 'utf8')) as {
-    version: string;
-  };
+  const pkg = readJsonFile<{ version: string }>(join(PACKAGE_ROOT, 'package.json'));
   return pkg.version;
 }
 
 export function buildTemplateVars(input: {
   projectName: string;
   wikiDir: string;
-  scriptsDir: string;
   focusDirs: string[];
   initTimestamp?: string;
 }): Record<string, string> {
@@ -81,7 +113,6 @@ export function buildTemplateVars(input: {
   return {
     PROJECT_NAME: input.projectName,
     WIKI_DIR: input.wikiDir,
-    SCRIPTS_DIR: input.scriptsDir,
     INIT_TIMESTAMP: initTimestamp,
     ENTITY_SCOPE_LINES: entityScopeLines,
     FOCUS_DIRS:
@@ -102,7 +133,7 @@ export function installConfigPath(projectRoot: string): string {
 export function readInstallConfig(projectRoot: string): InstallConfig | null {
   const path = installConfigPath(projectRoot);
   if (!existsSync(path)) return null;
-  return JSON.parse(readFileSync(path, 'utf8')) as InstallConfig;
+  return readJsonFile<InstallConfig>(path);
 }
 
 export function writeInstallConfig(projectRoot: string, config: InstallConfig): void {
@@ -111,20 +142,11 @@ export function writeInstallConfig(projectRoot: string, config: InstallConfig): 
 
 export function inferInstallConfig(projectRoot: string): InstallConfig | null {
   const pkgPath = join(projectRoot, 'package.json');
-  let scriptsDir = 'scripts/wiki';
   let projectName = projectRoot.split(/[/\\]/).pop() ?? 'project';
 
   if (existsSync(pkgPath)) {
-    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-      name?: string;
-      scripts?: Record<string, string>;
-    };
+    const pkg = readJsonFile<{ name?: string }>(pkgPath);
     if (pkg.name) projectName = pkg.name;
-    const lintScript = pkg.scripts?.['wiki:lint'];
-    if (lintScript) {
-      const match = lintScript.match(/node\s+(\S+)\/lint\.mjs/);
-      if (match) scriptsDir = match[1];
-    }
   }
 
   let wikiDir = 'wiki';
@@ -142,7 +164,6 @@ export function inferInstallConfig(projectRoot: string): InstallConfig | null {
     version: '0.0.0',
     projectName,
     wikiDir,
-    scriptsDir,
     focusDirs: [],
   };
 }
@@ -221,57 +242,6 @@ export function scaffoldWikiTemplates(
   }
 
   return result;
-}
-
-export function scaffoldScripts(
-  scriptsDest: string,
-  vars: Record<string, string>,
-  options: { overwrite?: boolean; dryRun?: boolean } = {},
-): CopyTemplateResult {
-  return scaffoldScriptsInner(
-    scriptsDest,
-    vars,
-    options.overwrite ?? false,
-    options.dryRun ?? false,
-  );
-}
-
-function scaffoldScriptsInner(
-  scriptsDest: string,
-  vars: Record<string, string>,
-  overwrite: boolean,
-  dryRun: boolean,
-): CopyTemplateResult {
-  const srcRoot = templatePath('scripts');
-  const result: CopyTemplateResult = { created: [], skipped: [], updated: [] };
-
-  for (const name of readdirSync(srcRoot)) {
-    if (!name.endsWith('.mjs')) continue;
-    const dest = join(scriptsDest, name);
-    if (!overwrite && existsSync(dest)) {
-      result.skipped.push(name);
-      continue;
-    }
-    const existed = existsSync(dest);
-    if (dryRun) {
-      if (existed) result.updated.push(name);
-      else result.created.push(name);
-      continue;
-    }
-    writeInterpolatedFile(join(srcRoot, name), dest, vars);
-    if (existed) result.updated.push(name);
-    else result.created.push(name);
-  }
-
-  return result;
-}
-
-export function upgradeScripts(
-  scriptsDest: string,
-  vars: Record<string, string>,
-  options: { dryRun?: boolean } = {},
-): CopyTemplateResult {
-  return scaffoldScriptsInner(scriptsDest, vars, true, options.dryRun ?? false);
 }
 
 /** Derive a flat entity scope slug from a focus directory path (e.g. src/ui/_app/ → app). */
@@ -359,44 +329,29 @@ export const WIKI_SCRIPT_KEYS = [
 
 export type WikiScriptKey = (typeof WIKI_SCRIPT_KEYS)[number];
 
-export const WIKI_TEMPLATE_SCRIPTS = [
-  'help.mjs',
-  'lint.mjs',
-  'build-index.mjs',
-  'sync-see-also.mjs',
-  'log.mjs',
-  'setup-husky.mjs',
-  'migrate-pages.mjs',
-] as const;
-
-export function wikiScriptCandidates(scriptsDir: string): Record<WikiScriptKey, string> {
+export function wikiScriptCandidates(): Record<WikiScriptKey, string> {
   return {
-    'wiki:help': `node ${scriptsDir}/help.mjs`,
-    'wiki:lint': `node ${scriptsDir}/lint.mjs`,
-    'wiki:build': `node ${scriptsDir}/build-index.mjs`,
-    'wiki:check': `node ${scriptsDir}/build-index.mjs --check`,
-    'wiki:sync': `node ${scriptsDir}/sync-see-also.mjs`,
-    'wiki:log': `node ${scriptsDir}/log.mjs`,
-    'wiki:setup:husky': `node ${scriptsDir}/setup-husky.mjs`,
+    'wiki:help': 'llm-wiki-manager help',
+    'wiki:lint': 'llm-wiki-manager lint',
+    'wiki:build': 'llm-wiki-manager build',
+    'wiki:check': 'llm-wiki-manager check',
+    'wiki:sync': 'llm-wiki-manager sync',
+    'wiki:log': 'llm-wiki-manager log',
+    'wiki:setup:husky': 'llm-wiki-manager setup-husky',
   };
 }
 
 export type MergePackageJsonResult =
   { status: 'no-package-json' } | { status: 'merged'; added: string[] } | { status: 'unchanged' };
 
-export function mergePackageJsonScripts(
-  projectRoot: string,
-  scriptsDir: string,
-): MergePackageJsonResult {
+export function mergePackageJsonScripts(projectRoot: string): MergePackageJsonResult {
   const pkgPath = join(projectRoot, 'package.json');
   if (!existsSync(pkgPath)) return { status: 'no-package-json' };
 
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-    scripts?: Record<string, string>;
-  };
+  const pkg = readJsonFile<{ scripts?: Record<string, string> }>(pkgPath);
   if (!pkg.scripts) pkg.scripts = {};
 
-  const candidates = wikiScriptCandidates(scriptsDir);
+  const candidates = wikiScriptCandidates();
 
   const added: string[] = [];
   for (const key of WIKI_SCRIPT_KEYS) {
@@ -412,51 +367,50 @@ export function mergePackageJsonScripts(
   return { status: 'merged', added };
 }
 
+function managedBlock(section: string): string {
+  return `${MANAGED_SECTION_DELIMITER}\n${section.trim()}\n${MANAGED_SECTION_END}`;
+}
+
 export function amendFile(filePath: string, section: string): boolean {
-  const delimiter = MANAGED_SECTION_DELIMITER;
-  const endDelimiter = MANAGED_SECTION_END_DELIMITER;
-  const managedBlock = `${delimiter}\n${section.trim()}\n${endDelimiter}\n`;
   if (existsSync(filePath)) {
     const existing = readFileSync(filePath, 'utf8');
-    if (existing.includes(delimiter)) return false; // already amended
+    if (existing.includes(MANAGED_SECTION_DELIMITER)) return false; // already amended
     // Downgrade top-level heading to second-level when appending
-    const appendSection = section.replace(/^# /m, '## ').trim();
-    const appendBlock = `${delimiter}\n${appendSection}\n${endDelimiter}\n`;
-    writeFileSync(filePath, `${existing.trimEnd()}\n\n${appendBlock}`, 'utf8');
+    const appendSection = section.replace(/^# /m, '## ');
+    writeFileSync(filePath, `${existing.trimEnd()}\n\n${managedBlock(appendSection)}\n`, 'utf8');
   } else {
-    writeFileSync(filePath, managedBlock, 'utf8');
+    writeFileSync(filePath, `${managedBlock(section)}\n`, 'utf8');
   }
   return true;
 }
 
 export function replaceManagedSection(filePath: string, section: string): boolean {
-  const delimiter = MANAGED_SECTION_DELIMITER;
-  const endDelimiter = MANAGED_SECTION_END_DELIMITER;
-  const managedBlock = `${delimiter}\n${section.trim()}\n${endDelimiter}\n`;
   if (!existsSync(filePath)) {
-    writeFileSync(filePath, managedBlock, 'utf8');
+    writeFileSync(filePath, `${managedBlock(section)}\n`, 'utf8');
     return true;
   }
 
   const existing = readFileSync(filePath, 'utf8');
-  const start = existing.indexOf(delimiter);
+  const start = existing.indexOf(MANAGED_SECTION_DELIMITER);
   if (start < 0) return false;
 
-  const afterDelimiter = start + delimiter.length;
-  const endIdx = existing.indexOf(endDelimiter, afterDelimiter);
-  const before = existing.slice(0, start).trimEnd();
-  const after =
-    endIdx >= 0
-      ? existing.slice(endIdx + endDelimiter.length).trimStart()
-      : (() => {
-          const nextMarker = existing.indexOf('<!--', afterDelimiter);
-          return nextMarker >= 0 ? existing.slice(nextMarker).trimStart() : '';
-        })();
+  const afterDelimiter = start + MANAGED_SECTION_DELIMITER.length;
+  const endIdx = existing.indexOf(MANAGED_SECTION_END, afterDelimiter);
 
-  const out = before
-    ? `${before}\n\n${managedBlock}${after ? `\n${after}\n` : ''}`
-    : `${managedBlock}${after ? `\n${after}\n` : ''}`;
-  writeFileSync(filePath, out.endsWith('\n') ? out : `${out}\n`, 'utf8');
+  let afterSection: string;
+  if (endIdx >= 0) {
+    afterSection = existing.slice(endIdx + MANAGED_SECTION_END.length);
+  } else {
+    // Legacy block without an end marker: assume it runs to the next HTML
+    // comment, or to end of file when there is none.
+    const nextMarker = existing.indexOf('<!--', afterDelimiter);
+    afterSection = nextMarker >= 0 ? existing.slice(nextMarker) : '';
+  }
+
+  const before = existing.slice(0, start).trimEnd();
+  const after = afterSection.trim();
+  const out = [before, managedBlock(section), after].filter(Boolean).join('\n\n');
+  writeFileSync(filePath, `${out}\n`, 'utf8');
   return true;
 }
 
@@ -465,19 +419,14 @@ export type SyncPackageJsonResult =
   | { status: 'synced'; added: string[]; updated: string[] }
   | { status: 'unchanged' };
 
-export function syncPackageJsonScripts(
-  projectRoot: string,
-  scriptsDir: string,
-): SyncPackageJsonResult {
+export function syncPackageJsonScripts(projectRoot: string): SyncPackageJsonResult {
   const pkgPath = join(projectRoot, 'package.json');
   if (!existsSync(pkgPath)) return { status: 'no-package-json' };
 
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-    scripts?: Record<string, string>;
-  };
+  const pkg = readJsonFile<{ scripts?: Record<string, string> }>(pkgPath);
   if (!pkg.scripts) pkg.scripts = {};
 
-  const candidates = wikiScriptCandidates(scriptsDir);
+  const candidates = wikiScriptCandidates();
   const added: string[] = [];
   const updated: string[] = [];
 

@@ -24,7 +24,6 @@ import {
 function parseUpgradeArgs(argv: string[]): UpgradeOptions {
   return {
     dryRun: argv.includes('--dry-run'),
-    skipScripts: argv.includes('--skip-scripts'),
     skipPages: argv.includes('--skip-pages'),
   };
 }
@@ -54,13 +53,7 @@ export async function upgrade(): Promise<void> {
     log.warn('Dry run — no files will be modified.');
   }
 
-  const { scripts, wikiMeta } = runUpgradeSteps(cwd, config, options);
-
-  if (scripts.created.length + scripts.updated.length > 0) {
-    log.step(
-      `Scripts: ${scripts.created.length} created, ${scripts.updated.length} updated, ${scripts.skipped.length} skipped`,
-    );
-  }
+  const { wikiMeta } = runUpgradeSteps(cwd, config, options);
 
   if (wikiMeta.created.length + wikiMeta.updated.length > 0) {
     log.step(
@@ -74,7 +67,6 @@ export async function upgrade(): Promise<void> {
     const agentsContent = interpolate(agentsTemplate, {
       PROJECT_NAME: config.projectName,
       WIKI_DIR: config.wikiDir,
-      SCRIPTS_DIR: config.scriptsDir,
     });
     const agentsDest = resolve(cwd, 'AGENTS.md');
     const agentsExisting = existsSync(agentsDest) ? readFileSync(agentsDest, 'utf8') : '';
@@ -84,7 +76,7 @@ export async function upgrade(): Promise<void> {
       amendFile(agentsDest, agentsContent);
     }
 
-    const pkgResult = syncPackageJsonScripts(cwd, config.scriptsDir);
+    const pkgResult = syncPackageJsonScripts(cwd);
     if (pkgResult.status === 'synced') {
       const changes = [...pkgResult.added, ...pkgResult.updated.map((k) => `${k} (updated)`)];
       log.step(`Synced package.json wiki scripts (${changes.join(', ')})…`);

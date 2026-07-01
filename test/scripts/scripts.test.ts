@@ -1,16 +1,13 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { spawnSync } from 'child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import {
   WIKI_SCRIPT_KEYS,
-  WIKI_TEMPLATE_SCRIPTS,
   wikiScriptCandidates,
-  scaffoldScripts,
   mergePackageJsonScripts,
-  templatePath,
 } from '../../src/utils/fs.js';
-import { makeTmpWikiDir, cleanup, writePage, fm, scriptPath } from '../helpers/wiki.js';
+import { makeTmpWikiDir, cleanup } from '../helpers/wiki.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const tmpDirs: string[] = [];
 function makeTmpDir(): string {
@@ -23,57 +20,12 @@ afterEach(() => {
   for (const dir of tmpDirs.splice(0)) cleanup(dir);
 });
 
-function scriptFileFromCommand(command: string): string {
-  const match = command.match(/^node (.+\.mjs)/);
-  if (!match) throw new Error(`unexpected command format: ${command}`);
-  return match[1].split('/').pop()!;
-}
-
-function runScript(scriptFile: string, args: string[] = []): ReturnType<typeof spawnSync> {
-  return spawnSync('node', [scriptPath(scriptFile), ...args], { encoding: 'utf8' });
-}
-
-describe('wiki script templates', () => {
-  it('ships every expected script under templates/scripts', () => {
-    const dir = templatePath('scripts');
-    const onDisk = readdirSync(dir)
-      .filter((f) => f.endsWith('.mjs') && !f.startsWith('_'))
-      .sort();
-    expect(onDisk).toEqual([...WIKI_TEMPLATE_SCRIPTS].sort());
-  });
-
-  it('each template script is a runnable node entry point', () => {
-    for (const script of WIKI_TEMPLATE_SCRIPTS) {
-      const content = readFileSync(scriptPath(script), 'utf8');
-      expect(content.startsWith('#!/usr/bin/env node')).toBe(true);
-    }
-  });
-
-  it('each npm alias points at an existing template script file', () => {
-    const candidates = wikiScriptCandidates('scripts/wiki');
-    for (const key of WIKI_SCRIPT_KEYS) {
-      const scriptFile = scriptFileFromCommand(candidates[key]);
-      expect(existsSync(scriptPath(scriptFile))).toBe(true);
-    }
-  });
-
-  it('scaffoldScripts copies all scripts with interpolated placeholders', () => {
-    const dest = makeTmpDir();
-    scaffoldScripts(dest, {
-      WIKI_DIR: 'docs/wiki',
-      SCRIPTS_DIR: 'tools/wiki',
-    });
-
-    for (const script of WIKI_TEMPLATE_SCRIPTS) {
-      expect(existsSync(join(dest, script))).toBe(true);
-    }
-
-    const lint = readFileSync(join(dest, 'lint.mjs'), 'utf8');
-    const utils = readFileSync(join(dest, '_wiki-utils.mjs'), 'utf8');
-    expect(lint).toContain('tools/wiki');
-    expect(utils).toContain("'docs/wiki'");
-    expect(lint).not.toContain('{{WIKI_DIR}}');
-    expect(utils).not.toContain('{{WIKI_DIR}}');
+describe('wiki CLI script aliases', () => {
+  it('wikiScriptCandidates returns llm-wiki-manager invocations', () => {
+    const candidates = wikiScriptCandidates();
+    expect(candidates['wiki:lint']).toBe('llm-wiki-manager lint');
+    expect(candidates['wiki:check']).toBe('llm-wiki-manager check');
+    expect(candidates['wiki:sync']).toBe('llm-wiki-manager sync');
   });
 
   it('mergePackageJsonScripts registers every wiki alias', () => {
@@ -83,7 +35,7 @@ describe('wiki script templates', () => {
       JSON.stringify({ name: 'acme' }, null, 2) + '\n',
     );
 
-    const result = mergePackageJsonScripts(projectDir, 'custom/scripts');
+    const result = mergePackageJsonScripts(projectDir);
     expect(result.status).toBe('merged');
     expect(result.status === 'merged' ? result.added : []).toEqual([...WIKI_SCRIPT_KEYS]);
 
@@ -91,13 +43,13 @@ describe('wiki script templates', () => {
     expect(Object.keys(pkg.scripts).filter((k: string) => k.startsWith('wiki:'))).toEqual([
       ...WIKI_SCRIPT_KEYS,
     ]);
-    expect(pkg.scripts).toEqual(wikiScriptCandidates('custom/scripts'));
+    expect(pkg.scripts).toEqual(wikiScriptCandidates());
   });
 });
 
-describe('wiki script smoke tests', () => {
-  it('help.mjs documents every npm alias with usage hints', () => {
-    const result = runScript('help.mjs');
+describe('wiki CLI smoke tests', () => {
+  it('help documents every npm alias with usage hints', () => {
+    const result = runBuiltCli(process.cwd(), ['help']);
     expect(result.status).toBe(0);
 
     for (const key of WIKI_SCRIPT_KEYS) {
@@ -105,67 +57,5 @@ describe('wiki script smoke tests', () => {
       expect(result.stdout).toContain('When:');
       expect(result.stdout).toContain('Run:');
     }
-  });
-
-  it('lint.mjs validates an empty wiki', () => {
-    const wikiDir = makeTmpDir();
-    writeFileSync(join(wikiDir, 'index.md'), '# Wiki Index\n');
-    writeFileSync(join(wikiDir, 'log.md'), '# Log\n');
-
-    const result = runScript('lint.mjs', ['--wiki-dir', wikiDir]);
-    expect(result.status).toBe(0);
-    expect(result.stdout).toContain('No errors found');
-  });
-
-  it('lint.mjs rejects --wiki-dir without a value', () => {
-    const result = runScript('lint.mjs', ['--wiki-dir']);
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('--wiki-dir requires a value');
-  });
-
-  it('build-index.mjs writes index.md', () => {
-    const wikiDir = makeTmpDir();
-    writePage(wikiDir, 'concepts/a.md', fm({ type: 'concept', title: 'Alpha' }));
-
-    const result = runScript('build-index.mjs', ['--wiki-dir', wikiDir]);
-    expect(result.status).toBe(0);
-    expect(readFileSync(join(wikiDir, 'index.md'), 'utf8')).toContain('[Alpha](concepts/a.md)');
-  });
-
-  it('build-index.mjs --check passes on a fresh index and fails when stale', () => {
-    const wikiDir = makeTmpDir();
-    writePage(wikiDir, 'concepts/a.md', fm({ type: 'concept', title: 'Alpha' }));
-
-    expect(runScript('build-index.mjs', ['--wiki-dir', wikiDir, '--check']).status).toBe(1);
-
-    runScript('build-index.mjs', ['--wiki-dir', wikiDir]);
-    expect(runScript('build-index.mjs', ['--wiki-dir', wikiDir, '--check']).status).toBe(0);
-
-    writeFileSync(join(wikiDir, 'index.md'), '# stale\n');
-    expect(runScript('build-index.mjs', ['--wiki-dir', wikiDir, '--check']).status).toBe(1);
-  });
-
-  it('sync-see-also.mjs exits cleanly on an empty wiki', () => {
-    const wikiDir = makeTmpDir();
-    const result = runScript('sync-see-also.mjs', ['--wiki-dir', wikiDir]);
-    expect(result.status).toBe(0);
-  });
-
-  it('log.mjs appends an ingest entry', () => {
-    const wikiDir = makeTmpDir();
-    writeFileSync(join(wikiDir, 'log.md'), '# Log\n\n| Date | Op | Title |\n| --- | --- | --- |\n');
-
-    const result = runScript('log.mjs', ['add', 'ingest', 'Test Source', '--wiki-dir', wikiDir]);
-    expect(result.status).toBe(0);
-    expect(readFileSync(join(wikiDir, 'log.md'), 'utf8')).toContain('Test Source');
-  });
-
-  it('log.mjs rejects unknown operations', () => {
-    const wikiDir = makeTmpDir();
-    writeFileSync(join(wikiDir, 'log.md'), '# Log\n');
-
-    const result = runScript('log.mjs', ['add', 'bogus', 'Title', '--wiki-dir', wikiDir]);
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('Unknown operation');
   });
 });

@@ -1,9 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { spawnSync } from 'child_process';
 import { readFileSync, mkdtempSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { makeTmpWikiDir, cleanup, writePage, fm, scriptPath } from '../helpers/wiki.js';
+import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 
 const dirs: string[] = [];
 function newWikiDir(): string {
@@ -17,12 +16,10 @@ afterEach(() => {
 });
 
 function runSync(wikiDir: string, extraArgs: string[] = []) {
-  return spawnSync('node', [scriptPath('sync-see-also.mjs'), '--wiki-dir', wikiDir, ...extraArgs], {
-    encoding: 'utf8',
-  });
+  return runWikiCliWithWikiDir(wikiDir, 'sync', extraArgs);
 }
 
-describe('sync-see-also.mjs', () => {
+describe('sync command', () => {
   it('appends a missing related link under a new "## See also" section', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
@@ -138,5 +135,40 @@ describe('sync-see-also.mjs', () => {
 
     expect(afterSecond).toBe(afterFirst);
     expect(afterFirst.match(/\[B Page\]\(b\.md\)/g)?.length).toBe(1);
+  });
+
+  it('inserts links inside "## See also" when it is not the last section', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
+    const aPath = writePage(
+      dir,
+      'concepts/a.md',
+      fm({ related: ['concepts/b.md'] }) +
+        '\nBody.\n\n## See also\n\n- [Existing](existing.md)\n\n## History\n\nOld notes.\n',
+    );
+    writePage(dir, 'concepts/existing.md', fm({ type: 'hub', title: 'Existing' }));
+
+    runSync(dir);
+
+    const content = readFileSync(aPath, 'utf8');
+    const linkIdx = content.indexOf('[B Page](b.md)');
+    const historyIdx = content.indexOf('## History');
+    expect(linkIdx).toBeGreaterThan(-1);
+    expect(linkIdx).toBeLessThan(historyIdx);
+    expect(content).toContain('Old notes.');
+  });
+
+  it('syncs pages whose filenames contain the substring "raw"', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
+    const path = writePage(
+      dir,
+      'concepts/drawing.md',
+      fm({ title: 'Drawing', related: ['concepts/b.md'] }) + '\nBody.\n',
+    );
+
+    const result = runSync(dir);
+    expect(result.status).toBe(0);
+    expect(readFileSync(path, 'utf8')).toContain('[B Page](b.md)');
   });
 });

@@ -1,8 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { spawnSync } from 'child_process';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { makeTmpWikiDir, cleanup, writePage, fm, scriptPath } from '../helpers/wiki.js';
+import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 
 const dirs: string[] = [];
 function newWikiDir(): string {
@@ -15,16 +14,18 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) cleanup(dir);
 });
 
-function runBuildIndex(wikiDir: string, extraArgs: string[] = []) {
-  return spawnSync('node', [scriptPath('build-index.mjs'), '--wiki-dir', wikiDir, ...extraArgs], {
-    encoding: 'utf8',
-  });
+function runBuild(wikiDir: string) {
+  return runWikiCliWithWikiDir(wikiDir, 'build');
 }
 
-describe('build-index.mjs', () => {
+function runCheck(wikiDir: string) {
+  return runWikiCliWithWikiDir(wikiDir, 'check');
+}
+
+describe('build command', () => {
   it('writes index.md with "none yet" placeholders for an empty wiki', () => {
     const dir = newWikiDir();
-    const result = runBuildIndex(dir);
+    const result = runBuild(dir);
     expect(result.status).toBe(0);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index).toContain('# Wiki Index');
@@ -34,7 +35,7 @@ describe('build-index.mjs', () => {
   it('lists a concept page under the Concepts section', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'Caching', tags: ['perf'] }));
-    runBuildIndex(dir);
+    runBuild(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index).toMatch(/## Concepts/);
     expect(index).toContain('[Caching](concepts/a.md)');
@@ -44,7 +45,7 @@ describe('build-index.mjs', () => {
   it('lists a source page under the Sources section', () => {
     const dir = newWikiDir();
     writePage(dir, 'sources/s.md', fm({ type: 'source', title: 'RFC 9110' }));
-    runBuildIndex(dir);
+    runBuild(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index).toMatch(/## Sources/);
     expect(index).toContain('[RFC 9110](sources/s.md)');
@@ -58,7 +59,7 @@ describe('build-index.mjs', () => {
       'entities/billing.md',
       fm({ type: 'overview', title: 'Billing', tags: ['billing'] }),
     );
-    runBuildIndex(dir);
+    runBuild(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index).toContain('[Hub Page](raw/raw.md)');
     expect(index).toMatch(/## Entities/);
@@ -70,7 +71,7 @@ describe('build-index.mjs', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/z.md', fm({ type: 'concept', title: 'Zebra' }));
     writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'Apple' }));
-    runBuildIndex(dir);
+    runBuild(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index.indexOf('Apple')).toBeLessThan(index.indexOf('Zebra'));
   });
@@ -80,7 +81,7 @@ describe('build-index.mjs', () => {
     writeFileSync(join(dir, 'log.md'), '# Log\n');
     writeFileSync(join(dir, 'schema.md'), fm({ type: 'hub', title: 'Schema' }));
     writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
-    runBuildIndex(dir);
+    runBuild(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index).not.toContain('Schema');
   });
@@ -89,7 +90,7 @@ describe('build-index.mjs', () => {
     const dir = newWikiDir();
     writePage(dir, 'raw/articles/notes.md', fm({ type: 'concept', title: 'Should Not Appear' }));
     writePage(dir, 'raw/raw.md', fm({ type: 'hub', title: 'Raw Hub' }));
-    runBuildIndex(dir);
+    runBuild(dir);
     const index = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(index).not.toContain('Should Not Appear');
     expect(index).toContain('[Raw Hub](raw/raw.md)');
@@ -98,43 +99,54 @@ describe('build-index.mjs', () => {
   it('is idempotent across repeated runs', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
-    runBuildIndex(dir);
+    runBuild(dir);
     const first = readFileSync(join(dir, 'index.md'), 'utf8');
-    runBuildIndex(dir);
+    runBuild(dir);
     const second = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(second).toBe(first);
   });
 
-  it('--check passes when index.md matches the generated output', () => {
+  it('check passes when index.md matches the generated output', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
-    runBuildIndex(dir);
-    const result = runBuildIndex(dir, ['--check']);
+    runBuild(dir);
+    const result = runCheck(dir);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('up to date');
   });
 
-  it('--check fails when index.md is missing or stale', () => {
+  it('check fails when index.md is missing or stale', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
 
-    const missing = runBuildIndex(dir, ['--check']);
+    const missing = runCheck(dir);
     expect(missing.status).toBe(1);
     expect(missing.stderr).toContain('stale');
 
-    runBuildIndex(dir);
+    runBuild(dir);
     writeFileSync(join(dir, 'index.md'), '# stale index\n');
-    const stale = runBuildIndex(dir, ['--check']);
+    const stale = runCheck(dir);
     expect(stale.status).toBe(1);
     expect(stale.stderr).toContain('stale');
   });
 
-  it('--check does not modify index.md', () => {
+  it('check does not modify index.md', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
-    runBuildIndex(dir);
+    runBuild(dir);
     const before = readFileSync(join(dir, 'index.md'), 'utf8');
-    runBuildIndex(dir, ['--check']);
+    runCheck(dir);
     expect(readFileSync(join(dir, 'index.md'), 'utf8')).toBe(before);
+  });
+
+  it('check passes when git checked index.md out with CRLF line endings', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
+    runBuild(dir);
+    const indexPath = join(dir, 'index.md');
+    const lf = readFileSync(indexPath, 'utf8');
+    writeFileSync(indexPath, lf.replace(/\n/g, '\r\n'), 'utf8');
+    const result = runCheck(dir);
+    expect(result.status).toBe(0);
   });
 });

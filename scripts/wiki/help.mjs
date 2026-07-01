@@ -82,4 +82,9 @@ console.log('    # .husky/pre-commit → npx lint-staged');
 console.log('    npm run wiki:setup:husky   # wires pre-push wiki:check');
 console.log('');
 
+console.log('  Refreshing scaffold after a package update:');
+console.log('    npx llm-wiki-manager upgrade');
+console.log('    npx llm-wiki-manager upgrade --dry-run');
+console.log('');
+
 console.log(`Scripts live in ${SCRIPTS_DIR}/. Without npm scripts, run node ${SCRIPTS_DIR}/<script>.mjs`);

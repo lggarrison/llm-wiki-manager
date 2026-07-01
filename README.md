@@ -102,6 +102,15 @@ After `init` completes:
 
 If your project has no `package.json`, use the raw script paths under `scripts/wiki/` instead (see [Managing the wiki](#managing-the-wiki)).
 
+Re-running `init` on an existing project is safe: it only creates missing scaffold files and does not overwrite your wiki content or `log.md`. To refresh template files (scripts, `schema.md`, `wiki/AGENTS.md`, root `AGENTS.md`) after updating the package, use **upgrade**:
+
+```bash
+npx llm-wiki-manager upgrade
+npx llm-wiki-manager upgrade --dry-run   # preview changes
+```
+
+Install metadata is stored in `.llm-wiki-manager.json` at the project root.
+
 ---
 
 ## Updating the wiki

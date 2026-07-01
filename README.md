@@ -1,6 +1,7 @@
 # llm-wiki-manager
 
 [![CI](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/llm-wiki-manager.svg)](https://www.npmjs.com/package/llm-wiki-manager)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen.svg)](https://nodejs.org)
 
@@ -52,33 +53,54 @@ package.json           # wiki:* npm scripts added (when present; invoke llm-wiki
 
 ## Installation
 
-The source lives at [github.com/lggarrison/llm-wiki-manager](https://github.com/lggarrison/llm-wiki-manager).
+Install from [npm](https://www.npmjs.com/package/llm-wiki-manager) or [GitHub](https://github.com/lggarrison/llm-wiki-manager).
 
-### From GitHub (recommended for now)
+### From npm (recommended)
 
-Run directly without installing — npm builds the package from source on install:
+Run without adding a dependency:
+
+```bash
+npx llm-wiki-manager init
+```
+
+Or add it as a dev dependency in your project:
+
+```bash
+npm install --save-dev llm-wiki-manager
+npx llm-wiki-manager init
+```
+
+Pin a specific version:
+
+```bash
+npx llm-wiki-manager@1.0.0 init
+```
+
+### From GitHub
+
+Useful when you want to install directly from the repository (for example, before a version hits npm, or to test a branch):
 
 ```bash
 npx github:lggarrison/llm-wiki-manager init
 ```
 
-Or add it as a dev dependency in your project:
+Or add it as a dev dependency:
 
 ```bash
 npm install --save-dev github:lggarrison/llm-wiki-manager
 npx llm-wiki-manager init
 ```
 
+Pin a release tag:
+
+```bash
+npx github:lggarrison/llm-wiki-manager#v1.0.0 init
+```
+
 If your machine is set up with a GitHub SSH key, you can use the SSH form instead:
 
 ```bash
 npm install --save-dev git+ssh://git@github.com/lggarrison/llm-wiki-manager.git
-```
-
-### From npm (once published)
-
-```bash
-npx llm-wiki-manager init
 ```
 
 ### From a local clone
@@ -485,9 +507,11 @@ Issues and pull requests are welcome at [github.com/lggarrison/llm-wiki-manager]
 
 ### Releases
 
-Version tags are published as [GitHub Releases](https://github.com/lggarrison/llm-wiki-manager/releases). Pin a specific version:
+Every version tag is published to [npm](https://www.npmjs.com/package/llm-wiki-manager) and as a [GitHub Release](https://github.com/lggarrison/llm-wiki-manager/releases) at the same time. Pin a specific version:
 
 ```bash
+npx llm-wiki-manager@1.0.0 init
+# or from GitHub:
 npx github:lggarrison/llm-wiki-manager#v1.0.0 init
 ```
 

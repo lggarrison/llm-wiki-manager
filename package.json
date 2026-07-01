@@ -1,7 +1,6 @@
 {
   "name": "llm-wiki-manager",
   "version": "1.0.0",
-  "private": true,
   "description": "Scaffold and manage an LLM-maintained personal wiki",
   "type": "module",
   "bin": {
@@ -36,6 +35,7 @@
     "globals": "^17.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
+    "npm-run-all2": "^9.0.2",
     "prettier": "^3.9.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.1",
@@ -52,7 +52,7 @@
     "check:node-types": "check-node-types --source nvmrc",
     "test": "vitest run",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
-    "release:check": "npm run check:node-types && npm run lint && npm run format:check && npm test && npm run build && npm run test:e2e && npm run wiki:lint && npm run wiki:check",
+    "release:check": "run-s check:node-types lint format:check test build test:e2e wiki:lint wiki:check",
     "wiki:help": "node dist/bin/cli.js help",
     "wiki:lint": "node dist/bin/cli.js lint",
     "wiki:build": "node dist/bin/cli.js build",

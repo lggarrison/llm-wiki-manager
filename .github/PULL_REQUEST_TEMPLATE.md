@@ -10,8 +10,6 @@ _One or two sentences: what does this change do, and why?_
 
 _Bullet the notable changes. Call out anything that affects the published surface: CLI commands/flags (`bin/cli.ts`), scaffold templates (`templates/`), or the `"files"` allowlist in `package.json`._
 
--
-
 ## How to verify
 
 _Exact commands a reviewer can run. For example:_

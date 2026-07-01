@@ -67,7 +67,7 @@ Do not encode scope with folder nesting under `entities/`.
 | `aliases` | Alternate titles for search |
 | `tags` | Topic labels; first tag is the scope slug on entity-family pages |
 | `related` | Wiki-root-relative paths to related pages |
-| `sources` | (concept pages) paths to source summaries that back this page |
+| `sources` | Paths to source summaries that back this page (entities and concepts) |
 | `code_refs` | Repo-root-relative code paths (e.g. `src/commands/init.ts`); lint verifies each exists |
 | `status` | `active` · `deprecated` · `wip` |
 | `summary` | One sentence; shown in index tables |
@@ -94,22 +94,38 @@ Source pairing: `sources/<slug>.md` shares the basename of its raw artifact (`ra
 
 ---
 
-## Operations
+## §7 The three workflows
 
-### Ingest
+These are what the agent actually does with the wiki.
 
-1. Place artifact under `raw/<category>/` (articles, prs, tickets, design-notes, transcripts)
-2. Create `sources/<slug>.md` summary (same basename as the raw file)
-3. Update `entities/` and/or `concepts/` pages
-4. `npm run wiki:sync` → `npm run wiki:build` → `npm run wiki:log -- add ingest "<title>"`
+### Ingest (a new artifact lands in raw/)
 
-### Query
+1. Read the artifact end-to-end.
+2. Discuss key takeaways with the user; confirm scope.
+3. Place the artifact under `raw/<category>/` if not already there (articles, prs, tickets, design-notes, transcripts).
+4. Write `sources/<id>.md` summarizing it (`type: source`; basename must match the raw file).
+5. Update affected `entities/` and `concepts/` pages: bump `last_updated`, add the source path to `sources:`, weave in new claims, flag contradictions (see **Contradictions** below).
+6. A single source can touch 5–15 pages in one pass — that's normal.
+7. `npm run wiki:sync` — sync new `related:` entries to body links.
+8. `npm run wiki:build` — regenerate `index.md`.
+9. `npm run wiki:log -- add ingest "<title>"`.
+10. `npm run wiki:lint`; fix errors.
 
-Read `index.md`, synthesize with citations, stub gaps as `status: wip`.
+### Query (user asks a question)
 
-### Lint
+1. **Find candidates:** prefer `qmd query "<q>" -c <collection> --files --min-score 0.3` if qmd is installed; otherwise read `index.md` and grep.
+2. Drill into the relevant `entities/`, `concepts/`, and `sources/` pages; cite each page and its `code_refs:`.
+3. If the answer is novel and reusable (a synthesis, comparison, or discovered connection), file it back — usually a new deep-dive next to the most relevant entity. Update neighbors' `related:`, bump `last_updated`, append `npm run wiki:log -- add query "<summary>"`.
+4. Stub gaps as `status: wip` (see **Gaps** below).
 
-`npm run wiki:lint` before committing wiki changes.
+### Maintenance trigger (agent edits src/ non-trivially)
+
+1. Grep `entities/*.md` and `concepts/*.md` for the touched file path in `code_refs:`.
+2. For each match, update the page (and `last_updated`) in the same change.
+3. If a top-level `src/ui/` or `src/api/` dir was added or removed, add or deprecate the corresponding `entities/<slug>.md` overview and note it in `log.md` via `npm run wiki:log -- add maintenance "<note>"`.
+4. `npm run wiki:lint`.
+
+This is the "compound interest" mechanism: docs move in the same PR as the code, so the wiki never drifts.
 
 ---
 

@@ -7,11 +7,17 @@ import { fm, writePage, PACKAGE_ROOT } from '../helpers/wiki.js';
 
 const tmpDirs: string[] = [];
 
-function makeTmpProject(): string {
+function makeTmpDir(withPackageJson = true): string {
   const dir = mkdtempSync(join(tmpdir(), 'llm-wiki-e2e-'));
-  writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+  if (withPackageJson) {
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+  }
   tmpDirs.push(dir);
   return dir;
+}
+
+function makeTmpProject(): string {
+  return makeTmpDir(true);
 }
 
 function initProject(dir: string, extraArgs: string[] = []): ReturnType<typeof runBuiltCli> {
@@ -126,6 +132,48 @@ describe('CLI e2e workflow', () => {
     const content = readFileSync(join(dir, 'wiki', 'concepts', 'legacy.md'), 'utf8');
     expect(content).toContain('status: wip');
     expect(content).not.toContain('status: draft');
+  });
+
+  it('init scaffolds without package.json (no npm scripts added)', () => {
+    const dir = makeTmpDir(false);
+    const result = initProject(dir);
+
+    expect(result.status).toBe(0);
+    expect(existsSync(join(dir, 'wiki', 'schema.md'))).toBe(true);
+    expect(existsSync(join(dir, 'scripts', 'wiki', 'lint.mjs'))).toBe(true);
+    expect(existsSync(join(dir, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(dir, 'package.json'))).toBe(false);
+    expect(existsSync(join(dir, '.llm-wiki-manager.json'))).toBe(true);
+  });
+
+  it('re-init preserves existing log.md and schema.md', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const logPath = join(dir, 'wiki', 'log.md');
+    const schemaPath = join(dir, 'wiki', 'schema.md');
+    writeFileSync(logPath, '# Custom log history\n\nDo not overwrite.\n');
+    writeFileSync(schemaPath, '# Custom schema\n\nUser edits.\n');
+
+    const reInit = initProject(dir);
+    expect(reInit.status).toBe(0);
+    expect(readFileSync(logPath, 'utf8')).toContain('Do not overwrite.');
+    expect(readFileSync(schemaPath, 'utf8')).toContain('User edits.');
+  });
+
+  it('upgrade --dry-run reports changes without writing files', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const schemaPath = join(dir, 'wiki', 'schema.md');
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const configBefore = readFileSync(configPath, 'utf8');
+    writeFileSync(schemaPath, '# stale schema\n');
+
+    const dryRun = runBuiltCli(dir, ['upgrade', '--dry-run']);
+    expect(dryRun.status).toBe(0);
+    expect(readFileSync(schemaPath, 'utf8')).toBe('# stale schema\n');
+    expect(readFileSync(configPath, 'utf8')).toBe(configBefore);
   });
 });
 

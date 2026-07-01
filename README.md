@@ -601,4 +601,8 @@ npm pack
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, the branch model, and how to open a pull request. Release history is in [CHANGELOG.md](CHANGELOG.md). To report a security issue privately, see [SECURITY.md](SECURITY.md).

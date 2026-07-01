@@ -4,13 +4,18 @@ import { basename, join, resolve } from 'path';
 import pc from 'picocolors';
 import {
   templatePath,
-  copyTemplate,
   amendFile,
   interpolate,
   mergePackageJsonScripts,
-  scopeSlugFromFocusDir,
   scaffoldWikiEmptyDirs,
   scaffoldEntityOverviews,
+  scaffoldWikiTemplates,
+  scaffoldScripts,
+  buildTemplateVars,
+  writeInstallConfig,
+  getPackageVersion,
+  isExistingInstall,
+  readInstallConfig,
 } from '../utils/fs.js';
 
 export async function init(): Promise<void> {
@@ -60,45 +65,50 @@ export async function init(): Promise<void> {
     .map((s: string) => s.trim())
     .filter(Boolean);
 
+  const wikiDirStr = (wikiDir as string).trim();
+  const scriptsDirStr = (scriptsDir as string).trim();
+  const projectNameStr = (projectName as string).trim();
   const initDate = new Date().toISOString().slice(0, 10);
-  const entitySlugs = focusDirList.map((d: string) => scopeSlugFromFocusDir(d));
-  const entityScopeLines =
-    entitySlugs.length > 0
-      ? entitySlugs.join('\n')
-      : '# Add scope slugs below as you define documented source areas';
 
-  const vars: Record<string, string> = {
-    PROJECT_NAME: (projectName as string).trim(),
-    WIKI_DIR: (wikiDir as string).trim(),
-    SCRIPTS_DIR: (scriptsDir as string).trim(),
-    INIT_DATE: initDate,
-    ENTITY_SCOPE_LINES: entityScopeLines,
-    FOCUS_DIRS:
-      focusDirList.length > 0
-        ? focusDirList.map((d: string) => `\`${d}/\``).join(', ')
-        : 'the entire project',
-    FOCUS_DIRS_LIST:
-      focusDirList.length > 0
-        ? focusDirList.map((d: string) => `- \`${d}/\``).join('\n')
-        : '- _(whole project — no specific directory scope)_',
-  };
+  const vars = buildTemplateVars({
+    projectName: projectNameStr,
+    wikiDir: wikiDirStr,
+    scriptsDir: scriptsDirStr,
+    focusDirs: focusDirList,
+    initDate,
+  });
 
   const cwd = process.cwd();
-  const wikiDest = resolve(cwd, (wikiDir as string).trim());
-  const scriptsDest = resolve(cwd, (scriptsDir as string).trim());
+  const wikiDest = resolve(cwd, wikiDirStr);
+  const scriptsDest = resolve(cwd, scriptsDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
+  const reInit = isExistingInstall(cwd, wikiDirStr);
 
-  // 1. Scaffold wiki directory
+  if (reInit) {
+    log.warn('Existing wiki detected — only missing scaffold files will be created.');
+    log.info(`To refresh templates, run ${pc.bold('npx llm-wiki-manager upgrade')}.`);
+  }
+
+  // 1. Scaffold wiki directory (create-if-missing)
   log.step('Scaffolding wiki directory…');
-  copyTemplate(templatePath('wiki'), wikiDest, vars);
+  const wikiResult = scaffoldWikiTemplates(wikiDest, vars, { overwrite: false });
+  if (wikiResult.created.length > 0) {
+    log.info(`Created: ${wikiResult.created.join(', ')}`);
+  }
+  if (reInit && wikiResult.skipped.length > 0) {
+    log.info(`Skipped existing: ${wikiResult.skipped.length} template file(s)`);
+  }
   scaffoldWikiEmptyDirs(wikiDest);
   if (focusDirList.length > 0) {
     scaffoldEntityOverviews(wikiDest, focusDirList, initDate);
   }
 
-  // 2. Scaffold management scripts
+  // 2. Scaffold management scripts (create-if-missing)
   log.step('Installing management scripts…');
-  copyTemplate(templatePath('scripts'), scriptsDest, vars);
+  const scriptsResult = scaffoldScripts(scriptsDest, vars, { overwrite: false });
+  if (scriptsResult.created.length > 0) {
+    log.info(`Created: ${scriptsResult.created.join(', ')}`);
+  }
 
   // 3. Add npm scripts to package.json (when present)
   const pkgResult = mergePackageJsonScripts(cwd, vars.SCRIPTS_DIR);
@@ -117,17 +127,31 @@ export async function init(): Promise<void> {
 
   const amended = amendFile(agentsDest, agentsContent);
   if (!amended) {
-    log.warn('AGENTS.md already contains an llm-wiki-manager section — skipped.');
+    log.warn(
+      'AGENTS.md already contains an llm-wiki-manager section — skipped. Run upgrade to refresh.',
+    );
   }
+
+  const existingConfig = readInstallConfig(cwd);
+  writeInstallConfig(cwd, {
+    version: getPackageVersion(),
+    projectName: projectNameStr,
+    wikiDir: wikiDirStr,
+    scriptsDir: scriptsDirStr,
+    focusDirs: focusDirList.length > 0 ? focusDirList : (existingConfig?.focusDirs ?? []),
+  });
 
   outro(
     pc.green('Done!') +
       ' Next steps:\n' +
-      `  • Review ${pc.bold(join((wikiDir as string).trim(), 'schema.md'))} to understand wiki conventions\n` +
+      `  • Review ${pc.bold(join(wikiDirStr, 'schema.md'))} to understand wiki conventions\n` +
       `  • Run ${pc.bold('npm run wiki:help')} for a list of wiki commands\n` +
       `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
       `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
-      `  • Open ${pc.bold(join((wikiDir as string).trim(), 'README.md'))} (human entry) and ${pc.bold(join((wikiDir as string).trim(), 'AGENTS.md'))} (agent entry)\n` +
+      `  • Open ${pc.bold(join(wikiDirStr, 'README.md'))} (human entry) and ${pc.bold(join(wikiDirStr, 'AGENTS.md'))} (agent entry)\n` +
+      (reInit
+        ? `  • Run ${pc.bold('npx llm-wiki-manager upgrade')} to refresh template files\n`
+        : '') +
       `  • Optional git hooks (Husky + lint-staged) — see README "Optional git hooks"\n` +
       `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n`,
   );

@@ -1,6 +1,8 @@
+## Introduction
+
 Thanks for contributing to llm-wiki-manager!
 
-Open PRs against **`develop`** (the default branch). Releases are cut from **`main`**. Fill in the sections that apply and delete the rest.
+Open PRs against **`develop`** (the default branch). <!-- Releases are cut from **`main`**. --> Fill in the sections that apply and delete the rest, including the Introduction section.
 
 ## Summary
 

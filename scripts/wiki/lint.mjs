@@ -231,8 +231,11 @@ for (const file of pages) {
     err(file, `invalid status "${fm.status}" — must be one of: ${[...VALID_STATUSES].join(', ')}`);
   }
 
-  if (fm.last_updated && !/^\d{4}-\d{2}-\d{2}$/.test(fm.last_updated)) {
-    err(file, `last_updated must be YYYY-MM-DD, got: ${fm.last_updated}`);
+  if (fm.last_updated && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(fm.last_updated)) {
+    err(
+      file,
+      `last_updated must be a UTC ISO timestamp (YYYY-MM-DDTHH:MM:SSZ), got: ${fm.last_updated}`,
+    );
   }
 
   const codeRefs = Array.isArray(fm.code_refs) ? fm.code_refs : [];

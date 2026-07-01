@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Utils
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [utils]
 related: [entities/commands.md, entities/templates.md]
 status: wip

@@ -46,7 +46,7 @@ export function runUpgradeSteps(
   if (!dryRun) {
     scaffoldWikiEmptyDirs(wikiDest);
     if (config.focusDirs.length > 0) {
-      scaffoldEntityOverviews(wikiDest, config.focusDirs, vars.INIT_DATE);
+      scaffoldEntityOverviews(wikiDest, config.focusDirs, vars.INIT_TIMESTAMP);
     }
   }
 

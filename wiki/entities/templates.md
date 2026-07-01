@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Templates
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [templates]
 related: [entities/utils.md, concepts/template-system.md]
 status: wip

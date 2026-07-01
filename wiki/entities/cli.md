@@ -1,7 +1,7 @@
 ---
 type: overview
 title: CLI
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [cli]
 related: [entities/commands.md]
 status: wip

@@ -71,7 +71,7 @@ Do not encode scope with folder nesting under `entities/`.
 | --- | --- |
 | `type` | One of the page types in §3 |
 | `title` | Human-readable; used in `index.md` |
-| `last_updated` | ISO date `YYYY-MM-DD`; update on every edit |
+| `last_updated` | UTC ISO 8601 timestamp `YYYY-MM-DDTHH:MM:SSZ`; update on every edit |
 
 ### Encouraged
 
@@ -149,3 +149,14 @@ Flag both pages with a `> ⚠️ Contradiction:` blockquote and create a reconci
 ## Gaps
 
 Create stub pages (`status: wip`) rather than leaving broken `related:` references.
+
+---
+
+## Where to go next
+
+- **Schema & workflows (authoritative):** `{{WIKI_DIR}}/AGENTS.md`
+- **Human onboarding / browsing:** `{{WIKI_DIR}}/README.md`
+- **Content catalog:** `{{WIKI_DIR}}/index.md`
+- **Event log:** `{{WIKI_DIR}}/log.md`
+- **Search setup & CLI:** `{{WIKI_DIR}}/concepts/wiki-search.md`
+- **Scripts:** `{{SCRIPTS_DIR}}/` (lint, build-index, log, sync-see-also, qmd-*)

@@ -8,26 +8,28 @@
 
 | Title | Status | Updated |
 | --- | --- | --- |
-| [Raw Sources](raw/raw.md) | active | 2026-06-30 |
+| [Raw Sources](raw/raw.md) | active | 2026-07-01T01:56:22Z |
 
 ## Entities
 
 | Title | Scope tag | Status | Updated |
 | --- | --- | --- | --- |
-| [CLI](entities/cli.md) | cli | wip | 2026-06-30 |
-| [Commands](entities/commands.md) | commands | wip | 2026-06-30 |
-| [Templates](entities/templates.md) | templates | wip | 2026-06-30 |
-| [Utils](entities/utils.md) | utils | wip | 2026-06-30 |
+| [CLI](entities/cli.md) | cli | wip | 2026-06-30T00:00:00Z |
+| [Commands](entities/commands.md) | commands | wip | 2026-06-30T00:00:00Z |
+| [Templates](entities/templates.md) | templates | wip | 2026-06-30T00:00:00Z |
+| [Utils](entities/utils.md) | utils | wip | 2026-06-30T00:00:00Z |
 
 ## Concepts
 
 | Title | Tags | Status | Updated |
 | --- | --- | --- | --- |
-| [Dogfooding](concepts/dogfooding.md) | dogfooding, architecture | active | 2026-06-30 |
-| [Init Command](concepts/init-command.md) | cli, scaffold | active | 2026-06-30 |
-| [Repository Layout](concepts/repo-layout.md) | architecture | active | 2026-06-30 |
-| [Template System](concepts/template-system.md) | templates, scaffold | active | 2026-06-30 |
-| [Wiki Management Scripts](concepts/wiki-scripts.md) | scripts, lint, maintenance | active | 2026-06-30 |
+| [Dogfooding](concepts/dogfooding.md) | dogfooding, architecture | active | 2026-06-30T00:00:00Z |
+| [E2E Tests](concepts/e2e-tests.md) | testing, vitest, cli | active | 2026-06-30T00:00:00Z |
+| [Init Command](concepts/init-command.md) | cli, scaffold | active | 2026-06-30T00:00:00Z |
+| [Repository Layout](concepts/repo-layout.md) | architecture | active | 2026-06-30T00:00:00Z |
+| [Template System](concepts/template-system.md) | templates, scaffold | active | 2026-06-30T00:00:00Z |
+| [Unit Tests](concepts/unit-tests.md) | testing, vitest | active | 2026-06-30T00:00:00Z |
+| [Wiki Management Scripts](concepts/wiki-scripts.md) | scripts, lint, maintenance | active | 2026-06-30T00:00:00Z |
 
 ## Sources
 

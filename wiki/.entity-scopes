@@ -1,6 +1,3 @@
 # Required entity overview slugs (one per line)
-# Must match entities/<slug>.md with type: overview and scope-tag as first tag
-commands
-utils
-templates
-cli
+# Must match entities/<slug>.md with type: overview; first tag = scope slug
+# Add scope slugs below as you define documented source areas

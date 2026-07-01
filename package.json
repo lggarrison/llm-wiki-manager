@@ -55,7 +55,8 @@
     "wiki:build": "node scripts/wiki/build-index.mjs",
     "wiki:check": "node scripts/wiki/build-index.mjs --check",
     "wiki:sync": "node scripts/wiki/sync-see-also.mjs",
-    "wiki:log": "node scripts/wiki/log.mjs"
+    "wiki:log": "node scripts/wiki/log.mjs",
+    "wiki:setup:husky": "node scripts/wiki/setup-husky.mjs"
   },
   "lint-staged": {
     "*.{ts,js,mjs,cjs}": [

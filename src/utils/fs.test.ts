@@ -187,13 +187,13 @@ describe('scaffoldEntityOverviews', () => {
 });
 
 describe('wiki template bundle', () => {
-  it('includes vault entry files and obsidian config', () => {
+  it('includes vault entry files', () => {
     const dest = makeTmpDir();
     copyTemplate(templatePath('wiki'), dest, {
       PROJECT_NAME: 'acme',
       WIKI_DIR: 'wiki',
       SCRIPTS_DIR: 'scripts/wiki',
-      INIT_DATE: '2026-06-30',
+      INIT_TIMESTAMP: '2026-06-30T00:00:00Z',
       ENTITY_SCOPE_LINES: 'api',
       FOCUS_DIRS: '`src/`',
       FOCUS_DIRS_LIST: '- `src/`',
@@ -203,7 +203,6 @@ describe('wiki template bundle', () => {
     expect(existsSync(join(dest, 'AGENTS.md'))).toBe(true);
     expect(existsSync(join(dest, 'raw', 'raw.md'))).toBe(true);
     expect(existsSync(join(dest, '.entity-scopes'))).toBe(true);
-    expect(existsSync(join(dest, '.obsidian', 'app.json'))).toBe(true);
     expect(readFileSync(join(dest, 'README.md'), 'utf8')).toContain('acme');
     expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('api');
   });
@@ -320,7 +319,7 @@ describe('scaffoldWikiTemplates', () => {
       wikiDir: 'wiki',
       scriptsDir: 'scripts/wiki',
       focusDirs: ['src'],
-      initDate: '2026-06-30',
+      initTimestamp: '2026-06-30T00:00:00Z',
     });
 
     scaffoldWikiTemplates(dest, vars, { overwrite: false });
@@ -338,7 +337,7 @@ describe('scaffoldWikiTemplates', () => {
       wikiDir: 'wiki',
       scriptsDir: 'scripts/wiki',
       focusDirs: [],
-      initDate: '2026-06-30',
+      initTimestamp: '2026-06-30T00:00:00Z',
     });
 
     scaffoldWikiTemplates(dest, vars, { overwrite: false });

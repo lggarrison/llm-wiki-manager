@@ -1,9 +1,9 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [scripts, lint, maintenance]
-related: [concepts/repo-layout.md, concepts/template-system.md]
+related: [concepts/repo-layout.md, concepts/template-system.md, concepts/unit-tests.md]
 status: active
 summary: Node scripts copied from templates/scripts/ that validate, index, sync, and log wiki operations.
 ---
@@ -42,3 +42,4 @@ Use `wiki:check` (read-only) in CI and pre-push hooks to catch stale `index.md` 
 
 - [Template System](template-system.md)
 - [Repo Layout](repo-layout.md)
+- [Unit Tests](unit-tests.md)

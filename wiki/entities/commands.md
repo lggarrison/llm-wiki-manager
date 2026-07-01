@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [commands, cli]
 related: [entities/utils.md, concepts/init-command.md]
 status: wip

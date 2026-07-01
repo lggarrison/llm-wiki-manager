@@ -74,7 +74,7 @@ describe('lint.mjs', () => {
     writePage(
       dir,
       'concepts/a.md',
-      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01\n---\n',
+      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01T00:00:00Z\n---\n',
     );
     const result = runLint(dir);
     expect(result.status).toBe(0);
@@ -112,12 +112,20 @@ describe('lint.mjs', () => {
     expect(result.stdout).toContain('body link must target a wiki page');
   });
 
-  it('fails on a malformed last_updated date', () => {
+  it('fails on a malformed last_updated value', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', fm({ last_updated: 'Jan 1 2026' }));
     const result = runLint(dir);
     expect(result.status).toBe(1);
-    expect(result.stdout).toContain('last_updated must be YYYY-MM-DD');
+    expect(result.stdout).toContain('last_updated must be a UTC ISO timestamp');
+  });
+
+  it('fails on a date-only last_updated (timestamp required)', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ last_updated: '2026-01-01' }));
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('last_updated must be a UTC ISO timestamp');
   });
 
   it('fails when a related: path does not resolve', () => {

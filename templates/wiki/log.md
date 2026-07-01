@@ -5,6 +5,6 @@ Managed by `node {{SCRIPTS_DIR}}/log.mjs`.
 
 ---
 
-## [{{INIT_DATE}}] maintenance | Wiki initialized
+## [{{INIT_TIMESTAMP}}] maintenance | Wiki initialized
 
 Wiki scaffolded by llm-wiki-manager.

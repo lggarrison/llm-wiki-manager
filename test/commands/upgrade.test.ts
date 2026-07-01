@@ -81,7 +81,7 @@ describe('init safe re-run via scaffoldWikiTemplates', () => {
       wikiDir: 'wiki',
       scriptsDir: 'scripts/wiki',
       focusDirs: [],
-      initDate: '2026-06-30',
+      initTimestamp: '2026-06-30T00:00:00Z',
     });
 
     scaffoldWikiTemplates(wikiDir, vars, { overwrite: false });

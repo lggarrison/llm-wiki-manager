@@ -1,9 +1,16 @@
 ---
 type: concept
 title: Repository Layout
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [architecture]
-related: [concepts/dogfooding.md, concepts/init-command.md, concepts/template-system.md]
+related:
+  [
+    concepts/dogfooding.md,
+    concepts/init-command.md,
+    concepts/template-system.md,
+    concepts/unit-tests.md,
+    concepts/e2e-tests.md,
+  ]
 status: active
 summary: How src/, bin/, templates/, test/, and dogfooded wiki directories fit together in llm-wiki-manager.
 ---
@@ -14,13 +21,15 @@ This repo is both the **llm-wiki-manager npm package** and a **dogfooded consume
 
 ## Package source
 
-| Path                   | Role                                                                      |
-| ---------------------- | ------------------------------------------------------------------------- |
-| `bin/cli.ts`           | CLI entry; compiled to `dist/bin/cli.js`                                  |
-| `src/commands/init.ts` | Init command implementation                                               |
-| `src/utils/fs.ts`      | Template copy, interpolation, package.json merge, AGENTS.md amend         |
-| `templates/`           | Published scaffold templates (shipped in npm tarball)                     |
-| `test/`                | Vitest suite including script behavior tests against `templates/scripts/` |
+| Path                   | Role                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------- |
+| `bin/cli.ts`           | CLI entry; compiled to `dist/bin/cli.js`                                                                  |
+| `src/commands/init.ts` | Init command implementation                                                                               |
+| `src/utils/fs.ts`      | Template copy, interpolation, package.json merge, AGENTS.md amend                                         |
+| `templates/`           | Published scaffold templates (shipped in npm tarball)                                                     |
+| `test/`                | Vitest unit tests and e2e CLI workflow tests (see [Unit Tests](unit-tests.md), [E2E Tests](e2e-tests.md)) |
+| `vitest.config.ts`     | Default test config — `src/` and `test/` except `test/e2e/`                                               |
+| `vitest.e2e.config.ts` | E2e-only config with global build setup                                                                   |
 
 ## Dogfooded wiki (this repo)
 
@@ -44,3 +53,5 @@ Only `dist/` and `templates/` ship via npm (`"files"` allowlist). Dogfooded `wik
 - [Init Command](init-command.md)
 - [Template System](template-system.md)
 - [Wiki Management Scripts](wiki-scripts.md)
+- [Unit Tests](unit-tests.md)
+- [E2E Tests](e2e-tests.md)

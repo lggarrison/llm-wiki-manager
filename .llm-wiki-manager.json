@@ -1,0 +1,7 @@
+{
+  "version": "0.1.0",
+  "projectName": "llm-wiki-manager",
+  "wikiDir": "wiki",
+  "scriptsDir": "scripts/wiki",
+  "focusDirs": []
+}

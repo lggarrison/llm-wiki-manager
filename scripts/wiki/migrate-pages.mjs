@@ -53,6 +53,18 @@ function migrateStatus(content) {
   return { updated, changed };
 }
 
+function migrateTimestamps(content) {
+  let changed = false;
+  const updated = content.replace(
+    /^(last_updated:\s*)(\d{4}-\d{2}-\d{2})\s*$/m,
+    (_, prefix, date) => {
+      changed = true;
+      return `${prefix}${date}T00:00:00Z`;
+    },
+  );
+  return { updated, changed };
+}
+
 function migrateWikilinks(content) {
   let changed = false;
   const updated = content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => {
@@ -80,6 +92,10 @@ for (const file of pages) {
   const statusResult = migrateStatus(content);
   content = statusResult.updated;
   changed ||= statusResult.changed;
+
+  const timestampResult = migrateTimestamps(content);
+  content = timestampResult.updated;
+  changed ||= timestampResult.changed;
 
   const linkResult = migrateWikilinks(content);
   content = linkResult.updated;

@@ -97,9 +97,9 @@ export function buildTemplateVars(input: {
   wikiDir: string;
   scriptsDir: string;
   focusDirs: string[];
-  initDate?: string;
+  initTimestamp?: string;
 }): Record<string, string> {
-  const initDate = input.initDate ?? new Date().toISOString().slice(0, 10);
+  const initTimestamp = input.initTimestamp ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const entitySlugs = input.focusDirs.map((d) => scopeSlugFromFocusDir(d));
   const entityScopeLines =
     entitySlugs.length > 0
@@ -110,7 +110,7 @@ export function buildTemplateVars(input: {
     PROJECT_NAME: input.projectName,
     WIKI_DIR: input.wikiDir,
     SCRIPTS_DIR: input.scriptsDir,
-    INIT_DATE: initDate,
+    INIT_TIMESTAMP: initTimestamp,
     ENTITY_SCOPE_LINES: entityScopeLines,
     FOCUS_DIRS:
       input.focusDirs.length > 0
@@ -309,7 +309,11 @@ export function scopeSlugFromFocusDir(focusDir: string): string {
   return base.replace(/^_/, '');
 }
 
-export function entityOverviewStub(slug: string, sourcePath: string, initDate: string): string {
+export function entityOverviewStub(
+  slug: string,
+  sourcePath: string,
+  initTimestamp: string,
+): string {
   const title = slug
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
@@ -318,7 +322,7 @@ export function entityOverviewStub(slug: string, sourcePath: string, initDate: s
   return `---
 type: overview
 title: ${title}
-last_updated: ${initDate}
+last_updated: ${initTimestamp}
 tags: [${slug}]
 related: []
 status: wip
@@ -356,7 +360,7 @@ export function scaffoldWikiEmptyDirs(wikiDest: string): void {
 export function scaffoldEntityOverviews(
   wikiDest: string,
   focusDirs: string[],
-  initDate: string,
+  initTimestamp: string,
 ): string[] {
   mkdirSync(join(wikiDest, 'entities'), { recursive: true });
   const slugs: string[] = [];
@@ -365,7 +369,7 @@ export function scaffoldEntityOverviews(
     slugs.push(slug);
     const entityPath = join(wikiDest, 'entities', `${slug}.md`);
     if (!existsSync(entityPath)) {
-      writeFileSync(entityPath, entityOverviewStub(slug, focusDir, initDate));
+      writeFileSync(entityPath, entityOverviewStub(slug, focusDir, initTimestamp));
     }
   }
   return slugs;

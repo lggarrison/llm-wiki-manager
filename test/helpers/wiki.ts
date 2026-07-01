@@ -29,7 +29,7 @@ export function fm(fields: Record<string, string | string[]> = {}): string {
   const defaults: Record<string, string | string[]> = {
     type: 'concept',
     title: 'Test Page',
-    last_updated: '2026-01-01',
+    last_updated: '2026-01-01T00:00:00Z',
     tags: [],
     related: [],
     status: 'wip',

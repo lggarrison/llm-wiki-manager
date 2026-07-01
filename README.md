@@ -279,7 +279,7 @@ Every wiki page must have YAML frontmatter:
 ---
 type: concept # concept | source | overview | hub
 title: 'Page Title'
-last_updated: 2025-06-30
+last_updated: 2025-06-30T00:00:00Z
 tags: [auth, api]
 related: [] # relative paths from wiki root
 status: draft # draft | stable | archived

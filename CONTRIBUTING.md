@@ -4,7 +4,7 @@ Thanks for your interest in contributing! This project is a small Node.js CLI wr
 
 ## Prerequisites
 
-- Node.js 18 or later (`node --version`)
+- Node.js 24 (see [`.nvmrc`](.nvmrc); run `nvm use` or `fnm use` after clone)
 - npm (bundled with Node)
 
 ## Setup
@@ -12,6 +12,7 @@ Thanks for your interest in contributing! This project is a small Node.js CLI wr
 ```bash
 git clone https://github.com/lggarrison/llm-wiki-manager.git
 cd llm-wiki-manager
+nvm use   # or: fnm use
 npm install
 ```
 

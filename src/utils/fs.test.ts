@@ -193,7 +193,7 @@ describe('wiki template bundle', () => {
       PROJECT_NAME: 'acme',
       WIKI_DIR: 'wiki',
       SCRIPTS_DIR: 'scripts/wiki',
-      INIT_DATE: '2026-06-30T00:00:00Z',
+      INIT_TIMESTAMP: '2026-06-30T00:00:00Z',
       ENTITY_SCOPE_LINES: 'api',
       FOCUS_DIRS: '`src/`',
       FOCUS_DIRS_LIST: '- `src/`',
@@ -319,7 +319,7 @@ describe('scaffoldWikiTemplates', () => {
       wikiDir: 'wiki',
       scriptsDir: 'scripts/wiki',
       focusDirs: ['src'],
-      initDate: '2026-06-30T00:00:00Z',
+      initTimestamp: '2026-06-30T00:00:00Z',
     });
 
     scaffoldWikiTemplates(dest, vars, { overwrite: false });
@@ -337,7 +337,7 @@ describe('scaffoldWikiTemplates', () => {
       wikiDir: 'wiki',
       scriptsDir: 'scripts/wiki',
       focusDirs: [],
-      initDate: '2026-06-30T00:00:00Z',
+      initTimestamp: '2026-06-30T00:00:00Z',
     });
 
     scaffoldWikiTemplates(dest, vars, { overwrite: false });

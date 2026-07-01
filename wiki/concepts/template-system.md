@@ -34,7 +34,7 @@ Common variables:
 | `SCRIPTS_DIR`     | `scripts/wiki`             |
 | `FOCUS_DIRS`      | `` `src/`, `templates/` `` |
 | `FOCUS_DIRS_LIST` | bullet list for schema.md  |
-| `INIT_DATE`       | UTC ISO timestamp of init  |
+| `INIT_TIMESTAMP`  | UTC ISO timestamp of init  |
 
 ## Templates vs dogfooded output
 

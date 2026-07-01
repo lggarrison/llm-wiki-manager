@@ -112,14 +112,14 @@ export async function init(): Promise<void> {
   const wikiDirStr = values.wikiDir;
   const scriptsDirStr = values.scriptsDir;
   const projectNameStr = values.projectName;
-  const initDate = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  const initTimestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
   const vars = buildTemplateVars({
     projectName: projectNameStr,
     wikiDir: wikiDirStr,
     scriptsDir: scriptsDirStr,
     focusDirs: focusDirList,
-    initDate,
+    initTimestamp,
   });
 
   const cwd = process.cwd();
@@ -144,7 +144,7 @@ export async function init(): Promise<void> {
   }
   scaffoldWikiEmptyDirs(wikiDest);
   if (focusDirList.length > 0) {
-    scaffoldEntityOverviews(wikiDest, focusDirList, initDate);
+    scaffoldEntityOverviews(wikiDest, focusDirList, initTimestamp);
   }
 
   // 2. Scaffold management scripts (create-if-missing)

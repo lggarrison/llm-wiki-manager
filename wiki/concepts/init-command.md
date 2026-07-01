@@ -21,7 +21,7 @@ The `init` command in `src/commands/init.ts` is the sole CLI entry point today. 
 | Scripts directory | `scripts/wiki`            | copied script location         |
 | Focus directories | _(blank = whole project)_ | `schema.md`, `AGENTS.md` scope |
 
-These become interpolation variables (`PROJECT_NAME`, `WIKI_DIR`, `SCRIPTS_DIR`, `FOCUS_DIRS`, `FOCUS_DIRS_LIST`, `INIT_DATE`) passed to [Template System](template-system.md).
+These become interpolation variables (`PROJECT_NAME`, `WIKI_DIR`, `SCRIPTS_DIR`, `FOCUS_DIRS`, `FOCUS_DIRS_LIST`, `INIT_TIMESTAMP`) passed to [Template System](template-system.md).
 
 ## Scaffold steps
 

@@ -1,7 +1,7 @@
 ---
 type: hub
 title: Raw Sources
-last_updated: {{INIT_DATE}}
+last_updated: {{INIT_TIMESTAMP}}
 tags: [raw]
 related: []
 status: active

@@ -449,6 +449,23 @@ describe('install config', () => {
     expect(readInstallConfig(dir)).toEqual(config);
   });
 
+  it('readInstallConfig parses .llm-wiki-manager.json with UTF-8 BOM', () => {
+    const dir = makeTmpDir();
+    const config = {
+      version: '0.1.0',
+      projectName: 'acme',
+      wikiDir: 'wiki',
+      focusDirs: ['src'],
+    };
+    const path = join(dir, '.llm-wiki-manager.json');
+    writeFileSync(
+      path,
+      String.fromCharCode(0xfeff) + JSON.stringify(config, null, 2) + '\n',
+      'utf8',
+    );
+    expect(readInstallConfig(dir)).toEqual(config);
+  });
+
   it('infers paths from AGENTS.md and schema.md', () => {
     const dir = makeTmpDir();
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n');

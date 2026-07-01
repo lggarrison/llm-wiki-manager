@@ -213,4 +213,29 @@ describe('lint command', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).not.toContain('block-style YAML list');
   });
+
+  it('fails when a Prettier-wrapped related: path does not resolve', () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01T00:00:00Z\nrelated:\n  [concepts/missing.md]\n---\n\nBody.\n',
+    );
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('related: path does not exist');
+  });
+
+  it('warns when Prettier-wrapped related: has no corresponding body link', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'concept', title: 'B' }));
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01T00:00:00Z\nrelated:\n  [concepts/b.md]\n---\n\nBody without link.\n',
+    );
+    const result = runLint(dir);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('has no corresponding body link');
+  });
 });

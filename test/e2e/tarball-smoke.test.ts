@@ -58,11 +58,24 @@ describe('packed tarball smoke test', () => {
     ]);
     expect(init.status).toBe(0);
 
+    const checkAfterInit = run('npx', projectDir, ['llm-wiki-manager', 'check']);
+    expect(checkAfterInit.status).toBe(0);
+    expect(checkAfterInit.stdout).toContain('up to date');
+
+    const doctor = run('npx', projectDir, ['llm-wiki-manager', 'doctor']);
+    expect(doctor.status).toBe(0);
+    expect(doctor.stdout).toContain('No problems found');
+
     const pkg = JSON.parse(readFileSync(join(projectDir, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
     };
     expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
 
+    writePage(
+      join(projectDir, 'wiki'),
+      'concepts/drawing.md',
+      fm({ type: 'concept', title: 'Drawing', related: ['concepts/smoke.md'] }) + '\nBody.\n',
+    );
     writePage(
       join(projectDir, 'wiki'),
       'concepts/smoke.md',

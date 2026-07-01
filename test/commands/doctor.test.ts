@@ -86,4 +86,53 @@ describe('doctor command', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('wiki:lint');
   });
+
+  it('reports a missing managed section in AGENTS.md', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    writeFileSync(join(dir, 'AGENTS.md'), '# Project notes only\n\nNo managed block.\n');
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('managed section');
+    expect(result.stdout).toContain('upgrade');
+  });
+
+  it('accepts .llm-wiki-manager.json written with a UTF-8 BOM', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
+    writeFileSync(
+      configPath,
+      String.fromCharCode(0xfeff) + JSON.stringify(config, null, 2) + '\n',
+      'utf8',
+    );
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('No problems found');
+  });
+
+  it('accepts index.md checked out with CRLF line endings', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    writePage(
+      join(dir, 'wiki'),
+      'concepts/new-page.md',
+      fm({ type: 'concept', title: 'New Page' }) + '\nBody.\n',
+    );
+    expect(runBuiltCli(dir, ['build', '--wiki-dir', 'wiki']).status).toBe(0);
+
+    const indexPath = join(dir, 'wiki', 'index.md');
+    const lf = readFileSync(indexPath, 'utf8');
+    writeFileSync(indexPath, lf.replace(/\n/g, '\r\n'), 'utf8');
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('index.md is up to date');
+  });
 });

@@ -153,6 +153,52 @@ describe('CLI e2e workflow', () => {
     expect(readFileSync(schemaPath, 'utf8')).toBe('# stale schema\n');
     expect(readFileSync(configPath, 'utf8')).toBe(configBefore);
   });
+
+  it('init leaves index.md fresh so check passes without a manual build', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const check = runBuiltCli(dir, ['check', '--wiki-dir', 'wiki']);
+    expect(check.status).toBe(0);
+    expect(check.stdout).toContain('up to date');
+  });
+
+  it('upgrade preserves user content after the managed section end marker', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const agentsPath = join(dir, 'AGENTS.md');
+    const agentsBefore = readFileSync(agentsPath, 'utf8');
+    writeFileSync(
+      agentsPath,
+      `${agentsBefore.trimEnd()}\n\n## Custom notes\n\nUser-owned content.\n`,
+    );
+
+    writeFileSync(join(dir, 'wiki', 'schema.md'), '# stale schema\n');
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+    expect(upgrade.status).toBe(0);
+
+    const agentsAfter = readFileSync(agentsPath, 'utf8');
+    expect(agentsAfter).toContain('## Custom notes');
+    expect(agentsAfter).toContain('User-owned content.');
+    expect(agentsAfter).toContain('[`wiki/AGENTS.md`](wiki/AGENTS.md)');
+  });
+
+  it('init succeeds when package.json has a UTF-8 BOM', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      String.fromCharCode(0xfeff) + JSON.stringify({ name: 'acme' }, null, 2) + '\n',
+      'utf8',
+    );
+
+    expect(initProject(dir).status).toBe(0);
+
+    const doctor = runBuiltCli(dir, ['doctor']);
+    expect(doctor.status).toBe(0);
+    expect(doctor.stdout).toContain('No problems found');
+  });
 });
 
 describe('CLI meta flags', () => {
@@ -175,6 +221,7 @@ describe('CLI meta flags', () => {
     expect(result.stdout).toContain('init');
     expect(result.stdout).toContain('upgrade');
     expect(result.stdout).toContain('lint');
+    expect(result.stdout).toContain('doctor');
   });
 
   it('an unknown command exits 1 with usage on stderr', () => {

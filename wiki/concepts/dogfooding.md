@@ -25,10 +25,11 @@ These paths are **committed to git** but **not published** to npm. Consumers run
 
 ## README vs wiki
 
-| Artifact    | Audience               | Content                                                        |
-| ----------- | ---------------------- | -------------------------------------------------------------- |
-| `README.md` | External users         | Install, commands, hooks, releasing                            |
-| `wiki/`     | Agents and maintainers | Architecture, design rationale, compounding internal knowledge |
+| Artifact       | Audience               | Content                                                        |
+| -------------- | ---------------------- | -------------------------------------------------------------- |
+| `README.md`    | External users         | Install, commands, hooks                                       |
+| `RELEASING.md` | Maintainers            | Cut-a-release runbook (semver, tagging, npm, troubleshooting)  |
+| `wiki/`        | Agents and maintainers | Architecture, design rationale, compounding internal knowledge |
 
 Do not migrate install docs into the wiki. Add concept pages when design decisions or code behavior need explanation beyond the README.
 

@@ -112,7 +112,7 @@ export async function init(): Promise<void> {
   const wikiDirStr = values.wikiDir;
   const scriptsDirStr = values.scriptsDir;
   const projectNameStr = values.projectName;
-  const initDate = new Date().toISOString().slice(0, 10);
+  const initDate = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 
   const vars = buildTemplateVars({
     projectName: projectNameStr,

@@ -12,7 +12,7 @@ Every wiki page **must** begin with YAML frontmatter:
 ---
 type: overview | entity | comparison | deep-dive | concept | source | hub
 title: 'Human-readable title'
-last_updated: YYYY-MM-DD
+last_updated: YYYY-MM-DDTHH:MM:SSZ
 tags: []
 related: []
 status: active | wip | deprecated
@@ -25,7 +25,7 @@ status: active | wip | deprecated
 | -------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `type`         | yes         | `overview` — entity scope entry; `entity` — feature/module page; `comparison` — cross-scope comparison; `deep-dive` — long-form reference; `concept` — cross-cutting knowledge; `source` — raw artifact summary; `hub` — navigation page (`README.md`, `index.md`, `raw/raw.md` only) |
 | `title`        | yes         | Human-readable, used in index and log                                                                                                                                                                                                                                                 |
-| `last_updated` | yes         | ISO date `YYYY-MM-DD`; update every time the page changes                                                                                                                                                                                                                             |
+| `last_updated` | yes         | UTC ISO 8601 timestamp `YYYY-MM-DDTHH:MM:SSZ`; update on every change                                                                                                                                                                                                                 |
 | `tags`         | recommended | List of topic labels; first tag on entity pages is the scope slug                                                                                                                                                                                                                     |
 | `related`      | recommended | List of relative paths to related pages (may be empty `[]`)                                                                                                                                                                                                                           |
 | `status`       | recommended | `active` → reliable reference; `wip` → in progress; `deprecated` → superseded                                                                                                                                                                                                         |
@@ -50,7 +50,7 @@ When ingesting new source material or creating concept pages, prefer content tha
 ```
 wiki/
 ├── AGENTS.md        ← agent entry point (read first; full rules for LLM agents)
-├── README.md        ← human entry point (Obsidian onboarding, browsing)
+├── README.md        ← human entry point (onboarding, browsing)
 ├── schema.md        ← full frontmatter spec and conventions (this file)
 ├── index.md         ← auto-generated content catalog (never hand-edit tables)
 ├── log.md           ← append-only chronological event record
@@ -61,12 +61,11 @@ wiki/
 │   ├── tickets/
 │   ├── design-notes/
 │   ├── transcripts/
-│   └── assets/      ← images/diagrams (Obsidian attachment folder)
+│   └── assets/      ← images/diagrams
 ├── entities/        ← FLAT namespace — one .md per topic, NO subdirectories
 ├── concepts/        ← cross-cutting topics / shared mechanisms
 ├── sources/         ← one LLM-written summary per raw artifact
-├── archive/         ← pre-migration snapshots (excluded from lint + graph)
-└── .obsidian/       ← committed vault config (link style, attachments, plugins)
+└── archive/         ← pre-migration snapshots (excluded from lint + graph)
 ```
 
 Place new pages by role:
@@ -165,7 +164,7 @@ When a `related:` reference would point to a page that doesn't exist yet, create
 ---
 type: concept
 title: "Placeholder Title"
-last_updated: YYYY-MM-DD
+last_updated: YYYY-MM-DDTHH:MM:SSZ
 tags: []
 related: []
 status: wip

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [testing, vitest]
 related:
   [concepts/e2e-tests.md, concepts/wiki-scripts.md, concepts/dogfooding.md, concepts/repo-layout.md]

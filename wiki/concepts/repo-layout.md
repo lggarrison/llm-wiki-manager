@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Repository Layout
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [architecture]
 related:
   [

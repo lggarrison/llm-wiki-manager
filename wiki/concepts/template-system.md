@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Template System
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [templates, scaffold]
 related: [concepts/init-command.md, concepts/repo-layout.md, concepts/dogfooding.md]
 status: active
@@ -34,7 +34,7 @@ Common variables:
 | `SCRIPTS_DIR`     | `scripts/wiki`             |
 | `FOCUS_DIRS`      | `` `src/`, `templates/` `` |
 | `FOCUS_DIRS_LIST` | bullet list for schema.md  |
-| `INIT_DATE`       | ISO date of init           |
+| `INIT_DATE`       | UTC ISO timestamp of init  |
 
 ## Templates vs dogfooded output
 

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Dogfooding
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [dogfooding, architecture]
 related: [concepts/repo-layout.md, concepts/template-system.md, concepts/unit-tests.md]
 status: active

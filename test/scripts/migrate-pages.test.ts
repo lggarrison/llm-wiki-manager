@@ -64,6 +64,37 @@ describe('migrate-pages.mjs', () => {
     );
   });
 
+  it('converts a date-only last_updated to a UTC ISO timestamp', () => {
+    const { wikiDir, scriptsDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/dated.md',
+      fm({ title: 'Dated', type: 'concept', last_updated: '2026-01-15' }) + '\n# Dated\n',
+    );
+
+    runMigrate(wikiDir, scriptsDir);
+
+    expect(readFileSync(join(wikiDir, 'concepts', 'dated.md'), 'utf8')).toContain(
+      'last_updated: 2026-01-15T00:00:00Z',
+    );
+  });
+
+  it('leaves an existing timestamp last_updated untouched', () => {
+    const { wikiDir, scriptsDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/stamped.md',
+      fm({ title: 'Stamped', type: 'concept', last_updated: '2026-01-15T09:30:00Z' }) +
+        '\n# Stamped\n',
+    );
+
+    runMigrate(wikiDir, scriptsDir);
+
+    expect(readFileSync(join(wikiDir, 'concepts', 'stamped.md'), 'utf8')).toContain(
+      'last_updated: 2026-01-15T09:30:00Z',
+    );
+  });
+
   it('converts wikilinks to markdown links', () => {
     const { wikiDir, scriptsDir } = makeTmpProject();
     writePage(

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md]
 status: active

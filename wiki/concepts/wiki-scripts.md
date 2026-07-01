@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [scripts, lint, maintenance]
 related: [concepts/repo-layout.md, concepts/template-system.md, concepts/unit-tests.md]
 status: active

@@ -99,7 +99,7 @@ export function buildTemplateVars(input: {
   focusDirs: string[];
   initDate?: string;
 }): Record<string, string> {
-  const initDate = input.initDate ?? new Date().toISOString().slice(0, 10);
+  const initDate = input.initDate ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const entitySlugs = input.focusDirs.map((d) => scopeSlugFromFocusDir(d));
   const entityScopeLines =
     entitySlugs.length > 0

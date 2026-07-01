@@ -1,7 +1,7 @@
 ---
 type: hub
 title: Raw Sources
-last_updated: 2026-07-01
+last_updated: 2026-07-01T00:00:00Z
 tags: [raw]
 related: []
 status: active

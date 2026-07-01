@@ -1,6 +1,6 @@
 # llm-wiki-manager Wiki
 
-Human entry point for browsing this vault in Obsidian (or any markdown viewer).
+Human entry point for browsing this vault in [Obsidian](https://obsidian.md/) or any markdown viewer.
 
 ## Start here
 
@@ -18,6 +18,6 @@ Human entry point for browsing this vault in Obsidian (or any markdown viewer).
 - **`sources/`** — LLM summaries of ingested raw artifacts
 - **`raw/`** — immutable inputs ([raw.md](raw/raw.md) hub → `articles/`, `prs/`, etc.)
 
-Open this folder as an Obsidian vault. Vault settings live in `.obsidian/` (committed).
+These are plain markdown files — no editor config ships with the scaffold. Open the folder as a vault in [Obsidian](https://obsidian.md/) for a linked graph view; add your own `.obsidian/` settings if you want, and the wiki tooling will ignore them.
 
 Content in `entities/`, `concepts/`, and `sources/` grows through your day-to-day work — the scaffold only creates empty structure and scope stubs.

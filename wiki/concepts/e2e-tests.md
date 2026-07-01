@@ -1,7 +1,7 @@
 ---
 type: concept
 title: E2E Tests
-last_updated: 2026-06-30
+last_updated: 2026-06-30T00:00:00Z
 tags: [testing, vitest, cli]
 related:
   [concepts/unit-tests.md, concepts/init-command.md, concepts/dogfooding.md, entities/commands.md]

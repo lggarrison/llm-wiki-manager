@@ -67,11 +67,11 @@ Do not encode scope with folder nesting under `entities/`.
 
 ### Required
 
-| Field          | Notes                                       |
-| -------------- | ------------------------------------------- |
-| `type`         | One of the page types in §3                 |
-| `title`        | Human-readable; used in `index.md`          |
-| `last_updated` | ISO date `YYYY-MM-DD`; update on every edit |
+| Field          | Notes                                                               |
+| -------------- | ------------------------------------------------------------------- |
+| `type`         | One of the page types in §3                                         |
+| `title`        | Human-readable; used in `index.md`                                  |
+| `last_updated` | UTC ISO 8601 timestamp `YYYY-MM-DDTHH:MM:SSZ`; update on every edit |
 
 ### Encouraged
 
@@ -155,7 +155,7 @@ Create stub pages (`status: wip`) rather than leaving broken `related:` referenc
 ## Where to go next
 
 - **Schema & workflows (authoritative):** `wiki/AGENTS.md`
-- **Human onboarding / Obsidian setup:** `wiki/README.md`
+- **Human onboarding / browsing:** `wiki/README.md`
 - **Content catalog:** `wiki/index.md`
 - **Event log:** `wiki/log.md`
 - **Search setup & CLI:** `wiki/concepts/wiki-search.md`

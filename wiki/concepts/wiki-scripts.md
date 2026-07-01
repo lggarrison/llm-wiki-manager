@@ -4,7 +4,7 @@ title: Wiki Management Scripts
 last_updated: 2026-06-30
 tags: [scripts, lint, maintenance]
 related: [concepts/repo-layout.md, concepts/template-system.md]
-status: stable
+status: active
 summary: Node scripts copied from templates/scripts/ that validate, index, sync, and log wiki operations.
 ---
 

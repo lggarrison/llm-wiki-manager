@@ -4,7 +4,7 @@ title: Templates
 last_updated: 2026-06-30
 tags: [templates]
 related: [entities/utils.md, concepts/template-system.md]
-status: draft
+status: wip
 summary: Overview of templates/ — published scaffold source of truth.
 ---
 

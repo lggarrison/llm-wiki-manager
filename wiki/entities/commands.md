@@ -4,7 +4,7 @@ title: Commands
 last_updated: 2026-06-30
 tags: [commands, cli]
 related: [entities/utils.md, concepts/init-command.md]
-status: draft
+status: wip
 summary: Overview of src/commands/ — CLI command implementations.
 ---
 

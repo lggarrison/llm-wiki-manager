@@ -4,7 +4,7 @@ title: Init Command
 last_updated: 2026-06-30
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md]
-status: stable
+status: active
 summary: How the init CLI scaffolds a wiki, scripts, AGENTS.md, and npm scripts into a consumer project.
 ---
 

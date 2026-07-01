@@ -4,7 +4,7 @@ title: Repository Layout
 last_updated: 2026-06-30
 tags: [architecture]
 related: [concepts/dogfooding.md, concepts/init-command.md, concepts/template-system.md]
-status: stable
+status: active
 summary: How src/, bin/, templates/, test/, and dogfooded wiki directories fit together in llm-wiki-manager.
 ---
 

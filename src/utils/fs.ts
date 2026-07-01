@@ -75,7 +75,7 @@ title: ${title}
 last_updated: ${initDate}
 tags: [${slug}]
 related: []
-status: draft
+status: wip
 summary: Overview stub for \`${normalizedPath}/\` — expand through day-to-day work.
 ---
 

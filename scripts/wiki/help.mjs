@@ -46,8 +46,8 @@ const commands = [
   },
   {
     name: 'wiki:setup:husky',
-    summary: 'Wire wiki:lint and wiki:check into Husky pre-commit and pre-push hooks',
-    when: 'Once, after installing Husky — appends to existing hooks or creates them',
+    summary: 'Wire wiki:check into Husky pre-push and print lint-staged pre-commit guide',
+    when: 'Once, after installing Husky — appends to existing pre-push or creates it',
     example: 'npm run wiki:setup:husky',
   },
 ];
@@ -76,8 +76,10 @@ console.log('    npm run wiki:lint');
 console.log('');
 
 console.log('  Optional git hooks (requires Husky — see README):');
-console.log('    npm install -D husky');
-console.log('    npm run wiki:setup:husky');
+console.log('    npm install -D husky lint-staged');
+console.log('    # add wiki/**/*.md to lint-staged in package.json (see README)');
+console.log('    # .husky/pre-commit → npx lint-staged');
+console.log('    npm run wiki:setup:husky   # wires pre-push wiki:check');
 console.log('');
 
 console.log(`Scripts live in ${SCRIPTS_DIR}/. Without npm scripts, run node ${SCRIPTS_DIR}/<script>.mjs`);

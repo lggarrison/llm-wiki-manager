@@ -4,7 +4,7 @@ title: CLI
 last_updated: 2026-06-30
 tags: [cli]
 related: [entities/commands.md]
-status: draft
+status: wip
 summary: Overview of bin/ — CLI entry point compiled to dist/bin/cli.js.
 ---
 

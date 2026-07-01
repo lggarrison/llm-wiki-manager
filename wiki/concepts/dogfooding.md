@@ -4,7 +4,7 @@ title: Dogfooding
 last_updated: 2026-06-30
 tags: [dogfooding, architecture]
 related: [concepts/repo-layout.md, concepts/template-system.md]
-status: stable
+status: active
 summary: How llm-wiki-manager uses its own wiki workflow internally — scaffold, validation, and template refresh.
 ---
 

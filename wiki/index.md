@@ -8,26 +8,26 @@
 
 | Title | Status | Updated |
 | --- | --- | --- |
-| [Raw Sources](raw/raw.md) | stable | 2026-06-30 |
+| [Raw Sources](raw/raw.md) | active | 2026-06-30 |
 
 ## Entities
 
 | Title | Scope tag | Status | Updated |
 | --- | --- | --- | --- |
-| [CLI](entities/cli.md) | cli | draft | 2026-06-30 |
-| [Commands](entities/commands.md) | commands | draft | 2026-06-30 |
-| [Templates](entities/templates.md) | templates | draft | 2026-06-30 |
-| [Utils](entities/utils.md) | utils | draft | 2026-06-30 |
+| [CLI](entities/cli.md) | cli | wip | 2026-06-30 |
+| [Commands](entities/commands.md) | commands | wip | 2026-06-30 |
+| [Templates](entities/templates.md) | templates | wip | 2026-06-30 |
+| [Utils](entities/utils.md) | utils | wip | 2026-06-30 |
 
 ## Concepts
 
 | Title | Tags | Status | Updated |
 | --- | --- | --- | --- |
-| [Dogfooding](concepts/dogfooding.md) | dogfooding, architecture | stable | 2026-06-30 |
-| [Init Command](concepts/init-command.md) | cli, scaffold | stable | 2026-06-30 |
-| [Repository Layout](concepts/repo-layout.md) | architecture | stable | 2026-06-30 |
-| [Template System](concepts/template-system.md) | templates, scaffold | stable | 2026-06-30 |
-| [Wiki Management Scripts](concepts/wiki-scripts.md) | scripts, lint, maintenance | stable | 2026-06-30 |
+| [Dogfooding](concepts/dogfooding.md) | dogfooding, architecture | active | 2026-06-30 |
+| [Init Command](concepts/init-command.md) | cli, scaffold | active | 2026-06-30 |
+| [Repository Layout](concepts/repo-layout.md) | architecture | active | 2026-06-30 |
+| [Template System](concepts/template-system.md) | templates, scaffold | active | 2026-06-30 |
+| [Wiki Management Scripts](concepts/wiki-scripts.md) | scripts, lint, maintenance | active | 2026-06-30 |
 
 ## Sources
 

@@ -32,7 +32,7 @@ describe('lint.mjs', () => {
 
   it('exits 0 for a single valid, fully-linked page', () => {
     const dir = newWikiDir();
-    writePage(dir, 'concepts/a.md', fm({ type: 'hub', title: 'A' }) + '\nBody text.\n');
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }) + '\nBody text.\n');
     const result = runLint(dir);
     expect(result.status).toBe(0);
   });
@@ -63,10 +63,53 @@ describe('lint.mjs', () => {
 
   it('fails on an invalid status', () => {
     const dir = newWikiDir();
-    writePage(dir, 'concepts/a.md', fm({ status: 'bogus' }));
+    writePage(dir, 'concepts/a.md', fm({ status: 'draft' }));
     const result = runLint(dir);
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('invalid status');
+  });
+
+  it('allows pages without optional frontmatter fields', () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01\n---\n',
+    );
+    const result = runLint(dir);
+    expect(result.status).toBe(0);
+  });
+
+  it('fails when type is placed in the wrong directory', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'entity', title: 'A' }));
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('must be placed at entities/<slug>.md');
+  });
+
+  it('fails on non-kebab-case filenames', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/BadName.md', fm({ title: 'Bad' }));
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('lowercase kebab-case');
+  });
+
+  it('fails when code_refs path does not exist', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ code_refs: ['missing/file.ts'] }));
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('code_refs: path does not exist');
+  });
+
+  it('fails on body links to non-wiki paths', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm() + '\n[src](../src/foo.ts)\n');
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('body link must target a wiki page');
   });
 
   it('fails on a malformed last_updated date', () => {
@@ -103,7 +146,7 @@ describe('lint.mjs', () => {
 
   it('warns (not errors) when related: has no corresponding body link', () => {
     const dir = newWikiDir();
-    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B' }));
+    writePage(dir, 'concepts/b.md', fm({ type: 'concept', title: 'B' }));
     writePage(dir, 'concepts/a.md', fm({ related: ['concepts/b.md'] }));
     const result = runLint(dir);
     expect(result.status).toBe(0);
@@ -120,7 +163,7 @@ describe('lint.mjs', () => {
 
   it('does not flag hub/overview pages as orphans', () => {
     const dir = newWikiDir();
-    writePage(dir, 'hub.md', fm({ type: 'hub', title: 'Hub' }));
+    writePage(dir, 'raw/raw.md', fm({ type: 'hub', title: 'Raw Hub' }));
     const result = runLint(dir);
     expect(result.stdout).not.toContain('orphaned page');
   });

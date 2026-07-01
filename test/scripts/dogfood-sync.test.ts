@@ -12,6 +12,10 @@ function interpolate(str: string, vars: Record<string, string>): string {
   return str.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? `{{${key}}}`);
 }
 
+function normalizeEol(str: string): string {
+  return str.replace(/\r\n/g, '\n');
+}
+
 function listFiles(dir: string): string[] {
   const results: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -38,7 +42,7 @@ describe('dogfooded scripts/wiki matches templates/scripts', () => {
       const expected = interpolate(readFileSync(templateFile, 'utf8'), DOGFOOD_VARS);
       const actual = readFileSync(dogfoodFile, 'utf8');
 
-      expect(actual, rel).toBe(expected);
+      expect(normalizeEol(actual), rel).toBe(normalizeEol(expected));
     }
   });
 });

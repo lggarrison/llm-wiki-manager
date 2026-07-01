@@ -128,9 +128,7 @@ export async function init(): Promise<void> {
       `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
       `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
       `  • Open ${pc.bold(join((wikiDir as string).trim(), 'README.md'))} (human entry) and ${pc.bold(join((wikiDir as string).trim(), 'AGENTS.md'))} (agent entry)\n` +
-      `  • Optional:\n` +
-      `            • add git hooks — see README "Optional git hooks"\n` +
-      `            • add lint-staged — see README "Advanced: lint-staged"\n` +
-      `            • ${pc.bold('npm run wiki:setup:husky')} to wire husky git hooks — see README\n`,
+      `  • Optional git hooks (Husky + lint-staged) — see README "Optional git hooks"\n` +
+      `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n`,
   );
 }

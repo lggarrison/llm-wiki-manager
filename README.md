@@ -143,15 +143,15 @@ npm run wiki:log -- add query "Summary of the question"
 
 When `init` finds a `package.json`, it adds these npm scripts. Run `npm run wiki:help` anytime for a quick reference.
 
-| Script             | Command                                     | Purpose                                     |
-| ------------------ | ------------------------------------------- | ------------------------------------------- |
-| `wiki:help`        | `node scripts/wiki/help.mjs`                | List commands, usage, and when to run them  |
-| `wiki:lint`        | `node scripts/wiki/lint.mjs`                | Validate frontmatter, links, and structure  |
-| `wiki:build`       | `node scripts/wiki/build-index.mjs`         | Regenerate `index.md`                       |
-| `wiki:check`       | `node scripts/wiki/build-index.mjs --check` | Verify `index.md` is up to date (read-only) |
-| `wiki:sync`        | `node scripts/wiki/sync-see-also.mjs`       | Sync `related:` frontmatter to body links   |
-| `wiki:log`         | `node scripts/wiki/log.mjs`                 | Append operation entries to `log.md`        |
-| `wiki:setup:husky` | `node scripts/wiki/setup-husky.mjs`         | Wire wiki lint/check into Husky git hooks   |
+| Script             | Command                                     | Purpose                                           |
+| ------------------ | ------------------------------------------- | ------------------------------------------------- |
+| `wiki:help`        | `node scripts/wiki/help.mjs`                | List commands, usage, and when to run them        |
+| `wiki:lint`        | `node scripts/wiki/lint.mjs`                | Validate frontmatter, links, and structure        |
+| `wiki:build`       | `node scripts/wiki/build-index.mjs`         | Regenerate `index.md`                             |
+| `wiki:check`       | `node scripts/wiki/build-index.mjs --check` | Verify `index.md` is up to date (read-only)       |
+| `wiki:sync`        | `node scripts/wiki/sync-see-also.mjs`       | Sync `related:` frontmatter to body links         |
+| `wiki:log`         | `node scripts/wiki/log.mjs`                 | Append operation entries to `log.md`              |
+| `wiki:setup:husky` | `node scripts/wiki/setup-husky.mjs`         | Wire pre-push wiki:check; print lint-staged guide |
 
 ### Lint — validate structure
 
@@ -276,45 +276,52 @@ status: draft # draft | stable | archived
 
 `init` does not install git hooks in your project — it only adds npm scripts when `package.json` exists. You can wire up hooks yourself if you want automated wiki checks.
 
-**Recommended pattern:** lint on commit (read-only), check index on push (read-only).
+### Recommended setup (Husky + lint-staged)
 
-| Hook       | Command              | Why                                                           |
-| ---------- | -------------------- | ------------------------------------------------------------- |
-| pre-commit | `npm run wiki:lint`  | Catch broken links and invalid frontmatter before commit      |
-| pre-push   | `npm run wiki:check` | Ensure `index.md` matches current pages without writing files |
+Use **lint-staged** on pre-commit to rebuild and lint wiki pages when they are staged, and **wiki:check** on pre-push to catch a stale `index.md` before it reaches the remote.
 
-Run `npm run wiki:build` manually (or via your agent workflow) after adding, removing, or renaming pages — it writes `index.md`, so it belongs in the edit workflow rather than as a silent pre-commit step.
+| Hook       | Command              | Why                                                               |
+| ---------- | -------------------- | ----------------------------------------------------------------- |
+| pre-commit | `npx lint-staged`    | Run wiki build/lint only when staged files include `wiki/**/*.md` |
+| pre-push   | `npm run wiki:check` | Verify `index.md` is current (read-only; does not modify files)   |
 
-### Quick setup with Husky
-
-Install [Husky](https://typicode.github.io/husky/) first, then run the setup script. It creates `.husky/pre-commit` and `.husky/pre-push` when missing, or appends wiki commands to existing hooks without removing what you already have.
+**1. Install Husky and lint-staged**
 
 ```bash
-npm install -D husky
+npm install -D husky lint-staged
+```
+
+**2. Add lint-staged config to `package.json`**
+
+```json
+"lint-staged": {
+  "wiki/**/*.md": [
+    "npm run wiki:build",
+    "npm run wiki:lint",
+    "prettier --write"
+  ]
+}
+```
+
+Adjust the glob if your wiki directory is not `wiki/`. lint-staged re-stages any files modified by these tasks (including regenerated `wiki/index.md`).
+
+**3. Set `.husky/pre-commit`**
+
+```sh
+npx lint-staged
+```
+
+**4. Wire pre-push with the setup script**
+
+```bash
 npm run wiki:setup:husky
 ```
 
-Re-running `wiki:setup:husky` is safe — it skips hooks that are already configured.
+This appends `npm run wiki:check` to `.husky/pre-push` (or creates the hook) and prints the lint-staged snippet above. Re-running is safe — it skips hooks that are already configured.
 
-### Scoped pre-commit (only when wiki files change)
+### Minimal setup (no lint-staged)
 
-If you prefer not to lint on every commit, append this to an existing `.husky/pre-commit` instead of using `wiki:setup:husky` as-is:
-
-```sh
-git diff --cached --name-only --diff-filter=ACM | grep -q '^wiki/' && npm run wiki:lint
-```
-
-Replace `^wiki/` with your wiki directory if you chose a non-default name at init.
-
-### Advanced: lint-staged
-
-If your project already uses [lint-staged](https://github.com/lint-staged/lint-staged), you can optionally add:
-
-```json
-"wiki/**/*.md": ["npm run wiki:build", "npm run wiki:lint"]
-```
-
-lint-staged re-stages any files modified by these tasks (including regenerated `index.md`).
+If you do not use lint-staged, run `npm run wiki:build` and `npm run wiki:lint` manually before committing wiki changes, and add `npm run wiki:check` to pre-push (via `wiki:setup:husky` or by hand).
 
 ---
 
@@ -368,8 +375,8 @@ The bootstrap script copies `templates/scripts/` into `scripts/wiki/` with place
 
 This repo uses [ESLint](https://eslint.org), [Prettier](https://prettier.io), and [Husky](https://typicode.github.io/husky/) with [lint-staged](https://github.com/lint-staged/lint-staged):
 
-- **pre-commit** — runs `lint-staged`; when staged files include `wiki/`, also runs `npm run wiki:lint`
-- **pre-push** — runs `npm run release:check` (lint, format, tests, build, and wiki checks)
+- **pre-commit** — `npx lint-staged` (wiki pages run `wiki:build`, `wiki:lint`, and Prettier via `package.json`)
+- **pre-push** — `npm run release:check` (lint, format, tests, build, and wiki checks)
 
 Husky is only installed in the local development repo; it is skipped automatically in CI, production installs, and when the package is consumed as a dependency.
 

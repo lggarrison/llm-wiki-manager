@@ -61,6 +61,11 @@
       "eslint --fix --no-warn-ignored",
       "prettier --write"
     ],
+    "wiki/**/*.md": [
+      "npm run wiki:build",
+      "npm run wiki:lint",
+      "prettier --write"
+    ],
     "*.{json,md,yml,yaml}": [
       "prettier --write"
     ]

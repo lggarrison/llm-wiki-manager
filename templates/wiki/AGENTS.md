@@ -19,6 +19,19 @@ Run `npm run wiki:help` from the project root for wiki commands.
 
 ---
 
+## Gotchas
+
+Quick pitfalls for new maintainers:
+
+- **Never hand-edit `index.md` tables** — they are regenerated from frontmatter. Edit only the prose preamble; run `npm run wiki:build` after frontmatter changes.
+- **`raw/` is immutable.** Corrections mean ingesting a new dated source — do not edit the artifact in place.
+- **No sub-folder hubs under `entities/`.** The directory is flat by design; scope bucketing is the first tag in `tags:`.
+- **New app dir under `src/ui/` or `src/api/`** (or any path listed in `.entity-scopes`) → add `entities/<slug>.md` with `type: overview` or lint fails.
+- **Stop-and-ask code triggers** (e.g. shared CSS variables, z-index tokens, overlay placement — see repo-root AGENTS.md or CLAUDE.md if present) usually require a matching wiki update via the **Maintenance trigger** workflow in §7.
+- **Deleting a wiki page needs user confirmation.** Prefer `status: deprecated` plus a `log.md` entry via `npm run wiki:log -- add maintenance "..."`.
+
+---
+
 ## §3 Page types
 
 Every page declares its role with `type:` in frontmatter. `npm run wiki:lint` enforces type values and placement.

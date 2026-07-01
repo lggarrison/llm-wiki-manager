@@ -12,9 +12,8 @@ updates:
       prefix: chore
       include: scope
     ignore:
-      # @types/node majors track Node.js majors. Dev/CI use `.nvmrc` (see
-      # README); keep types aligned with that pin — not the latest @types/node
-      # release. Bump both `.nvmrc` and @types/node together when upgrading Node.
+      # @types/node majors track Node.js majors. `.nvmrc`, engines.node, and
+      # @types/node are all aligned on Node 24+. Bump them together when upgrading.
       # Dependabot cannot read `.nvmrc`; CI runs `npm run check:node-types`.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']

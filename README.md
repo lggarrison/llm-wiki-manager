@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/lggarrison/llm-wiki-manager/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D24-brightgreen.svg)](https://nodejs.org)
 
 ## What this is, in one paragraph
 
@@ -360,10 +360,9 @@ Run `npm run wiki:setup:husky` for pre-push only. Before committing wiki changes
 
 ## Requirements
 
-- Node.js 18 or later (to run the CLI and wiki scripts)
-- Node.js 24 for local development — use [`.nvmrc`](.nvmrc) (`nvm use` / `fnm use`)
+- Node.js 24 or later — use [`.nvmrc`](.nvmrc) (`nvm use` / `fnm use`)
 
-For why `@types/node` must match `.nvmrc` and how Dependabot/CI enforce it, see [wiki/concepts/node-version-and-types.md](wiki/concepts/node-version-and-types.md).
+For Node toolchain policy, `@types/node` alignment, and Dependabot/CI guardrails, see [wiki/concepts/node-version-and-types.md](wiki/concepts/node-version-and-types.md).
 
 ---
 

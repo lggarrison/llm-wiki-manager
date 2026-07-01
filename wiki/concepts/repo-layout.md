@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Repository Layout
-last_updated: 2026-07-01T20:30:00Z
+last_updated: 2026-07-01T21:00:00Z
 tags: [architecture]
 related:
   [
@@ -52,7 +52,8 @@ Only `dist/` and `templates/` ship via npm (`"files"` allowlist). Dogfooded `wik
 
 | Path                            | Role                                                   |
 | ------------------------------- | ------------------------------------------------------ |
-| `.nvmrc`                        | Dev/CI Node pin (currently 24)                         |
+| `.nvmrc`                        | Node pin for version managers and CI (currently 24)    |
+| `package.json` `engines.node`   | npm minimum Node version (`>=24`)                      |
 | `.github/workflows/ci.yml`      | Lint, test, wiki checks on push/PR                     |
 | `.github/workflows/release.yml` | Release automation                                     |
 | `.github/dependabot.yml`        | Weekly dependency PRs (with `@types/node` major guard) |

@@ -54,7 +54,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
   const projectName = await text({
     message: 'Project name (used in AGENTS.md and schema.md)',
     initialValue: basename(process.cwd()),
-    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
+    validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(projectName)) {
     cancel('Cancelled');
@@ -64,7 +64,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
   const wikiDir = await text({
     message: 'Wiki directory name',
     initialValue: 'wiki',
-    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
+    validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(wikiDir)) {
     cancel('Cancelled');
@@ -74,7 +74,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
   const scriptsDir = await text({
     message: 'Scripts directory',
     initialValue: 'scripts/wiki',
-    validate: (v) => (v.trim().length === 0 ? 'Required' : undefined),
+    validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(scriptsDir)) {
     cancel('Cancelled');
@@ -94,7 +94,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
     projectName: (projectName as string).trim(),
     wikiDir: (wikiDir as string).trim(),
     scriptsDir: (scriptsDir as string).trim(),
-    focusDirs: focusDirs ?? '',
+    focusDirs: typeof focusDirs === 'string' ? focusDirs.trim() : '',
   };
 }
 

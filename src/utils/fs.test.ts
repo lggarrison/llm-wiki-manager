@@ -187,7 +187,7 @@ describe('scaffoldEntityOverviews', () => {
 });
 
 describe('wiki template bundle', () => {
-  it('includes vault entry files and obsidian config', () => {
+  it('includes vault entry files', () => {
     const dest = makeTmpDir();
     copyTemplate(templatePath('wiki'), dest, {
       PROJECT_NAME: 'acme',
@@ -203,7 +203,6 @@ describe('wiki template bundle', () => {
     expect(existsSync(join(dest, 'AGENTS.md'))).toBe(true);
     expect(existsSync(join(dest, 'raw', 'raw.md'))).toBe(true);
     expect(existsSync(join(dest, '.entity-scopes'))).toBe(true);
-    expect(existsSync(join(dest, '.obsidian', 'app.json'))).toBe(true);
     expect(readFileSync(join(dest, 'README.md'), 'utf8')).toContain('acme');
     expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('api');
   });

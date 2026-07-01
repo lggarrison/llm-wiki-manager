@@ -1,12 +1,13 @@
 ---
 type: concept
 title: Repository Layout
-last_updated: 2026-06-30T00:00:00Z
+last_updated: 2026-07-01T20:30:00Z
 tags: [architecture]
 related:
   [
     concepts/dogfooding.md,
     concepts/init-command.md,
+    concepts/node-version-and-types.md,
     concepts/template-system.md,
     concepts/unit-tests.md,
     concepts/e2e-tests.md,
@@ -47,8 +48,20 @@ Focus scope for this wiki: `src/` and `templates/` (set at init).
 
 Only `dist/` and `templates/` ship via npm (`"files"` allowlist). Dogfooded `wiki/`, `scripts/wiki/`, and `AGENTS.md` are repo-only — consumers run [Init Command](init-command.md) to create their own.
 
+## Toolchain
+
+| Path                            | Role                                                   |
+| ------------------------------- | ------------------------------------------------------ |
+| `.nvmrc`                        | Dev/CI Node pin (currently 24)                         |
+| `.github/workflows/ci.yml`      | Lint, test, wiki checks on push/PR                     |
+| `.github/workflows/release.yml` | Release automation                                     |
+| `.github/dependabot.yml`        | Weekly dependency PRs (with `@types/node` major guard) |
+
+See [Node Version and @types/node Alignment](node-version-and-types.md) for how the Node pin, `@types/node`, Dependabot, and CI fit together.
+
 ## See also
 
+- [Node Version and @types/node Alignment](node-version-and-types.md)
 - [Dogfooding](dogfooding.md)
 - [Init Command](init-command.md)
 - [Template System](template-system.md)

@@ -1,10 +1,16 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-06-30T00:00:00Z
+last_updated: 2026-07-01T20:30:00Z
 tags: [testing, vitest]
 related:
-  [concepts/e2e-tests.md, concepts/wiki-scripts.md, concepts/dogfooding.md, concepts/repo-layout.md]
+  [
+    concepts/e2e-tests.md,
+    concepts/wiki-scripts.md,
+    concepts/dogfooding.md,
+    concepts/node-version-and-types.md,
+    concepts/repo-layout.md,
+  ]
 code_refs:
   [
     vitest.config.ts,
@@ -59,11 +65,12 @@ Tests use temporary wiki directories created by `makeTmpWikiDir()` and tear them
 
 ## CI and release
 
-`npm test` runs in `release:check` before the e2e suite and wiki lint. Failures block publish validation.
+`npm run check:node-types` runs first in `release:check`, then `npm test`, the e2e suite, and wiki lint. Failures block publish validation. See [Node Version and @types/node Alignment](node-version-and-types.md) for the Node/types guard.
 
 ## See also
 
 - [E2E Tests](e2e-tests.md)
 - [Wiki Management Scripts](wiki-scripts.md)
 - [Dogfooding](dogfooding.md)
+- [Node Version and @types/node Alignment](node-version-and-types.md)
 - [Repository Layout](repo-layout.md)

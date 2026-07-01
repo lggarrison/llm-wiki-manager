@@ -1,9 +1,10 @@
 ---
 type: concept
 title: Template System
-last_updated: 2026-07-01T00:00:00Z
+last_updated: 2026-07-01T22:00:00Z
 tags: [templates, scaffold]
 related: [concepts/init-command.md, concepts/repo-layout.md, concepts/dogfooding.md]
+code_refs: [src/utils/fs.ts, templates/AGENTS.md, templates/wiki/schema.md]
 status: active
 summary: templates/ is the source of truth for wiki scaffold files; init copies and interpolates placeholders into consumer projects.
 ---
@@ -16,15 +17,22 @@ Published package contents include `templates/` (see `package.json` `"files"`). 
 
 ```
 templates/
-├── wiki/       schema.md, index.md, log.md (scaffolded wiki skeleton)
-└── AGENTS.md   agent instructions template
+├── wiki/
+│   ├── schema.md, AGENTS.md, README.md
+│   ├── index.md, log.md
+│   ├── raw/raw.md
+│   └── .entity-scopes
+├── AGENTS.md       repo-root pointer template
+└── scripts/        legacy .mjs mirror (dogfood sync only — not copied by init)
 ```
 
-Wiki management logic (lint, build, sync, log, etc.) lives in `src/wiki/` and ships as compiled JavaScript in `dist/` — not as copied template scripts.
+Wiki management logic (lint, build, sync, log, doctor, etc.) lives in `src/wiki/` and ships as compiled JavaScript in `dist/` — not as copied template scripts.
 
 ## Interpolation
 
-`copyTemplate` and scaffold helpers recursively copy template files, then walk `.md`, `.mjs`, and `.js` files replacing `{{VAR}}` placeholders via `interpolate()`.
+`copyTemplate` and scaffold helpers recursively copy template files, then walk interpolated file types replacing `{{VAR}}` placeholders via `interpolate()`.
+
+Interpolated extensions: `.md`, `.mjs`, `.js`, `.json`, and `.entity-scopes` (`shouldInterpolateFile` in `src/utils/fs.ts`).
 
 Common variables:
 
@@ -39,6 +47,8 @@ Common variables:
 ## Templates vs consumer output
 
 Consumers receive **copies** of wiki templates under their chosen wiki path. npm scripts invoke `llm-wiki-manager` subcommands — no script files are vendored into consumer repos.
+
+Upgrade refreshes meta paths in `WIKI_META_UPGRADE_PATHS`; init-only paths (`index.md`, `log.md`) are written on first init but not overwritten on re-init.
 
 ## See also
 

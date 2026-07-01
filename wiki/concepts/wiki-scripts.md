@@ -1,10 +1,29 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-01T00:00:00Z
+last_updated: 2026-07-01T22:00:00Z
 tags: [scripts, lint, maintenance]
 related:
-  [concepts/repo-layout.md, concepts/template-system.md, concepts/unit-tests.md, entities/cli.md]
+  [
+    concepts/repo-layout.md,
+    concepts/template-system.md,
+    concepts/unit-tests.md,
+    concepts/init-command.md,
+    entities/cli.md,
+  ]
+code_refs:
+  [
+    bin/cli.ts,
+    src/wiki/lint.ts,
+    src/wiki/build-index.ts,
+    src/wiki/sync-see-also.ts,
+    src/wiki/log.ts,
+    src/wiki/help.ts,
+    src/wiki/doctor.ts,
+    src/wiki/setup-husky.ts,
+    src/wiki/migrate-pages.ts,
+    src/wiki/constants.ts,
+  ]
 status: active
 summary: llm-wiki-manager CLI subcommands that validate, index, sync, and log wiki operations.
 ---
@@ -23,9 +42,19 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 | `check`        | `wiki:check`       | Verify `index.md` is up to date (read-only)              |
 | `sync`         | `wiki:sync`        | Add body links for `related:` frontmatter entries        |
 | `log`          | `wiki:log`         | Append ingest/query/lint/maintenance entries to `log.md` |
+| `doctor`       | _(CLI only)_       | Health-check scaffold; suggest fixes for common issues   |
 | `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
 
-`migrate-pages` runs internally during `upgrade` — not exposed as a public subcommand.
+`migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand.
+
+## Flags
+
+Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution. Additional flags:
+
+| Subcommand | Flag          | Effect                          |
+| ---------- | ------------- | ------------------------------- |
+| `lint`     | `--warn-only` | Report issues without exiting 1 |
+| `sync`     | `--dry`       | Preview link additions only     |
 
 ## Path resolution
 
@@ -33,7 +62,7 @@ Subcommands resolve the wiki directory from `--wiki-dir`, then `.llm-wiki-manage
 
 ## Meta files excluded from page lint
 
-`lint` and `build` skip `index.md`, `log.md`, and `schema.md` — these are structural/meta files, not wiki pages with frontmatter.
+`lint` and `build` skip structural/meta files (not wiki pages with frontmatter): `index.md`, `log.md`, `schema.md`, `README.md`, and `AGENTS.md` at the wiki root (`META_SKIP` in `src/wiki/constants.ts`).
 
 ## Typical workflow
 
@@ -45,11 +74,17 @@ npm run wiki:build
 npm run wiki:lint
 ```
 
-Use `wiki:check` (read-only) in CI and pre-push hooks to catch stale `index.md` without rewriting files.
+Use `wiki:check` (read-only) in consumer CI and pre-push hooks to catch stale `index.md` without rewriting files.
+
+## Git hooks
+
+- **Consumers:** `wiki:setup:husky` wires pre-push `wiki:check` and prints a lint-staged snippet for pre-commit wiki validation.
+- **This repo (maintainers):** pre-push runs the full `release:check` chain (see [Dogfooding](dogfooding.md)), not just `wiki:check`.
 
 ## See also
 
 - [Template System](template-system.md)
 - [Repo Layout](repo-layout.md)
 - [Unit Tests](unit-tests.md)
+- [Init Command](init-command.md)
 - [CLI](../entities/cli.md)

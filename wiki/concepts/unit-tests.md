@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-01T00:00:00Z
+last_updated: 2026-07-01T22:00:00Z
 tags: [testing, vitest]
 related:
   [
@@ -18,7 +18,7 @@ code_refs:
     test/helpers/wiki.ts,
     test/scripts/lint.test.ts,
     test/commands/upgrade.test.ts,
-    test/e2e/tarball-smoke.test.ts,
+    test/commands/doctor.test.ts,
   ]
 status: active
 summary: Vitest unit and integration tests for src/ utilities, CLI helpers, and wiki subcommand behavior.
@@ -36,13 +36,15 @@ Configuration lives in `vitest.config.ts`: it includes `src/**/*.test.ts` and `t
 
 ## Layout
 
-| Path                             | Role                                                                      |
-| -------------------------------- | ------------------------------------------------------------------------- |
-| `src/utils/fs.test.ts`           | Template copy, interpolation, install config, scaffold helpers in `fs.ts` |
-| `test/commands/upgrade.test.ts`  | Upgrade step orchestration, AGENTS.md managed section, page migration     |
-| `test/scripts/*.test.ts`         | Behavior of each `llm-wiki-manager` subcommand via built CLI              |
-| `test/helpers/wiki.ts`           | Temp wiki dirs, frontmatter fixtures, CLI helpers                         |
-| `test/e2e/tarball-smoke.test.ts` | Verifies subcommands work from an npm-packed install                      |
+| Path                            | Role                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------- |
+| `src/utils/fs.test.ts`          | Template copy, interpolation, install config, scaffold helpers in `fs.ts` |
+| `test/commands/upgrade.test.ts` | Upgrade step orchestration, AGENTS.md managed section, page migration     |
+| `test/commands/doctor.test.ts`  | Health-check CLI: missing files, stale index, script mismatches           |
+| `test/scripts/*.test.ts`        | Behavior of each `llm-wiki-manager` subcommand via built CLI              |
+| `test/helpers/wiki.ts`          | Temp wiki dirs, frontmatter fixtures, CLI helpers                         |
+
+Packed-install smoke tests live under `test/e2e/tarball-smoke.test.ts` and run via `npm run test:e2e`, not `npm test`.
 
 Script tests invoke the **built CLI** (`dist/bin/cli.js`) so behavior matches what consumers run.
 
@@ -65,7 +67,15 @@ Tests use temporary wiki directories created by `makeTmpWikiDir()` and tear them
 
 ## CI and release
 
-`npm run check:node-types` runs first in `release:check`, then `npm test`, the e2e suite, and wiki lint. Failures block publish validation. See [Node Version and @types/node Alignment](node-version-and-types.md) for the Node/types guard.
+`npm run release:check` runs the full gate chain before publish validation:
+
+```
+check:node-types → lint → format:check → test → build → test:e2e → wiki:lint → wiki:check
+```
+
+CI (`.github/workflows/ci.yml`) runs the same gates on Node 20 and 24. Note: CI runs `build` before `test`; `release:check` runs `test` then `build` then `test:e2e` (e2e global setup rebuilds anyway).
+
+See [Node Version and @types/node Alignment](node-version-and-types.md) for the Node/types guard.
 
 ## See also
 

@@ -94,6 +94,18 @@ You will be prompted for:
 | Scripts directory | `scripts/wiki`            | Where the management scripts are placed         |
 | Focus directories | _(blank = whole project)_ | Directories the wiki documents, e.g. `src, api` |
 
+To skip prompts (CI, scripts, or non-interactive shells), pass `--project-name` and optionally the other flags:
+
+```bash
+npx llm-wiki-manager init \
+  --project-name my-app \
+  --wiki-dir wiki \
+  --scripts-dir scripts/wiki \
+  --focus-dirs src,api
+```
+
+`--project-name` is required to skip prompts. `--wiki-dir`, `--scripts-dir`, and `--focus-dirs` default to the values in the table above.
+
 After `init` completes:
 
 1. Open `wiki/schema.md` to review the conventions your agent will follow

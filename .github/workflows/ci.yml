@@ -23,9 +23,11 @@ jobs:
 
       - run: npm run format:check
 
+      - run: npm run build
+
       - run: npm test
 
-      - run: npm run build
+      - run: npm run test:e2e
 
       - run: npm run wiki:lint
 

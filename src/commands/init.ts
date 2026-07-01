@@ -18,9 +18,39 @@ import {
   readInstallConfig,
 } from '../utils/fs.js';
 
-export async function init(): Promise<void> {
-  intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
+type InitFlagValues = {
+  projectName: string;
+  wikiDir: string;
+  scriptsDir: string;
+  focusDirs: string;
+};
 
+function parseInitArgs(argv: string[]): InitFlagValues | null {
+  const flagIndex = argv.indexOf('--project-name');
+  if (flagIndex === -1) return null;
+
+  const projectName = argv[flagIndex + 1]?.trim();
+  if (!projectName) {
+    throw new Error('--project-name requires a value');
+  }
+
+  const readFlag = (name: string, fallback: string): string => {
+    const idx = argv.indexOf(name);
+    if (idx === -1) return fallback;
+    const value = argv[idx + 1]?.trim();
+    if (!value) throw new Error(`${name} requires a value`);
+    return value;
+  };
+
+  return {
+    projectName,
+    wikiDir: readFlag('--wiki-dir', 'wiki'),
+    scriptsDir: readFlag('--scripts-dir', 'scripts/wiki'),
+    focusDirs: readFlag('--focus-dirs', ''),
+  };
+}
+
+async function promptInitValues(): Promise<InitFlagValues> {
   const projectName = await text({
     message: 'Project name (used in AGENTS.md and schema.md)',
     initialValue: basename(process.cwd()),
@@ -60,14 +90,28 @@ export async function init(): Promise<void> {
     process.exit(0);
   }
 
-  const focusDirList = (focusDirs ?? '')
+  return {
+    projectName: (projectName as string).trim(),
+    wikiDir: (wikiDir as string).trim(),
+    scriptsDir: (scriptsDir as string).trim(),
+    focusDirs: focusDirs ?? '',
+  };
+}
+
+export async function init(): Promise<void> {
+  intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
+
+  const fromFlags = parseInitArgs(process.argv.slice(3));
+  const values = fromFlags ?? (await promptInitValues());
+
+  const focusDirList = values.focusDirs
     .split(',')
-    .map((s: string) => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 
-  const wikiDirStr = (wikiDir as string).trim();
-  const scriptsDirStr = (scriptsDir as string).trim();
-  const projectNameStr = (projectName as string).trim();
+  const wikiDirStr = values.wikiDir;
+  const scriptsDirStr = values.scriptsDir;
+  const projectNameStr = values.projectName;
   const initDate = new Date().toISOString().slice(0, 10);
 
   const vars = buildTemplateVars({

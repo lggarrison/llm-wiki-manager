@@ -149,3 +149,14 @@ Flag both pages with a `> ⚠️ Contradiction:` blockquote and create a reconci
 ## Gaps
 
 Create stub pages (`status: wip`) rather than leaving broken `related:` references.
+
+---
+
+## Where to go next
+
+- **Schema & workflows (authoritative):** `wiki/AGENTS.md`
+- **Human onboarding / Obsidian setup:** `wiki/README.md`
+- **Content catalog:** `wiki/index.md`
+- **Event log:** `wiki/log.md`
+- **Search setup & CLI:** `wiki/concepts/wiki-search.md`
+- **Scripts:** `scripts/wiki/` (lint, build-index, log, sync-see-also, qmd-*)

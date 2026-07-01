@@ -360,7 +360,8 @@ Run `npm run wiki:setup:husky` for pre-push only. Before committing wiki changes
 
 ## Requirements
 
-- Node.js 18 or later
+- Node.js 18 or later (to run the CLI and wiki scripts)
+- Node.js 24 for local development — use [`.nvmrc`](.nvmrc) (`nvm use` / `fnm use`)
 
 ---
 
@@ -369,6 +370,7 @@ Run `npm run wiki:setup:husky` for pre-push only. Before committing wiki changes
 ```bash
 git clone https://github.com/lggarrison/llm-wiki-manager.git
 cd llm-wiki-manager
+nvm use              # or: fnm use  (Node 24 — see .nvmrc)
 npm install          # also sets up Husky git hooks and builds dist/
 npm run build        # compile TypeScript to dist/
 npm test             # run the vitest suite

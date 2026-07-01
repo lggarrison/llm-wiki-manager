@@ -5,7 +5,6 @@ import { tmpdir } from 'os';
 import {
   interpolate,
   amendFile,
-  copyTemplate,
   templatePath,
   mergePackageJsonScripts,
   syncPackageJsonScripts,
@@ -73,6 +72,7 @@ describe('amendFile', () => {
     expect(result).toBe(true);
     const content = readFileSync(target, 'utf8');
     expect(content).toContain('<!-- llm-wiki-manager -->');
+    expect(content).toContain('<!-- /llm-wiki-manager -->');
     expect(content).toContain('# Section\n\nbody');
   });
 
@@ -87,6 +87,7 @@ describe('amendFile', () => {
     const content = readFileSync(target, 'utf8');
     expect(content).toContain('# Existing project notes');
     expect(content).toContain('<!-- llm-wiki-manager -->');
+    expect(content).toContain('<!-- /llm-wiki-manager -->');
     expect(content).toContain('## LLM Wiki');
     expect(content).not.toMatch(/^# LLM Wiki/m);
   });
@@ -104,53 +105,22 @@ describe('amendFile', () => {
   });
 });
 
-describe('copyTemplate', () => {
-  it('copies a directory tree to the destination', () => {
-    const src = makeTmpDir();
+describe('scaffoldScripts', () => {
+  it('copies and interpolates script templates', () => {
     const dest = makeTmpDir();
-    writeFileSync(join(src, 'a.md'), '# A');
-    mkdirSync(join(src, 'nested'), { recursive: true });
-    writeFileSync(join(src, 'nested', 'b.md'), '# B');
+    scaffoldScripts(dest, {
+      WIKI_DIR: 'docs/wiki',
+      SCRIPTS_DIR: 'tools/wiki',
+    });
 
-    copyTemplate(src, dest);
-
-    expect(existsSync(join(dest, 'a.md'))).toBe(true);
-    expect(existsSync(join(dest, 'nested', 'b.md'))).toBe(true);
-  });
-
-  it('interpolates placeholders in copied .md/.mjs/.js files', () => {
-    const src = makeTmpDir();
-    const dest = makeTmpDir();
-    writeFileSync(join(src, 'page.md'), 'Project: {{PROJECT_NAME}}');
-    writeFileSync(join(src, 'script.mjs'), '// {{PROJECT_NAME}}');
-
-    copyTemplate(src, dest, { PROJECT_NAME: 'acme' });
-
-    expect(readFileSync(join(dest, 'page.md'), 'utf8')).toBe('Project: acme');
-    expect(readFileSync(join(dest, 'script.mjs'), 'utf8')).toBe('// acme');
-  });
-
-  it('interpolates .entity-scopes and .json template files', () => {
-    const src = makeTmpDir();
-    const dest = makeTmpDir();
-    mkdirSync(join(src, '.obsidian'), { recursive: true });
-    writeFileSync(join(src, '.entity-scopes'), 'scopes:\n{{ENTITY_SCOPE_LINES}}\n');
-    writeFileSync(join(src, '.obsidian', 'app.json'), '{"project":"{{PROJECT_NAME}}"}');
-
-    copyTemplate(src, dest, { ENTITY_SCOPE_LINES: 'api\nui', PROJECT_NAME: 'acme' });
-
-    expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('api\nui');
-    expect(readFileSync(join(dest, '.obsidian', 'app.json'), 'utf8')).toContain('acme');
-  });
-
-  it('does not modify files when no vars are given', () => {
-    const src = makeTmpDir();
-    const dest = makeTmpDir();
-    writeFileSync(join(src, 'page.md'), 'Project: {{PROJECT_NAME}}');
-
-    copyTemplate(src, dest);
-
-    expect(readFileSync(join(dest, 'page.md'), 'utf8')).toBe('Project: {{PROJECT_NAME}}');
+    expect(existsSync(join(dest, 'lint.mjs'))).toBe(true);
+    expect(existsSync(join(dest, '_wiki-utils.mjs'))).toBe(true);
+    const lint = readFileSync(join(dest, 'lint.mjs'), 'utf8');
+    const utils = readFileSync(join(dest, '_wiki-utils.mjs'), 'utf8');
+    expect(lint).toContain('tools/wiki');
+    expect(utils).toContain("'docs/wiki'");
+    expect(lint).not.toContain('{{WIKI_DIR}}');
+    expect(utils).not.toContain('{{WIKI_DIR}}');
   });
 });
 
@@ -189,22 +159,24 @@ describe('scaffoldEntityOverviews', () => {
 describe('wiki template bundle', () => {
   it('includes vault entry files', () => {
     const dest = makeTmpDir();
-    copyTemplate(templatePath('wiki'), dest, {
-      PROJECT_NAME: 'acme',
-      WIKI_DIR: 'wiki',
-      SCRIPTS_DIR: 'scripts/wiki',
-      INIT_TIMESTAMP: '2026-06-30T00:00:00Z',
-      ENTITY_SCOPE_LINES: 'api',
-      FOCUS_DIRS: '`src/`',
-      FOCUS_DIRS_LIST: '- `src/`',
-    });
+    scaffoldWikiTemplates(
+      dest,
+      buildTemplateVars({
+        projectName: 'acme',
+        wikiDir: 'wiki',
+        scriptsDir: 'scripts/wiki',
+        focusDirs: ['src'],
+        initTimestamp: '2026-06-30T00:00:00Z',
+      }),
+      { overwrite: false },
+    );
 
     expect(existsSync(join(dest, 'README.md'))).toBe(true);
     expect(existsSync(join(dest, 'AGENTS.md'))).toBe(true);
     expect(existsSync(join(dest, 'raw', 'raw.md'))).toBe(true);
     expect(existsSync(join(dest, '.entity-scopes'))).toBe(true);
     expect(readFileSync(join(dest, 'README.md'), 'utf8')).toContain('acme');
-    expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('api');
+    expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('src');
   });
 });
 
@@ -308,6 +280,23 @@ describe('replaceManagedSection', () => {
     const target = join(dir, 'AGENTS.md');
     writeFileSync(target, '# No delimiter here\n');
     expect(replaceManagedSection(target, '# Section')).toBe(false);
+  });
+
+  it('preserves user content after the managed block when end delimiter is present', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    writeFileSync(
+      target,
+      '# My Project\n\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n<!-- /llm-wiki-manager -->\n\nUser notes.\n',
+    );
+
+    const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh instructions.');
+    expect(ok).toBe(true);
+
+    const content = readFileSync(target, 'utf8');
+    expect(content).toContain('Fresh instructions.');
+    expect(content).toContain('User notes.');
+    expect(content).not.toContain('Stale.');
   });
 });
 

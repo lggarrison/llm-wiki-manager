@@ -6,7 +6,7 @@ import { dirname } from 'path';
 const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 export default function globalSetup(): void {
-  const result = spawnSync('npm', ['run', 'build'], {
+  const result = spawnSync('npm run build', {
     cwd: PACKAGE_ROOT,
     stdio: 'inherit',
     shell: true,

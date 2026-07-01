@@ -6,9 +6,9 @@
 
 ## What this is, in one paragraph
 
-The wiki implements Karpathy's LLM-Wiki pattern: a persistent, compounding knowledge base that an LLM agent owns and maintains, sitting between the team and the raw sources. It is plain markdown, doubles as an Obsidian vault, and is wired into the repo's tooling (npm scripts, a pre-commit hook, and tool-specific discovery shims) so it stays current as the code changes. Code in your app's source code remains the source of truth for behavior; wiki pages describe and cite code (via `code_refs:` frontmatter) but never duplicate it.
-
 Scaffold and manage a persistent, LLM-maintained wiki for your project. Rather than relying on retrieval-augmented generation (RAG), this tool sets up a structured knowledge base that an LLM agent incrementally builds, cross-references, and synthesizes over time.
+
+The wiki implements Karpathy's LLM-Wiki pattern: a persistent, compounding knowledge base that an LLM agent owns and maintains, sitting between the team and the raw sources. It is plain markdown, doubles as an Obsidian vault, and is wired into the repo's tooling (npm scripts, a pre-commit hook, and tool-specific discovery shims) so it stays current as the code changes. Code in your app's source code remains the source of truth for behavior; wiki pages describe and cite code (via `code_refs:` frontmatter) but never duplicate it.
 
 ---
 
@@ -18,19 +18,29 @@ Running `init` scaffolds the following into your project:
 
 ```
 wiki/
+├── AGENTS.md          # Agent entry point (full instructions)
 ├── schema.md          # LLM conventions: frontmatter spec, operations, link rules
+├── README.md          # Human entry point
 ├── index.md           # Auto-generated content catalog
 ├── log.md             # Append-only operation log
-├── concepts/          # Synthesized knowledge pages
+├── .entity-scopes     # Required entity overview slugs (one per line)
+├── entities/          # Flat — scope entry points and entity-family pages
+├── concepts/          # Cross-cutting synthesized knowledge
 ├── sources/           # Summaries of ingested source documents
-└── raw/               # Immutable source documents (never edited by the agent)
+├── archive/           # Deprecated pages (optional)
+└── raw/
+    ├── raw.md         # Hub for immutable ingested artifacts
+    └── articles/, prs/, tickets/, design-notes/, transcripts/, assets/
 
 scripts/wiki/
 ├── lint.mjs           # Validate frontmatter, links, and structure
 ├── build-index.mjs    # Regenerate index.md from page frontmatter
 ├── help.mjs           # List wiki commands and when to run them
 ├── log.mjs            # Append operation entries to log.md
-└── sync-see-also.mjs  # Sync related: frontmatter to body links
+├── sync-see-also.mjs  # Sync related: frontmatter to body links
+├── migrate-pages.mjs  # Auto-fix pages when schema rules change
+├── setup-husky.mjs    # Wire pre-push wiki:check hook
+└── _wiki-utils.mjs    # Internal shared helpers
 
 AGENTS.md              # Repo-root pointer to wiki/AGENTS.md (created or amended)
 
@@ -65,6 +75,8 @@ npm install --save-dev git+ssh://git@github.com/lggarrison/llm-wiki-manager.git
 ```
 
 ### From npm (once published)
+
+The package is not on the npm registry yet — use [From GitHub](#from-github-recommended-for-now) for v1.0. When it is published:
 
 ```bash
 npx llm-wiki-manager init
@@ -154,7 +166,7 @@ npm run wiki:log -- add ingest "Title of source"
 
 ### Querying the wiki
 
-Ask your agent a question. It will read `wiki/index.md` to locate relevant pages, then synthesize an answer with citations. If the query reveals a gap, the agent should create a stub page (`status: draft`) to track it.
+Ask your agent a question. It will read `wiki/index.md` to locate relevant pages, then synthesize an answer with citations. If the query reveals a gap, the agent should create a stub page (`status: wip`) to track it.
 
 ```bash
 npm run wiki:log -- add query "Summary of the question"
@@ -285,16 +297,24 @@ Every wiki page must have YAML frontmatter:
 
 ```yaml
 ---
-type: concept # concept | source | overview | hub
+type: concept # overview | entity | comparison | deep-dive | concept | source | hub
 title: 'Page Title'
 last_updated: 2025-06-30T00:00:00Z
 tags: [auth, api]
 related: [] # relative paths from wiki root
-status: draft # draft | stable | archived
+status: active # active | wip | deprecated
 ---
 ```
 
-- Place pages in the directory matching their type: `concepts/`, `sources/`, or wiki root (overview/hub)
+Page placement:
+
+- `overview`, `entity`, `comparison`, `deep-dive` → `entities/<slug>.md` (flat — no subdirectories)
+- `concept` → `concepts/<slug>.md`
+- `source` → `sources/<slug>.md`
+- `hub` → `README.md`, `index.md`, or `raw/raw.md` only
+
+Other rules:
+
 - Use markdown links `[Title](path.md)` — never wikilinks `[[...]]`
 - Every path in `related:` must also appear as a body link (run `npm run wiki:sync` to auto-add)
 - See `wiki/schema.md` for the full specification
@@ -423,7 +443,7 @@ Issues and pull requests are welcome at [github.com/lggarrison/llm-wiki-manager]
 Version tags are published as [GitHub Releases](https://github.com/lggarrison/llm-wiki-manager/releases). Pin a specific version:
 
 ```bash
-npx github:lggarrison/llm-wiki-manager#v0.1.1 init
+npx github:lggarrison/llm-wiki-manager#v1.0.0 init
 ```
 
 Release history is in [CHANGELOG.md](CHANGELOG.md). Maintainers: see [RELEASING.md](RELEASING.md) for the full cut-a-release runbook.

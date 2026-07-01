@@ -12,9 +12,9 @@ summary: Overview of src/utils/ — template copy, interpolation, package.json m
 
 Scope tag: **`utils`** (first tag).
 
-| File    | Role                                                                  |
-| ------- | --------------------------------------------------------------------- |
-| `fs.ts` | `copyTemplate`, `interpolate`, `mergePackageJsonScripts`, `amendFile` |
+| File    | Role                                                                                                                       |
+| ------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `fs.ts` | `scaffoldWikiTemplates`, `scaffoldScripts`, `interpolate`, `mergePackageJsonScripts`, `amendFile`, `replaceManagedSection` |
 
 ## See also
 

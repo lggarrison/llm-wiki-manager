@@ -6,7 +6,7 @@ import {
   WIKI_SCRIPT_KEYS,
   WIKI_TEMPLATE_SCRIPTS,
   wikiScriptCandidates,
-  copyTemplate,
+  scaffoldScripts,
   mergePackageJsonScripts,
   templatePath,
 } from '../../src/utils/fs.js';
@@ -37,7 +37,7 @@ describe('wiki script templates', () => {
   it('ships every expected script under templates/scripts', () => {
     const dir = templatePath('scripts');
     const onDisk = readdirSync(dir)
-      .filter((f) => f.endsWith('.mjs'))
+      .filter((f) => f.endsWith('.mjs') && !f.startsWith('_'))
       .sort();
     expect(onDisk).toEqual([...WIKI_TEMPLATE_SCRIPTS].sort());
   });
@@ -57,9 +57,9 @@ describe('wiki script templates', () => {
     }
   });
 
-  it('copyTemplate scaffolds all scripts with interpolated placeholders', () => {
+  it('scaffoldScripts copies all scripts with interpolated placeholders', () => {
     const dest = makeTmpDir();
-    copyTemplate(templatePath('scripts'), dest, {
+    scaffoldScripts(dest, {
       WIKI_DIR: 'docs/wiki',
       SCRIPTS_DIR: 'tools/wiki',
     });
@@ -69,8 +69,11 @@ describe('wiki script templates', () => {
     }
 
     const lint = readFileSync(join(dest, 'lint.mjs'), 'utf8');
-    expect(lint).toContain("'docs/wiki'");
+    const utils = readFileSync(join(dest, '_wiki-utils.mjs'), 'utf8');
+    expect(lint).toContain('tools/wiki');
+    expect(utils).toContain("'docs/wiki'");
     expect(lint).not.toContain('{{WIKI_DIR}}');
+    expect(utils).not.toContain('{{WIKI_DIR}}');
   });
 
   it('mergePackageJsonScripts registers every wiki alias', () => {
@@ -112,6 +115,12 @@ describe('wiki script smoke tests', () => {
     const result = runScript('lint.mjs', ['--wiki-dir', wikiDir]);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('No errors found');
+  });
+
+  it('lint.mjs rejects --wiki-dir without a value', () => {
+    const result = runScript('lint.mjs', ['--wiki-dir']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--wiki-dir requires a value');
   });
 
   it('build-index.mjs writes index.md', () => {

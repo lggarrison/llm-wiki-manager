@@ -25,14 +25,14 @@ These become interpolation variables (`PROJECT_NAME`, `WIKI_DIR`, `SCRIPTS_DIR`,
 
 ## Scaffold steps
 
-1. **Wiki directory** — copies `templates/wiki/` via `copyTemplate`, creates `concepts/`, `sources/`, `raw/` with `.gitkeep` files.
-2. **Management scripts** — copies `templates/scripts/` with placeholders replaced.
+1. **Wiki directory** — copies `templates/wiki/` via `scaffoldWikiTemplates`, creates `concepts/`, `sources/`, `raw/` with `.gitkeep` files.
+2. **Management scripts** — copies `templates/scripts/` via `scaffoldScripts` with placeholders replaced.
 3. **package.json** — merges `wiki:*` npm scripts via `mergePackageJsonScripts` (skipped if no `package.json` or scripts already exist).
 4. **AGENTS.md** — amends repo-root `AGENTS.md` with a pointer to `wiki/AGENTS.md`; vault copy created from `templates/wiki/AGENTS.md`
 
 ## Idempotency
 
-Re-running `init` on an already-initialized project skips npm script merges and AGENTS.md amendments when markers already exist. Wiki and script directories are overwritten by `copyTemplate` (`cpSync`).
+Re-running `init` on an already-initialized project skips npm script merges and AGENTS.md amendments when markers already exist. Wiki and script files are created only when missing (`scaffoldWikiTemplates` / `scaffoldScripts` with `overwrite: false`).
 
 ## See also
 

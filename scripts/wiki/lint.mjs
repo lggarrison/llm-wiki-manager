@@ -5,15 +5,20 @@
  */
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join, resolve, relative, dirname, basename } from 'path';
+import {
+  RAW_ARTIFACT_DIRS,
+  resolveWikiDir,
+  resolveRepoRoot,
+  shouldSkipWikiPath,
+  isRootMetaFile,
+} from './_wiki-utils.mjs';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
 const warnOnly = args.includes('--warn-only');
-const wikiDirFlag = args.indexOf('--wiki-dir');
-const repoRootFlag = args.indexOf('--repo-root');
-const WIKI_DIR = resolve(wikiDirFlag >= 0 ? args[wikiDirFlag + 1] : 'wiki');
-const REPO_ROOT = resolve(repoRootFlag >= 0 ? args[repoRootFlag + 1] : process.cwd());
+const WIKI_DIR = resolveWikiDir(args);
+const REPO_ROOT = resolveRepoRoot(args);
 
 const VALID_TYPES = new Set([
   'overview',
@@ -39,20 +44,6 @@ const TYPE_PLACEMENT = {
   source: /^sources\/[^/]+\.md$/,
   hub: /^(README\.md|index\.md|raw\/raw\.md)$/,
 };
-
-const RAW_ARTIFACT_DIRS = ['articles', 'prs', 'tickets', 'design-notes', 'transcripts', 'assets'];
-
-const META_SKIP = new Set(['index.md', 'log.md', 'schema.md', 'README.md', 'AGENTS.md']);
-
-function shouldSkipWikiPath(full) {
-  const rel = relative(WIKI_DIR, full).replace(/\\/g, '/');
-  if (rel.startsWith('archive/') || rel === 'archive') return true;
-  if (rel.includes('.obsidian')) return true;
-  for (const sub of RAW_ARTIFACT_DIRS) {
-    if (rel.startsWith(`raw/${sub}/`) || rel === `raw/${sub}`) return true;
-  }
-  return false;
-}
 
 function isInsideWiki(absPath) {
   const rel = relative(WIKI_DIR, absPath).replace(/\\/g, '/');
@@ -94,7 +85,7 @@ function walkMd(dir) {
   if (!existsSync(dir)) return results;
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
-    if (shouldSkipWikiPath(full)) continue;
+    if (shouldSkipWikiPath(full, WIKI_DIR)) continue;
     if (statSync(full).isDirectory()) results.push(...walkMd(full));
     else if (entry.endsWith('.md')) results.push(full);
   }
@@ -190,7 +181,7 @@ for (const file of pages) {
   const relPath = relative(WIKI_DIR, file).replace(/\\/g, '/');
   const fileName = basename(file);
 
-  if (META_SKIP.has(fileName) && dirname(file) === WIKI_DIR) continue;
+  if (isRootMetaFile(file, WIKI_DIR)) continue;
 
   if (!fm) {
     err(file, 'missing frontmatter');

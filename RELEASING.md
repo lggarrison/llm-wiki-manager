@@ -18,7 +18,7 @@ npx github:lggarrison/llm-wiki-manager init
 After you tag a release, they can pin a version:
 
 ```bash
-npx github:lggarrison/llm-wiki-manager#v0.1.1 init
+npx github:lggarrison/llm-wiki-manager#v1.0.0 init
 ```
 
 ## One-time setup
@@ -52,13 +52,13 @@ Use [semantic versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
 
 | Bump  | When to use it                                      | Example           |
 | ----- | --------------------------------------------------- | ----------------- |
-| patch | Bug fixes, docs, internal changes — no new behavior | `0.1.0` → `0.1.1` |
-| minor | New features that stay backward compatible          | `0.1.0` → `0.2.0` |
+| patch | Bug fixes, docs, internal changes — no new behavior | `1.0.0` → `1.0.1` |
+| minor | New features that stay backward compatible          | `1.0.0` → `1.1.0` |
 | major | Breaking changes (CLI flags, output, file layout)   | `0.1.0` → `1.0.0` |
 
 While the package is `0.x.y`, treat **minor** bumps as the place for breaking changes if you prefer not to jump to `1.0.0` yet.
 
-Tags use a `v` prefix to match npm convention: `v0.1.1` for version `0.1.1`.
+Tags use a `v` prefix to match npm convention: `v1.0.0` for version `1.0.0`.
 
 ## Pre-release checklist
 
@@ -111,7 +111,7 @@ If you ever need to create a release without the workflow (for example, the tag 
 ### Option A — GitHub CLI
 
 ```bash
-gh release create v0.1.1 --title "v0.1.1" --generate-notes
+gh release create v1.0.0 --title "v1.0.0" --generate-notes
 ```
 
 Use the same version in the tag name as in `package.json` (with a `v` prefix).
@@ -120,8 +120,8 @@ Use the same version in the tag name as in `package.json` (with a `v` prefix).
 
 1. Open [github.com/lggarrison/llm-wiki-manager/releases](https://github.com/lggarrison/llm-wiki-manager/releases).
 2. Click **Draft a new release**.
-3. Click **Choose a tag**, type `v0.1.1` (match `package.json`), and select **Create new tag on publish** if the tag is not listed yet. Target branch: `main`.
-4. Set the release title to `v0.1.1`.
+3. Click **Choose a tag**, type `v1.0.0` (match `package.json`), and select **Create new tag on publish** if the tag is not listed yet. Target branch: `main`.
+4. Set the release title to `v1.0.0`.
 5. Click **Generate release notes** or write a short summary of changes.
 6. Click **Publish release**.
 
@@ -132,12 +132,14 @@ Use the same version in the tag name as in `package.json` (with a `v` prefix).
 gh release list
 
 # Install the tagged version (smoke test)
-npx github:lggarrison/llm-wiki-manager#v0.1.1 --help
+npx github:lggarrison/llm-wiki-manager#v1.0.0 --help
 ```
 
 ## Publishing to npm (optional)
 
 The release workflow does **not** publish to npm — it only creates the GitHub Release. Skip this section until you want the package on [npmjs.com](https://www.npmjs.com/); GitHub releases alone are enough for `npx github:...` installs. When you are ready, publish manually from the tagged commit:
+
+**Important:** Remove `"private": true` from `package.json` before running `npm publish`. While `private` is set, npm refuses to publish — this is intentional for GitHub-only releases.
 
 ```bash
 npm publish
@@ -155,29 +157,29 @@ You can also generate the tarball locally:
 
 ```bash
 npm pack
-# produces llm-wiki-manager-0.1.0.tgz — delete it when done inspecting
+# produces llm-wiki-manager-1.0.0.tgz — delete it when done inspecting
 ```
 
 ## What each step does
 
 | Step                       | What happens                                                                                                                                                                                                                                                |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm version patch`        | Sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 0.1.1`, and tags it `v0.1.1`. Use `minor` or `major` instead of `patch` when appropriate.                                                                    |
-| `git push --follow-tags`   | Pushes the version-bump commit and the `v0.1.1` tag together. Pushing the tag triggers the Release workflow.                                                                                                                                                |
-| Release workflow           | Verifies the tag is on `main` and matches `package.json`, runs `release:check`, then creates the GitHub Release with auto-generated notes. Users can browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases) and install with `#v0.1.1`. |
+| `npm version patch`        | Sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 1.0.1`, and tags it `v1.0.1`. Use `minor` or `major` instead of `patch` when appropriate.                                                                    |
+| `git push --follow-tags`   | Pushes the version-bump commit and the `v1.0.0` tag together. Pushing the tag triggers the Release workflow.                                                                                                                                                |
+| Release workflow           | Verifies the tag is on `main` and matches `package.json`, runs `release:check`, then creates the GitHub Release with auto-generated notes. Users can browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases) and install with `#v1.0.0`. |
 | `npm publish` _(optional)_ | Uploads the package to npm so users can run `npx llm-wiki-manager` without the `github:` prefix. Not run by the workflow.                                                                                                                                   |
 
 ## If something goes wrong
 
 ### Before pushing
 
-- Undo the version bump locally: `git tag -d v0.1.1` then `git reset --hard HEAD~1`.
+- Undo the version bump locally: `git tag -d v1.0.0` then `git reset --hard HEAD~1`.
 
 ### After pushing to GitHub
 
-- **Workflow failed (release:check or a guard)** — fix the issue on `main`, then either re-run the failed run from the **Actions** tab, or delete and re-push the tag: `git push origin --delete v0.1.1`, fix, re-tag, and `git push --follow-tags`.
-- **Wrong tag, nobody has used it yet** — delete the remote tag (`git push origin --delete v0.1.1`), delete the GitHub Release if one was created (Releases page → release → Delete), fix locally, and re-run the release steps.
-- **Tag exists but no GitHub Release** — re-run the workflow from the Actions tab, or create it manually with `gh release create v0.1.1 --generate-notes`.
+- **Workflow failed (release:check or a guard)** — fix the issue on `main`, then either re-run the failed run from the **Actions** tab, or delete and re-push the tag: `git push origin --delete v1.0.0`, fix, re-tag, and `git push --follow-tags`.
+- **Wrong tag, nobody has used it yet** — delete the remote tag (`git push origin --delete v1.0.0`), delete the GitHub Release if one was created (Releases page → release → Delete), fix locally, and re-run the release steps.
+- **Tag exists but no GitHub Release** — re-run the workflow from the Actions tab, or create it manually with `gh release create v1.0.0 --generate-notes`.
 - **Want it on npm too** — check out the tagged commit and run `npm publish` (see [Publishing to npm](#publishing-to-npm-optional)).
 
 ### npm-specific

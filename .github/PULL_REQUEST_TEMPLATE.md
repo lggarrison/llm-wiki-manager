@@ -1,26 +1,26 @@
-<!--
 Thanks for contributing to llm-wiki-manager!
-Open PRs against `develop` (the default branch). Releases are cut from `main`.
-Fill in the sections that apply and delete the rest.
--->
+
+Open PRs against **`develop`** (the default branch). Releases are cut from **`main`**. Fill in the sections that apply and delete the rest.
 
 ## Summary
 
-<!-- What does this change do, and why? One or two sentences. -->
+_One or two sentences: what does this change do, and why?_
 
 ## Changes
 
-<!-- Bullet the notable changes. Call out anything that affects the published surface:
-     CLI commands/flags (bin/cli.ts), scaffold templates (templates/), or the "files" allowlist in package.json. -->
+_Bullet the notable changes. Call out anything that affects the published surface: CLI commands/flags (`bin/cli.ts`), scaffold templates (`templates/`), or the `"files"` allowlist in `package.json`._
 
 -
 
 ## How to verify
 
-<!-- Exact commands a reviewer can run. For example:
-     npm run build && node dist/bin/cli.js --help
-     npm test
-     npm run test:e2e -->
+_Exact commands a reviewer can run. For example:_
+
+```bash
+npm run build && node dist/bin/cli.js --help
+npm test
+npm run test:e2e
+```
 
 ## Checklist
 
@@ -35,4 +35,4 @@ Fill in the sections that apply and delete the rest.
 
 ## Notes
 
-<!-- Follow-ups, known limitations, or anything reviewers should be aware of. -->
+_Optional: follow-ups, known limitations, or anything reviewers should be aware of._

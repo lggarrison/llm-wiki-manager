@@ -22,6 +22,9 @@ import {
   scaffoldEntityOverviews,
   scaffoldWikiEmptyDirs,
   readJsonFile,
+  WIKI_EMPTY_DIRS,
+  WIKI_INIT_ONLY_PATHS,
+  WIKI_META_UPGRADE_PATHS,
 } from './fs.js';
 
 const tmpDirs: string[] = [];
@@ -191,6 +194,106 @@ describe('scaffoldEntityOverviews', () => {
     writeFileSync(join(dir, 'entities', 'api.md'), 'existing');
     scaffoldEntityOverviews(dir, ['src/api'], '2026-06-30');
     expect(readFileSync(join(dir, 'entities', 'api.md'), 'utf8')).toBe('existing');
+  });
+});
+
+describe('scaffoldWikiEmptyDirs', () => {
+  it('creates every expected empty directory with a .gitkeep file', () => {
+    const dir = makeTmpDir();
+    scaffoldWikiEmptyDirs(dir);
+
+    for (const sub of WIKI_EMPTY_DIRS) {
+      const subDir = join(dir, sub);
+      expect(existsSync(subDir)).toBe(true);
+      expect(existsSync(join(subDir, '.gitkeep'))).toBe(true);
+    }
+  });
+
+  it('is idempotent when directories already exist', () => {
+    const dir = makeTmpDir();
+    scaffoldWikiEmptyDirs(dir);
+    writeFileSync(join(dir, 'concepts', 'existing.md'), '# keep me\n');
+
+    scaffoldWikiEmptyDirs(dir);
+
+    expect(readFileSync(join(dir, 'concepts', 'existing.md'), 'utf8')).toBe('# keep me\n');
+    expect(existsSync(join(dir, 'archive', '.gitkeep'))).toBe(true);
+  });
+});
+
+/** Mirrors init's wiki-directory steps (templates, empty dirs, optional entity overviews). */
+function scaffoldFullWiki(
+  wikiDest: string,
+  options: { projectName?: string; focusDirs?: string[]; initTimestamp?: string } = {},
+) {
+  const initTimestamp = options.initTimestamp ?? '2026-06-30T00:00:00Z';
+  const focusDirs = options.focusDirs ?? [];
+  const vars = buildTemplateVars({
+    projectName: options.projectName ?? 'acme',
+    wikiDir: 'wiki',
+    focusDirs,
+    initTimestamp,
+  });
+
+  scaffoldWikiTemplates(wikiDest, vars, { overwrite: false });
+  scaffoldWikiEmptyDirs(wikiDest);
+  if (focusDirs.length > 0) {
+    scaffoldEntityOverviews(wikiDest, focusDirs, initTimestamp);
+  }
+
+  return vars;
+}
+
+describe('full wiki scaffold', () => {
+  const expectedTemplateFiles = [
+    ...WIKI_META_UPGRADE_PATHS,
+    ...WIKI_INIT_ONLY_PATHS,
+  ] as readonly string[];
+
+  it('creates all template files and empty directory layout from init', () => {
+    const dir = makeTmpDir();
+    const vars = scaffoldFullWiki(dir, { projectName: 'acme' });
+
+    for (const relPath of expectedTemplateFiles) {
+      expect(existsSync(join(dir, relPath))).toBe(true);
+    }
+
+    for (const sub of WIKI_EMPTY_DIRS) {
+      expect(existsSync(join(dir, sub, '.gitkeep'))).toBe(true);
+    }
+
+    expect(readFileSync(join(dir, 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
+    expect(readFileSync(join(dir, 'README.md'), 'utf8')).toContain('acme');
+    expect(readFileSync(join(dir, 'AGENTS.md'), 'utf8')).toContain('schema.md');
+    expect(readFileSync(join(dir, 'raw', 'raw.md'), 'utf8')).toContain('Raw Sources');
+    expect(readFileSync(join(dir, '.entity-scopes'), 'utf8')).toContain(vars.ENTITY_SCOPE_LINES);
+    expect(readFileSync(join(dir, 'log.md'), 'utf8')).toContain('Wiki Log — acme');
+  });
+
+  it('creates entity overview stubs when focus directories are provided', () => {
+    const dir = makeTmpDir();
+    scaffoldFullWiki(dir, {
+      projectName: 'acme',
+      focusDirs: ['src/commands', 'templates'],
+      initTimestamp: '2026-06-30T00:00:00Z',
+    });
+
+    expect(existsSync(join(dir, 'entities', 'commands.md'))).toBe(true);
+    expect(existsSync(join(dir, 'entities', 'templates.md'))).toBe(true);
+    expect(readFileSync(join(dir, 'entities', 'commands.md'), 'utf8')).toContain('type: overview');
+    expect(readFileSync(join(dir, 'entities', 'templates.md'), 'utf8')).toContain(
+      'tags: [templates]',
+    );
+    expect(readFileSync(join(dir, '.entity-scopes'), 'utf8')).toContain('commands');
+    expect(readFileSync(join(dir, '.entity-scopes'), 'utf8')).toContain('templates');
+  });
+
+  it('does not create entity overview stubs without focus directories', () => {
+    const dir = makeTmpDir();
+    scaffoldFullWiki(dir);
+
+    expect(existsSync(join(dir, 'entities', '.gitkeep'))).toBe(true);
+    expect(existsSync(join(dir, 'entities', 'commands.md'))).toBe(false);
   });
 });
 

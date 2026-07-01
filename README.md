@@ -28,12 +28,19 @@ Running `init` scaffolds the following into your project:
 
 ```
 wiki/
+├── AGENTS.md          # Agent entry point (full instructions)
 ├── schema.md          # LLM conventions: frontmatter spec, operations, link rules
+├── README.md          # Human entry point
 ├── index.md           # Auto-generated content catalog
 ├── log.md             # Append-only operation log
-├── concepts/          # Synthesized knowledge pages
+├── .entity-scopes     # Required entity overview slugs (one per line)
+├── entities/          # Flat — scope entry points and entity-family pages
+├── concepts/          # Cross-cutting synthesized knowledge
 ├── sources/           # Summaries of ingested source documents
-└── raw/               # Immutable source documents (never edited by the agent)
+├── archive/           # Deprecated pages (optional)
+└── raw/
+    ├── raw.md         # Hub for immutable ingested artifacts
+    └── articles/, prs/, tickets/, design-notes/, transcripts/, assets/
 
 AGENTS.md              # Repo-root pointer to wiki/AGENTS.md (created or amended)
 .llm-wiki-manager.json # Install metadata (version, wiki dir, focus dirs)

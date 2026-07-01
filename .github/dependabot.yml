@@ -11,6 +11,13 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+    ignore:
+      # @types/node majors track Node.js majors. Dev/CI use `.nvmrc` (see
+      # README); keep types aligned with that pin — not the latest @types/node
+      # release. Bump both `.nvmrc` and @types/node together when upgrading Node.
+      # Dependabot cannot read `.nvmrc`; CI runs `npm run check:node-types`.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /

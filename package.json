@@ -1,6 +1,6 @@
 {
   "name": "llm-wiki-manager",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Scaffold and manage an LLM-maintained personal wiki",
   "type": "module",
   "bin": {
@@ -59,6 +59,7 @@
     "wiki:check": "node dist/bin/cli.js check",
     "wiki:sync": "node dist/bin/cli.js sync",
     "wiki:log": "node dist/bin/cli.js log",
+    "wiki:doctor": "node dist/bin/cli.js doctor",
     "wiki:setup:husky": "node dist/bin/cli.js setup-husky"
   },
   "lint-staged": {

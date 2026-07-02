@@ -537,6 +537,43 @@ describe('replaceManagedSection', () => {
     expect(content).toContain('<!-- /llm-wiki-manager -->');
   });
 
+  it('ignores copied end markers inside fenced code when preserving a legacy block', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    writeFileSync(
+      target,
+      [
+        '# My Project',
+        '',
+        '<!-- llm-wiki-manager -->',
+        '# Old Wiki',
+        '',
+        'Stale.',
+        '',
+        '## My own section',
+        '',
+        'Document the old marker without making it a managed boundary:',
+        '',
+        '```markdown',
+        '<!-- /llm-wiki-manager -->',
+        '```',
+        '',
+        'Keep these notes.',
+        '',
+      ].join('\n'),
+    );
+
+    const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh.');
+    expect(ok).toBe(true);
+
+    const content = readFileSync(target, 'utf8');
+    expect(content).toContain('Fresh.');
+    expect(content).toContain('Stale.');
+    expect(content).toContain('## My own section');
+    expect(content).toContain('Keep these notes.');
+    expect(content).toContain('```markdown\n<!-- /llm-wiki-manager -->\n```');
+  });
+
   it('amendFile writes both start and end markers', () => {
     const dir = makeTmpDir();
     const target = join(dir, 'AGENTS.md');

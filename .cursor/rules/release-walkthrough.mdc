@@ -1,0 +1,51 @@
+---
+description: Guided step-by-step release walkthrough for llm-wiki-manager — use when the user wants to cut a release, is nervous about releasing, or asks to walk through RELEASING.md
+globs: RELEASING.md,.github/workflows/release.yml
+alwaysApply: false
+---
+
+# Release walkthrough (interactive)
+
+When the user wants to release, walk them through **one step at a time**. Wait for their reply before the next step. Keep each message short — no walls of text. Be reassuring; releasing is stressful.
+
+**Source of truth:** [RELEASING.md](RELEASING.md) at repo root. Read it if steps or guards changed.
+
+## Semver (confirm before bumping)
+
+| Bump | When | Example |
+|------|------|---------|
+| patch | Bug fixes, docs — no new behavior | 1.0.1 |
+| minor | New backward-compatible features | 1.1.0 |
+| major | Breaking changes | 2.0.0 |
+
+Critical bug fixes → **patch**, not minor.
+
+## Normal release steps (v1.0.1+)
+
+Give **only the current step**. After success, give the next.
+
+1. **Preflight on `develop`:** `git checkout develop && git pull && npm run release:check`
+2. **Bump version:** `npm version patch -m "Release %s"` (or minor/major)
+3. **Push commit only:** `git push origin develop` — do **not** push the tag yet
+4. **PR to `main`:** open `develop` → `main`, wait for CI, merge with **Create a merge commit** (never squash/rebase)
+5. **Push tag from `main`:** `git checkout main && git pull && git push origin vX.Y.Z` — triggers Release workflow
+6. **Verify:** watch Actions; smoke test from outside the repo: `cd $env:TEMP` then `npx -y llm-wiki-manager@X.Y.Z --help`
+7. **Confirm sync:** `sync-develop` job should pass; `origin/main` and `origin/develop` should match
+
+## Gotchas (mention when relevant)
+
+- **Squash merge on v1.0.0** left divergent histories — use merge commits for release PRs; if PR conflicts, merge `main` into `develop` with `git merge -X ours origin/main`, run `release:check`, push
+- **Windows npx:** smoke test from `$env:TEMP`, not inside this repo
+- **Wiki lint warnings** (orphaned pages) do not block release; errors do
+- **Repo must be public** for GitHub release pages to work for everyone
+- **First release (v1.0.0 only):** manual npm publish + Trusted Publishing — see RELEASING.md one-time setup; do not re-run unless starting a new package
+
+## If something fails
+
+- Workflow failed before publish: fix on `develop`, re-merge to `main`, delete/re-push tag — see RELEASING.md "If something goes wrong"
+- npm publish auth: Trusted Publisher must allow **Publish** for `release.yml`
+- Tag rejected: tagged commit must be on `main` and match `package.json` version
+
+## After a successful release
+
+Briefly confirm npm + GitHub Release URLs. Remind: future releases follow the same step sequence; CI handles npm, GitHub Release, and `main` → `develop` sync.

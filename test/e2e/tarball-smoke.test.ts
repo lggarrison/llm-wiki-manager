@@ -30,7 +30,12 @@ describe('packed tarball smoke test', () => {
     const packDir = mkdtempSync(join(tmpdir(), 'llm-wiki-pack-'));
     tmpDirs.push(packDir);
 
-    const pack = run('npm', PACKAGE_ROOT, ['pack', '--pack-destination', packDir]);
+    const pack = run('npm', PACKAGE_ROOT, [
+      'pack',
+      '--pack-destination',
+      packDir,
+      '--ignore-scripts',
+    ]);
     expect(pack.status).toBe(0);
 
     const tarball = readdirSync(packDir).find((f) => f.endsWith('.tgz'));
@@ -71,6 +76,7 @@ describe('packed tarball smoke test', () => {
       scripts: Record<string, string>;
     };
     expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
+    expect(pkg.scripts['wiki:doctor']).toBe('llm-wiki-manager doctor');
 
     writePage(
       join(projectDir, 'wiki'),
@@ -101,7 +107,12 @@ describe('packed tarball smoke test', () => {
     const packDir = mkdtempSync(join(tmpdir(), 'llm-wiki-pack-npx-'));
     tmpDirs.push(packDir);
 
-    const pack = run('npm', PACKAGE_ROOT, ['pack', '--pack-destination', packDir]);
+    const pack = run('npm', PACKAGE_ROOT, [
+      'pack',
+      '--pack-destination',
+      packDir,
+      '--ignore-scripts',
+    ]);
     expect(pack.status).toBe(0);
 
     const tarball = readdirSync(packDir).find((f) => f.endsWith('.tgz'));
@@ -129,5 +140,9 @@ describe('packed tarball smoke test', () => {
 
     const npmLint = run('npm', projectDir, ['run', 'wiki:lint']);
     expect(npmLint.status).toBe(0);
+
+    const npmDoctor = run('npm', projectDir, ['run', 'wiki:doctor']);
+    expect(npmDoctor.status).toBe(0);
+    expect(npmDoctor.stdout).toContain('No problems found');
   });
 });

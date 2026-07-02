@@ -22,7 +22,7 @@ Scope tag: **`utils`** (first tag).
 | Install config | `readInstallConfig`, `writeInstallConfig`, `isExistingInstall`, `inferInstallConfig`                                                                                                                                        |
 | Entity stubs   | `scaffoldEntityOverviews`, `entityOverviewStub`, `scopeSlugFromFocusDir`                                                                                                                                                    |
 | package.json   | `mergePackageJsonScripts`, `syncPackageJsonScripts`, `mergePackageJsonDevDependency`, `syncPackageJsonDevDependency`, `isPackageBinInstalled`, `packageBinPath`, `PACKAGE_NAME`, `wikiScriptCandidates`, `WIKI_SCRIPT_KEYS` |
-| AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization and legacy-tail preservation                                                                                                                             |
+| AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization, standalone end-marker detection, and legacy-tail preservation                                                                                           |
 | Misc           | `getPackageVersion`, `scaffoldWikiEmptyDirs`, `WIKI_EMPTY_DIRS`                                                                                                                                                             |
 
 ## `upgrade.ts` — upgrade orchestration
@@ -35,7 +35,7 @@ Scope tag: **`utils`** (first tag).
 
 ## Tests
 
-`fs.test.ts` covers template copy, interpolation, install config, scaffold helpers, managed `AGENTS.md` marker behavior, devDependency merging, and local binary detection.
+`fs.test.ts` covers template copy, interpolation, install config, scaffold helpers, managed `AGENTS.md` marker behavior (including fenced copied-marker examples), devDependency merging, and local binary detection.
 
 ## See also
 

@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 596" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 812" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="13">
   <!-- Terminal window -->
-  <rect x="0" y="0" width="760" height="596" rx="10" fill="#1e222a"/>
+  <rect x="0" y="0" width="760" height="812" rx="10" fill="#1e222a"/>
   <rect x="0" y="0" width="760" height="34" rx="10" fill="#2c313a"/>
   <rect x="0" y="24" width="760" height="10" fill="#2c313a"/>
   <circle cx="22" cy="17" r="6" fill="#e06c75"/>
@@ -14,26 +14,37 @@
     <text x="24" y="88"><tspan fill="#7f848e">┌</tspan>  <tspan fill="#56b6c2">llm-wiki-manager — wiki scaffold</tspan></text>
     <text x="24" y="108" fill="#7f848e">│</text>
     <text x="24" y="128"><tspan fill="#7f848e">◇</tspan>  Scaffolding wiki directory…</text>
-    <text x="24" y="148"><tspan fill="#7f848e">│</tspan>  <tspan fill="#7f848e">Created: schema.md, AGENTS.md, index.md, log.md, raw/raw.md, README.md</tspan></text>
+    <text x="24" y="148"><tspan fill="#7f848e">│</tspan>  <tspan fill="#7f848e">Created: .entity-scopes, AGENTS.md, index.md, log.md, raw/raw.md, README.md, schema.md</tspan></text>
     <text x="24" y="168" fill="#7f848e">│</text>
     <text x="24" y="188"><tspan fill="#7f848e">◇</tspan>  Building index.md…</text>
-    <text x="24" y="208"><tspan fill="#7f848e">│</tspan>  <tspan fill="#98c379">✓</tspan> <tspan fill="#7f848e">index.md written (2 page(s))</tspan></text>
+    <text x="24" y="208"><tspan fill="#7f848e">│</tspan>  <tspan fill="#98c379">✓</tspan> <tspan fill="#7f848e">index.md written (1 page(s))</tspan></text>
     <text x="24" y="228" fill="#7f848e">│</text>
-    <text x="24" y="248"><tspan fill="#7f848e">◇</tspan>  Adding npm scripts to package.json (wiki:lint, wiki:build, wiki:check, …)</text>
-    <text x="24" y="268" fill="#7f848e">│</text>
-    <text x="24" y="288"><tspan fill="#7f848e">◇</tspan>  Writing AGENTS.md…</text>
-    <text x="24" y="308" fill="#7f848e">│</text>
-    <text x="24" y="328"><tspan fill="#7f848e">└</tspan>  <tspan fill="#98c379">Done!</tspan> Next steps:</text>
-    <text x="44" y="348">• Review <tspan fill="#e5c07b">wiki/schema.md</tspan> to understand wiki conventions</text>
-    <text x="44" y="368">• Run <tspan fill="#e5c07b">npm run wiki:lint</tspan> to validate your wiki</text>
+    <text x="24" y="248"><tspan fill="#7f848e">◇</tspan>  Adding npm scripts to package.json (wiki:help, wiki:lint, wiki:build,</text>
+    <text x="24" y="268"><tspan fill="#7f848e">│</tspan>  wiki:check, wiki:sync, wiki:log, wiki:doctor, wiki:setup:husky)…</text>
+    <text x="24" y="288" fill="#7f848e">│</text>
+    <text x="24" y="308"><tspan fill="#7f848e">◇</tspan>  Writing AGENTS.md…</text>
+    <text x="24" y="328" fill="#7f848e">│</text>
+    <text x="24" y="348"><tspan fill="#7f848e">└</tspan>  <tspan fill="#98c379">Done!</tspan> Next steps:</text>
+    <text x="44" y="368">• Review <tspan fill="#e5c07b">wiki/schema.md</tspan> to understand wiki conventions</text>
     <text x="44" y="388">• Run <tspan fill="#e5c07b">npm run wiki:help</tspan> for a list of wiki commands</text>
+    <text x="44" y="408">• Run <tspan fill="#e5c07b">npm run wiki:lint</tspan> to validate your wiki</text>
+    <text x="44" y="428">• Run <tspan fill="#e5c07b">npm run wiki:build</tspan> to regenerate index.md</text>
+    <text x="44" y="448">• Run <tspan fill="#e5c07b">npm run wiki:doctor</tspan> to check scaffold health</text>
+    <text x="44" y="468">• Open <tspan fill="#e5c07b">wiki/README.md</tspan> (human entry) and <tspan fill="#e5c07b">wiki/AGENTS.md</tspan> (agent entry)</text>
+    <text x="44" y="488">• Optional git hooks (Husky + lint-staged) — see README "Optional git hooks"</text>
+    <text x="44" y="508">          • <tspan fill="#e5c07b">npm run wiki:setup:husky</tspan> wires pre-push wiki:check</text>
+    <text x="44" y="528">• Use <tspan fill="#e5c07b">npm run wiki:*</tspan> for wiki scripts (not <tspan fill="#e5c07b">npx run</tspan> — that is a different package)</text>
+    <text x="44" y="548"><tspan fill="#e5c07b">Final Step:</tspan> <tspan fill="#e5c07b">npm install</tspan> — required before <tspan fill="#e5c07b">npm run wiki:*</tspan> works</text>
 
-    <text x="24" y="428"><tspan fill="#98c379">$</tspan> npx llm-wiki-manager doctor</text>
-    <text x="24" y="454"><tspan fill="#98c379">✓</tspan> install config found (.llm-wiki-manager.json)</text>
-    <text x="24" y="474"><tspan fill="#98c379">✓</tspan> scaffold version matches package (v1.0.0)</text>
-    <text x="24" y="494"><tspan fill="#98c379">✓</tspan> wiki meta files present in wiki/</text>
-    <text x="24" y="514"><tspan fill="#98c379">✓</tspan> index.md is up to date</text>
-    <text x="24" y="534"><tspan fill="#98c379">✓</tspan> package.json wiki:* scripts are in sync</text>
-    <text x="24" y="562" fill="#98c379">No problems found.</text>
+    <text x="24" y="588"><tspan fill="#98c379">$</tspan> npm install</text>
+    <text x="24" y="618"><tspan fill="#98c379">$</tspan> npm run wiki:doctor</text>
+    <text x="24" y="644" fill="#7f848e">llm-wiki-manager doctor — v1.0.1</text>
+    <text x="24" y="670"><tspan fill="#98c379">✓</tspan> install config found (.llm-wiki-manager.json)</text>
+    <text x="24" y="690"><tspan fill="#98c379">✓</tspan> scaffold version matches package (v1.0.1)</text>
+    <text x="24" y="710"><tspan fill="#98c379">✓</tspan> wiki meta files present in wiki/</text>
+    <text x="24" y="730"><tspan fill="#98c379">✓</tspan> index.md is up to date</text>
+    <text x="24" y="750"><tspan fill="#98c379">✓</tspan> root AGENTS.md has the managed section</text>
+    <text x="24" y="770"><tspan fill="#98c379">✓</tspan> package.json wiki:* scripts are in sync</text>
+    <text x="24" y="798" fill="#98c379">No problems found.</text>
   </g>
 </svg>

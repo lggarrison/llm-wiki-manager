@@ -34,20 +34,20 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 
 ## Commands
 
-| CLI subcommand | npm command  | Purpose                                                  |
-| -------------- | ------------ | -------------------------------------------------------- |
-| `help`         | `wiki:help`  | List commands and typical workflows                      |
-| `lint`         | `wiki:lint`  | Validate frontmatter, links, orphans; scan AGENTS.md     |
-| `build`        | `wiki:build` | Regenerate `index.md`                                    |
-| `check`        | `wiki:check` | Verify `index.md` is up to date (read-only)              |
-| `sync`         | `wiki:sync`  | Add body links for `related:` frontmatter entries        |
-| `log`          | `wiki:log`   | Append ingest/query/lint/maintenance entries to `log.md` |
-| `doctor`       | _(CLI only)_ | Health-check scaffold; suggest fixes for common issues   |
+| CLI subcommand | npm command        | Purpose                                                  |
+| -------------- | ------------------ | -------------------------------------------------------- |
+| `help`         | `wiki:help`        | List commands and typical workflows                      |
+| `lint`         | `wiki:lint`        | Validate frontmatter, links, orphans; scan AGENTS.md     |
+| `build`        | `wiki:build`       | Regenerate `index.md`                                    |
+| `check`        | `wiki:check`       | Verify `index.md` is up to date (read-only)              |
+| `sync`         | `wiki:sync`        | Add body links for `related:` frontmatter entries        |
+| `log`          | `wiki:log`         | Append ingest/query/lint/maintenance entries to `log.md` |
+| `doctor`       | `wiki:doctor`      | Health-check scaffold; suggest fixes for common issues   |
+| `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
 
 `doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
-| `setup-husky` | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide |
 
-`migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy wikilinks to markdown links relative to the page being migrated, preferring an unambiguous existing page for bare-slug targets.
+`migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy frontmatter status/timestamp fields only inside YAML frontmatter, and rewrites body wikilinks to markdown links relative to the page being migrated while leaving fenced code examples untouched. Bare-slug wikilinks prefer an unambiguous existing page target.
 
 ## Flags
 

@@ -42,6 +42,12 @@ export function runHelp(cwd: string = process.cwd()): number {
       example: 'npm run wiki:log -- add ingest "Title of source"',
     },
     {
+      name: 'wiki:doctor',
+      summary: 'Check scaffold health and suggest fixes for common issues',
+      when: 'After init or upgrade; when wiki commands fail unexpectedly',
+      example: 'npm run wiki:doctor',
+    },
+    {
       name: 'wiki:setup:husky',
       summary: 'Wire wiki:check into Husky pre-push and print lint-staged pre-commit guide',
       when: 'Once, after installing Husky — appends to existing pre-push or creates it',
@@ -63,7 +69,8 @@ export function runHelp(cwd: string = process.cwd()): number {
 
   console.log('  First-time setup:');
   console.log('    npx llm-wiki-manager init');
-  console.log('    npx llm-wiki-manager doctor');
+  console.log('    npm install');
+  console.log('    npm run wiki:doctor');
   console.log('');
 
   console.log('  After ingesting a source:');
@@ -90,10 +97,12 @@ export function runHelp(cwd: string = process.cwd()): number {
   console.log('    npx llm-wiki-manager upgrade --dry-run');
   console.log('');
 
-  console.log('Without npm scripts, run llm-wiki-manager <command> (e.g. llm-wiki-manager lint)');
+  console.log('Wiki scripts live in package.json — run them with npm run wiki:*, not npx run.');
+  console.log('Before npm install, use npx llm-wiki-manager <command> instead.');
   console.log(
-    'For the full subcommand list (init, upgrade, doctor, …), run: llm-wiki-manager --help',
+    'Without npm scripts, run npx llm-wiki-manager <command> (e.g. npx llm-wiki-manager lint)',
   );
+  console.log('For the full subcommand list (init, upgrade, …), run: npx llm-wiki-manager --help');
 
   return 0;
 }

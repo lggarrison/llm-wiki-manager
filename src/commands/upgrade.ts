@@ -12,6 +12,7 @@ import {
   replaceManagedSection,
   amendFile,
   syncPackageJsonScripts,
+  syncPackageJsonDevDependency,
   MANAGED_SECTION_DELIMITER,
 } from '../utils/fs.js';
 import {
@@ -77,9 +78,12 @@ export async function upgrade(): Promise<void> {
     }
 
     const pkgResult = syncPackageJsonScripts(cwd);
+    const depResult = syncPackageJsonDevDependency(cwd);
     if (pkgResult.status === 'synced') {
       const changes = [...pkgResult.added, ...pkgResult.updated.map((k) => `${k} (updated)`)];
       log.step(`Synced package.json wiki scripts (${changes.join(', ')})…`);
+    } else if (depResult.status === 'merged') {
+      log.step(`Added ${pc.bold('llm-wiki-manager')} to devDependencies…`);
     }
 
     if (!options.skipPages) {

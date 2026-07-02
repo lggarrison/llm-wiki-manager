@@ -7,6 +7,7 @@ import {
   amendFile,
   interpolate,
   mergePackageJsonScripts,
+  mergePackageJsonDevDependency,
   scaffoldWikiEmptyDirs,
   scaffoldEntityOverviews,
   scaffoldWikiTemplates,
@@ -136,10 +137,13 @@ export async function init(): Promise<void> {
   runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr }));
 
   const pkgResult = mergePackageJsonScripts(cwd);
+  const depResult = mergePackageJsonDevDependency(cwd);
   if (pkgResult.status === 'merged') {
     log.step(`Adding npm scripts to package.json (${pkgResult.added.join(', ')})…`);
   } else if (pkgResult.status === 'no-package-json') {
     log.warn('No package.json found — skipped npm scripts (see README for manual setup).');
+  } else if (depResult.status === 'merged') {
+    log.step(`Adding ${pc.bold('llm-wiki-manager')} to devDependencies…`);
   } else {
     log.warn('package.json already has wiki scripts — skipped.');
   }
@@ -163,9 +167,14 @@ export async function init(): Promise<void> {
     focusDirs: focusDirList.length > 0 ? focusDirList : (existingConfig?.focusDirs ?? []),
   });
 
+  const needsNpmInstall = depResult.status === 'merged' && pkgResult.status !== 'no-package-json';
+
   outro(
     pc.green('Done!') +
       ' Next steps:\n' +
+      (needsNpmInstall
+        ? `  • Run ${pc.bold('npm install')} so ${pc.bold('npm run wiki:*')} commands work\n`
+        : '') +
       `  • Review ${pc.bold(join(wikiDirStr, 'schema.md'))} to understand wiki conventions\n` +
       `  • Run ${pc.bold('npm run wiki:help')} for a list of wiki commands\n` +
       `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-07-02T12:00:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -41,7 +41,10 @@ llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 
 1. **Wiki directory** — copies `templates/wiki/` via `scaffoldWikiTemplates`, creates empty dirs, and writes entity overview stubs when focus dirs are provided.
 2. **index.md** — runs `runBuild` so `wiki:check` passes immediately after init.
-3. **package.json** — merges `wiki:*` npm scripts that invoke `llm-wiki-manager` subcommands (skipped if no `package.json`, or if wiki scripts already exist).
+3. **package.json** — when present:
+   - merges missing `wiki:*` npm scripts (skipped if all wiki scripts already exist)
+   - adds `llm-wiki-manager` to `devDependencies` when absent (runs even when script merge is skipped)
+   - run `npm install` afterward so `npm run wiki:*` resolves the local CLI
 4. **AGENTS.md** — amends repo-root `AGENTS.md` from `templates/AGENTS.md` (pointer template); vault copy comes from `templates/wiki/AGENTS.md` via the wiki scaffold.
 5. **`.llm-wiki-manager.json`** — records install metadata (version, wiki dir, focus dirs).
 

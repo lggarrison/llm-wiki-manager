@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSy
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { fm, writePage, PACKAGE_ROOT } from '../helpers/wiki.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const tmpDirs: string[] = [];
 
@@ -94,5 +95,39 @@ describe('packed tarball smoke test', () => {
 
     const sync = run('npx', projectDir, ['llm-wiki-manager', 'sync']);
     expect(sync.status).toBe(0);
+  });
+
+  it('npm run wiki:lint works after npx-style init followed by npm install', () => {
+    const packDir = mkdtempSync(join(tmpdir(), 'llm-wiki-pack-npx-'));
+    tmpDirs.push(packDir);
+
+    const pack = run('npm', PACKAGE_ROOT, ['pack', '--pack-destination', packDir]);
+    expect(pack.status).toBe(0);
+
+    const tarball = readdirSync(packDir).find((f) => f.endsWith('.tgz'));
+    expect(tarball).toBeTruthy();
+
+    const projectDir = mkdtempSync(join(tmpdir(), 'llm-wiki-npx-consumer-'));
+    tmpDirs.push(projectDir);
+    writeFileSync(
+      join(projectDir, 'package.json'),
+      JSON.stringify({ name: 'acme' }, null, 2) + '\n',
+    );
+
+    const init = runBuiltCli(projectDir, ['init', '--project-name', 'acme', '--wiki-dir', 'wiki']);
+    expect(init.status).toBe(0);
+
+    const pkgBeforeInstall = JSON.parse(readFileSync(join(projectDir, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    expect(pkgBeforeInstall.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
+    expect(pkgBeforeInstall.devDependencies?.['llm-wiki-manager']).toMatch(/^\^/);
+
+    const install = run('npm', projectDir, ['install', join(packDir, tarball!)]);
+    expect(install.status).toBe(0);
+
+    const npmLint = run('npm', projectDir, ['run', 'wiki:lint']);
+    expect(npmLint.status).toBe(0);
   });
 });

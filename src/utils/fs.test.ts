@@ -8,7 +8,11 @@ import {
   copyTemplate,
   templatePath,
   mergePackageJsonScripts,
+  mergePackageJsonDevDependency,
   syncPackageJsonScripts,
+  isPackageBinInstalled,
+  packageBinPath,
+  PACKAGE_NAME,
   replaceManagedSection,
   scaffoldWikiTemplates,
   buildTemplateVars,
@@ -341,6 +345,15 @@ describe('mergePackageJsonScripts', () => {
     expect(pkg.scripts).toEqual(wikiScriptCandidates());
   });
 
+  it('does not add devDependencies by itself', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+
+    mergePackageJsonScripts(dir);
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.devDependencies).toBeUndefined();
+  });
+
   it('is idempotent when wiki scripts already exist', () => {
     const dir = makeTmpDir();
     const original = {
@@ -380,6 +393,82 @@ describe('mergePackageJsonScripts', () => {
   it('returns no-package-json when package.json is missing', () => {
     const dir = makeTmpDir();
     expect(mergePackageJsonScripts(dir)).toEqual({ status: 'no-package-json' });
+  });
+});
+
+describe('mergePackageJsonDevDependency', () => {
+  it('adds llm-wiki-manager to devDependencies when absent', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+
+    const result = mergePackageJsonDevDependency(dir, '1.0.0');
+    expect(result).toEqual({ status: 'merged', version: '1.0.0' });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.devDependencies).toEqual({ [PACKAGE_NAME]: '^1.0.0' });
+  });
+
+  it('does not overwrite an existing devDependency', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          devDependencies: { [PACKAGE_NAME]: '1.0.0' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    const result = mergePackageJsonDevDependency(dir, '2.0.0');
+    expect(result).toEqual({ status: 'unchanged' });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.devDependencies[PACKAGE_NAME]).toBe('1.0.0');
+  });
+
+  it('does not overwrite an existing dependency entry', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          dependencies: { [PACKAGE_NAME]: '^1.0.0' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    expect(mergePackageJsonDevDependency(dir, '2.0.0')).toEqual({ status: 'unchanged' });
+  });
+
+  it('returns no-package-json when package.json is missing', () => {
+    const dir = makeTmpDir();
+    expect(mergePackageJsonDevDependency(dir)).toEqual({ status: 'no-package-json' });
+  });
+});
+
+describe('isPackageBinInstalled', () => {
+  it('detects a local binary shim', () => {
+    const dir = makeTmpDir();
+    const binDir = join(dir, 'node_modules', '.bin');
+    mkdirSync(binDir, { recursive: true });
+    writeFileSync(packageBinPath(dir), '');
+
+    expect(isPackageBinInstalled(dir)).toBe(true);
+  });
+
+  it('detects a Windows .cmd shim', () => {
+    const dir = makeTmpDir();
+    const binDir = join(dir, 'node_modules', '.bin');
+    mkdirSync(binDir, { recursive: true });
+    writeFileSync(`${packageBinPath(dir)}.cmd`, '');
+
+    expect(isPackageBinInstalled(dir)).toBe(true);
   });
 });
 

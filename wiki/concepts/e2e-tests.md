@@ -1,7 +1,7 @@
 ---
 type: concept
 title: E2E Tests
-last_updated: 2026-07-02T01:15:00Z
+last_updated: 2026-07-02T12:00:00Z
 tags: [testing, vitest, cli]
 related:
   [concepts/unit-tests.md, concepts/init-command.md, concepts/dogfooding.md, entities/commands.md]
@@ -39,25 +39,25 @@ Configuration is in `vitest.e2e.config.ts`. It includes only `test/e2e/**/*.test
 
 Covers init, upgrade, and CLI meta behavior:
 
-| Test area                 | What it verifies                                                                    |
-| ------------------------- | ----------------------------------------------------------------------------------- |
-| Init scaffold             | Creates wiki, `AGENTS.md`, install config, and `wiki:*` npm scripts                 |
-| Wiki CLI after init       | `lint`, `build`, and `check` on a fresh wiki with a user-added concept page         |
-| Upgrade refresh           | Restores meta files without overwriting user content pages                          |
-| Legacy page migration     | Upgrade calls internal `runMigrate` to rewrite deprecated frontmatter and wikilinks |
-| Init without package.json | Scaffold succeeds; no npm scripts added                                             |
-| Re-init idempotency       | Preserves existing `log.md` and `schema.md`                                         |
-| Upgrade dry-run           | `--dry-run` reports changes without writing files                                   |
-| Post-init index           | `index.md` is fresh so `check` passes without a manual build                        |
-| Managed section           | Upgrade preserves user content after the AGENTS.md end marker                       |
-| UTF-8 BOM package.json    | Init succeeds; `doctor` reports no problems                                         |
-| CLI meta flags            | `--version`, `--help`, and unknown-command error handling                           |
+| Test area                 | What it verifies                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| Init scaffold             | Creates wiki, `AGENTS.md`, install config, `wiki:*` npm scripts, and `devDependencies` entry |
+| Wiki CLI after init       | `lint`, `build`, and `check` on a fresh wiki with a user-added concept page                  |
+| Upgrade refresh           | Restores meta files without overwriting user content pages                                   |
+| Legacy page migration     | Upgrade calls internal `runMigrate` to rewrite deprecated frontmatter and wikilinks          |
+| Init without package.json | Scaffold succeeds; no npm scripts added                                                      |
+| Re-init idempotency       | Preserves existing `log.md` and `schema.md`                                                  |
+| Upgrade dry-run           | `--dry-run` reports changes without writing files                                            |
+| Post-init index           | `index.md` is fresh so `check` passes without a manual build                                 |
+| Managed section           | Upgrade preserves user content after the AGENTS.md end marker                                |
+| UTF-8 BOM package.json    | Init succeeds; `doctor` reports no problems (tests stub local bin when needed)               |
+| CLI meta flags            | `--version`, `--help`, and unknown-command error handling                                    |
 
 Each test creates a temp directory with a minimal `package.json`, runs CLI commands via helpers, and cleans up in `afterEach`.
 
 ### `test/e2e/tarball-smoke.test.ts`
 
-Packs the package with `npm pack`, installs it into a temp consumer project, and verifies `lint`, `build`, `check`, `sync`, and `doctor` work from the published tarball layout.
+Packs the package with `npm pack`, installs it into a temp consumer project, and verifies `lint`, `build`, `check`, `sync`, and `doctor` work from the published tarball layout. Also covers the npx-style workflow: `init` → verify `devDependencies` → `npm install` tarball → `npm run wiki:lint`.
 
 ## Helpers
 

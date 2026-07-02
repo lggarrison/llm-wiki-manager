@@ -116,9 +116,7 @@ describe('migrate-pages', () => {
 
     runMigrateWiki(wikiDir);
 
-    expect(readFileSync(join(wikiDir, 'entities', 'bar.md'), 'utf8')).toContain(
-      '[Foo](foo.md)',
-    );
+    expect(readFileSync(join(wikiDir, 'entities', 'bar.md'), 'utf8')).toContain('[Foo](foo.md)');
   });
 
   it('prefers an existing bare-slug target outside concepts when it is unambiguous', () => {

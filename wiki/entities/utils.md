@@ -22,7 +22,7 @@ Scope tag: **`utils`** (first tag).
 | Install config | `readInstallConfig`, `writeInstallConfig`, `isExistingInstall`, `inferInstallConfig`            |
 | Entity stubs   | `scaffoldEntityOverviews`, `entityOverviewStub`, `scopeSlugFromFocusDir`                        |
 | package.json   | `mergePackageJsonScripts`, `syncPackageJsonScripts`, `wikiScriptCandidates`, `WIKI_SCRIPT_KEYS` |
-| AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization and legacy-tail preservation  |
+| AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization and legacy-tail preservation |
 | Misc           | `getPackageVersion`, `scaffoldWikiEmptyDirs`, `WIKI_EMPTY_DIRS`                                 |
 
 ## `upgrade.ts` — upgrade orchestration

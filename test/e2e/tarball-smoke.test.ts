@@ -71,6 +71,7 @@ describe('packed tarball smoke test', () => {
       scripts: Record<string, string>;
     };
     expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
+    expect(pkg.scripts['wiki:doctor']).toBe('llm-wiki-manager doctor');
 
     writePage(
       join(projectDir, 'wiki'),
@@ -129,5 +130,9 @@ describe('packed tarball smoke test', () => {
 
     const npmLint = run('npm', projectDir, ['run', 'wiki:lint']);
     expect(npmLint.status).toBe(0);
+
+    const npmDoctor = run('npm', projectDir, ['run', 'wiki:doctor']);
+    expect(npmDoctor.status).toBe(0);
+    expect(npmDoctor.stdout).toContain('No problems found');
   });
 });

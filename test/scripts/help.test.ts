@@ -14,7 +14,9 @@ describe('help command', () => {
     expect(out).toContain('Typical workflows');
     expect(out).toContain('First-time setup');
     expect(out).toContain('npx llm-wiki-manager init');
-    expect(out).toContain('llm-wiki-manager --help');
+    expect(out).toContain('npm install');
+    expect(out).toContain('npm run wiki:doctor');
+    expect(out).toContain('not npx run');
     expect(out).toContain('wiki:setup:husky');
     expect(out).toContain('npm install -D husky');
     expect(out).toContain('llm-wiki-manager');

@@ -49,6 +49,7 @@ describe('doctor command', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('llm-wiki-manager is not installed locally');
     expect(result.stdout).toContain('npm install');
+    expect(result.stdout).toContain('not npx run wiki:lint');
   });
 
   it('fails and suggests init when nothing is scaffolded', () => {

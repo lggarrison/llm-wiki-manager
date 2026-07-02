@@ -53,7 +53,29 @@ describe('CLI e2e workflow', () => {
     };
     expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
     expect(pkg.scripts['wiki:check']).toBe('llm-wiki-manager check');
+    expect(pkg.scripts['wiki:doctor']).toBe('llm-wiki-manager doctor');
     expect(pkg.devDependencies?.['llm-wiki-manager']).toMatch(/^\^/);
+  });
+
+  it('init outro shows Final Step npm install when local bin is missing', () => {
+    const dir = makeTmpProject();
+    const result = initProject(dir);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Final Step:');
+    expect(result.stdout).toContain('npm install');
+    expect(result.stdout).toContain('required before');
+  });
+
+  it('init outro omits Final Step npm install when local bin exists', () => {
+    const dir = makeTmpProject();
+    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+    writeFileSync(packageBinPath(dir), '');
+
+    const result = initProject(dir);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain('Final Step:');
   });
 
   it('wiki CLI lint, build, and check after init', () => {

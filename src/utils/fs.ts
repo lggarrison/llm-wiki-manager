@@ -325,6 +325,7 @@ export const WIKI_SCRIPT_KEYS = [
   'wiki:check',
   'wiki:sync',
   'wiki:log',
+  'wiki:doctor',
   'wiki:setup:husky',
 ] as const;
 
@@ -338,6 +339,7 @@ export function wikiScriptCandidates(): Record<WikiScriptKey, string> {
     'wiki:check': 'llm-wiki-manager check',
     'wiki:sync': 'llm-wiki-manager sync',
     'wiki:log': 'llm-wiki-manager log',
+    'wiki:doctor': 'llm-wiki-manager doctor',
     'wiki:setup:husky': 'llm-wiki-manager setup-husky',
   };
 }

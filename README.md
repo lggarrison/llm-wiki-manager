@@ -153,10 +153,28 @@ After `init` completes:
 1. Run `npm install` if you used `npx llm-wiki-manager init` without installing first — `init` records `llm-wiki-manager` in `devDependencies`, but the binary is not available until dependencies are installed
 2. Open `wiki/schema.md` to review the conventions your agent will follow
 3. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
-4. Run `npx llm-wiki-manager doctor` (or `npm run wiki:check` after `npm install`) to confirm the scaffold is healthy — `init` generates a fresh `index.md`, so `wiki:check` should pass immediately
+4. Run `npm run wiki:doctor` to confirm the scaffold is healthy — `init` generates a fresh `index.md`, so `wiki:check` should pass immediately
 5. Run `npm run wiki:lint` to validate page structure
 
 If your project has no `package.json`, invoke the CLI directly (see [Managing the wiki](#managing-the-wiki)).
+
+### Troubleshooting
+
+| Error                                                               | Cause                                                | Fix                                                                      |
+| ------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| `Cannot find module '.../wiki:lint'`                                | Ran `npx run wiki:lint` (different npm package)      | Use `npm run wiki:lint` or `npx llm-wiki-manager lint`                   |
+| `Missing script: "wiki:doctor"`                                     | Older package version before `wiki:doctor` was added | Run `npx llm-wiki-manager upgrade`, or use `npx llm-wiki-manager doctor` |
+| `llm-wiki-manager: command not found` when running `npm run wiki:*` | Dependencies not installed                           | Run `npm install`, then confirm with `npm run wiki:doctor`               |
+
+**Command patterns:**
+
+| Use case                    | Command                                     |
+| --------------------------- | ------------------------------------------- |
+| One-time scaffold / upgrade | `npx llm-wiki-manager init` or `upgrade`    |
+| Day-to-day wiki maintenance | `npm run wiki:*` (e.g. `npm run wiki:lint`) |
+| Before `npm install`        | `npx llm-wiki-manager lint` (direct CLI)    |
+
+Do not use `npx run wiki:*` — that invokes a different npm package named `run`.
 
 Re-running `init` on an existing project is safe: it only creates missing scaffold files and does not overwrite your wiki content or `log.md`. To refresh wiki templates (`schema.md`, `wiki/AGENTS.md`, root `AGENTS.md`) and sync npm scripts after updating the package, use **upgrade**:
 
@@ -216,19 +234,19 @@ llm-wiki-manager --version   # print installed package version
 DEBUG=1 llm-wiki-manager …   # print a full stack trace on errors (useful for bug reports)
 ```
 
-When `init` finds a `package.json`, it adds the `wiki:*` npm scripts below. Project lifecycle commands (`init`, `upgrade`, `doctor`) are invoked directly — they are not npm scripts.
+When `init` finds a `package.json`, it adds the `wiki:*` npm scripts below. Project lifecycle commands (`init`, `upgrade`) are invoked directly — they are not npm scripts.
 
 | Command       | npm script         | Purpose                                                                    |
 | ------------- | ------------------ | -------------------------------------------------------------------------- |
 | `init`        | —                  | Scaffold a new wiki (see [Initializing](#initializing-the-wiki))           |
 | `upgrade`     | —                  | Refresh templates and migrate pages after a package update                 |
-| `doctor`      | —                  | Read-only scaffold health check                                            |
 | `help`        | `wiki:help`        | List wiki npm scripts with usage, when-to-run hints, and typical workflows |
 | `lint`        | `wiki:lint`        | Validate frontmatter, links, and structure                                 |
 | `build`       | `wiki:build`       | Regenerate `index.md`                                                      |
 | `check`       | `wiki:check`       | Verify `index.md` is up to date (read-only)                                |
 | `sync`        | `wiki:sync`        | Sync `related:` frontmatter to body links                                  |
 | `log`         | `wiki:log`         | Append operation entries to `log.md`                                       |
+| `doctor`      | `wiki:doctor`      | Read-only scaffold health check                                            |
 | `setup-husky` | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide                        |
 
 Wiki subcommands (`lint`, `build`, `check`, `sync`, `log`) accept `--wiki-dir path/to/wiki` when the wiki is not at the default location. `--repo-root` is also available for advanced layouts.
@@ -242,7 +260,7 @@ npm run wiki:help
 
 Prints every `wiki:*` npm script with a one-line summary, when to run it, and an example command. Also lists typical workflows (ingest, edit pages, git hooks, package upgrades). This is the day-to-day reference for wiki maintenance.
 
-For the full CLI surface — including `init`, `upgrade`, and `doctor` — use top-level help:
+For the full CLI surface — including `init` and `upgrade` — use top-level help:
 
 ```bash
 llm-wiki-manager --help

@@ -15,6 +15,7 @@ import {
   writeInstallConfig,
   getPackageVersion,
   isExistingInstall,
+  isPackageBinInstalled,
   readInstallConfig,
 } from '../utils/fs.js';
 import { resolveWikiContext } from '../wiki/context.js';
@@ -167,23 +168,26 @@ export async function init(): Promise<void> {
     focusDirs: focusDirList.length > 0 ? focusDirList : (existingConfig?.focusDirs ?? []),
   });
 
-  const needsNpmInstall = depResult.status === 'merged' && pkgResult.status !== 'no-package-json';
+  const showNpmInstallReminder =
+    pkgResult.status !== 'no-package-json' && !isPackageBinInstalled(cwd);
 
   outro(
     pc.green('Done!') +
       ' Next steps:\n' +
-      (needsNpmInstall
-        ? `  • Run ${pc.bold('npm install')} so ${pc.bold('npm run wiki:*')} commands work\n`
-        : '') +
       `  • Review ${pc.bold(join(wikiDirStr, 'schema.md'))} to understand wiki conventions\n` +
       `  • Run ${pc.bold('npm run wiki:help')} for a list of wiki commands\n` +
       `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
       `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
+      `  • Run ${pc.bold('npm run wiki:doctor')} to check scaffold health\n` +
       `  • Open ${pc.bold(join(wikiDirStr, 'README.md'))} (human entry) and ${pc.bold(join(wikiDirStr, 'AGENTS.md'))} (agent entry)\n` +
       (reInit
         ? `  • Run ${pc.bold('npx llm-wiki-manager upgrade')} to refresh template files\n`
         : '') +
       `  • Optional git hooks (Husky + lint-staged) — see README "Optional git hooks"\n` +
-      `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n`,
+      `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n` +
+      `  • Use ${pc.bold('npm run wiki:*')} for wiki scripts (not ${pc.bold('npx run')} — that is a different package)\n` +
+      (showNpmInstallReminder
+        ? `\n  ${pc.yellow('Final Step:')} ${pc.bold('npm install')} — required before ${pc.bold('npm run wiki:*')} works\n`
+        : ''),
   );
 }

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-02T01:15:00Z
+last_updated: 2026-07-02T04:30:00Z
 tags: [testing, vitest]
 related:
   [
@@ -19,6 +19,7 @@ code_refs:
     test/scripts/lint.test.ts,
     test/commands/upgrade.test.ts,
     test/commands/doctor.test.ts,
+    test/workflows/release.test.ts,
   ]
 status: active
 summary: Vitest unit and integration tests for src/ utilities, CLI helpers, and wiki subcommand behavior.
@@ -36,13 +37,14 @@ Configuration lives in `vitest.config.ts`: it includes `src/**/*.test.ts` and `t
 
 ## Layout
 
-| Path                            | Role                                                                            |
-| ------------------------------- | ------------------------------------------------------------------------------- |
-| `src/utils/fs.test.ts`          | Template copy, interpolation, install config, scaffold helpers, managed markers |
-| `test/commands/upgrade.test.ts` | Upgrade step orchestration, AGENTS.md managed section, page migration           |
-| `test/commands/doctor.test.ts`  | Health-check CLI: missing files, stale index, script mismatches                 |
-| `test/scripts/*.test.ts`        | Behavior of each `llm-wiki-manager` subcommand via built CLI                    |
-| `test/helpers/wiki.ts`          | Temp wiki dirs, frontmatter fixtures, CLI helpers                               |
+| Path                             | Role                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------- |
+| `src/utils/fs.test.ts`           | Template copy, interpolation, install config, scaffold helpers, managed markers |
+| `test/commands/upgrade.test.ts`  | Upgrade step orchestration, AGENTS.md managed section, page migration           |
+| `test/commands/doctor.test.ts`   | Health-check CLI: missing files, stale index, script mismatches                 |
+| `test/scripts/*.test.ts`         | Behavior of each `llm-wiki-manager` subcommand via built CLI                    |
+| `test/workflows/release.test.ts` | Release workflow and RELEASING.md post-release sync invariants                  |
+| `test/helpers/wiki.ts`           | Temp wiki dirs, frontmatter fixtures, CLI helpers                               |
 
 Packed-install smoke tests live under `test/e2e/tarball-smoke.test.ts` and run via `npm run test:e2e`, not `npm test`.
 

@@ -22,6 +22,7 @@ npm install
 
 - `develop` is the default branch and the target for all pull requests. Day-to-day development happens here.
 - `main` is the release branch. Releases are cut from `main` and preserved there; it is not a target for feature PRs.
+- After each release, `main` is merged back into `develop` (automated by the release workflow; see [RELEASING.md](RELEASING.md) for the manual fallback).
 
 Branch off `develop`, and open your pull request against `develop`.
 

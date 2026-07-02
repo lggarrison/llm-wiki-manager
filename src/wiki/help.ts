@@ -99,8 +99,10 @@ export function runHelp(cwd: string = process.cwd()): number {
 
   console.log('Wiki scripts live in package.json — run them with npm run wiki:*, not npx run.');
   console.log('Before npm install, use npx llm-wiki-manager <command> instead.');
-  console.log('Without npm scripts, run llm-wiki-manager <command> (e.g. llm-wiki-manager lint)');
-  console.log('For the full subcommand list (init, upgrade, …), run: llm-wiki-manager --help');
+  console.log(
+    'Without npm scripts, run npx llm-wiki-manager <command> (e.g. npx llm-wiki-manager lint)',
+  );
+  console.log('For the full subcommand list (init, upgrade, …), run: npx llm-wiki-manager --help');
 
   return 0;
 }

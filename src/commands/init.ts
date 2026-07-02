@@ -168,24 +168,30 @@ export async function init(): Promise<void> {
     focusDirs: focusDirList.length > 0 ? focusDirList : (existingConfig?.focusDirs ?? []),
   });
 
-  const showNpmInstallReminder =
-    pkgResult.status !== 'no-package-json' && !isPackageBinInstalled(cwd);
+  const hasPackageJson = pkgResult.status !== 'no-package-json';
+  const showNpmInstallReminder = hasPackageJson && !isPackageBinInstalled(cwd);
+  const wikiHelpCmd = hasPackageJson ? 'npm run wiki:help' : 'npx llm-wiki-manager help';
+  const wikiLintCmd = hasPackageJson ? 'npm run wiki:lint' : 'npx llm-wiki-manager lint';
+  const wikiBuildCmd = hasPackageJson ? 'npm run wiki:build' : 'npx llm-wiki-manager build';
+  const wikiDoctorCmd = hasPackageJson ? 'npm run wiki:doctor' : 'npx llm-wiki-manager doctor';
 
   outro(
     pc.green('Done!') +
       ' Next steps:\n' +
       `  • Review ${pc.bold(join(wikiDirStr, 'schema.md'))} to understand wiki conventions\n` +
-      `  • Run ${pc.bold('npm run wiki:help')} for a list of wiki commands\n` +
-      `  • Run ${pc.bold('npm run wiki:lint')} to validate your wiki\n` +
-      `  • Run ${pc.bold('npm run wiki:build')} to regenerate index.md\n` +
-      `  • Run ${pc.bold('npm run wiki:doctor')} to check scaffold health\n` +
+      `  • Run ${pc.bold(wikiHelpCmd)} for a list of wiki commands\n` +
+      `  • Run ${pc.bold(wikiLintCmd)} to validate your wiki\n` +
+      `  • Run ${pc.bold(wikiBuildCmd)} to regenerate index.md\n` +
+      `  • Run ${pc.bold(wikiDoctorCmd)} to check scaffold health\n` +
       `  • Open ${pc.bold(join(wikiDirStr, 'README.md'))} (human entry) and ${pc.bold(join(wikiDirStr, 'AGENTS.md'))} (agent entry)\n` +
       (reInit
         ? `  • Run ${pc.bold('npx llm-wiki-manager upgrade')} to refresh template files\n`
         : '') +
-      `  • Optional git hooks (Husky + lint-staged) — see README "Optional git hooks"\n` +
-      `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n` +
-      `  • Use ${pc.bold('npm run wiki:*')} for wiki scripts (not ${pc.bold('npx run')} — that is a different package)\n` +
+      (hasPackageJson
+        ? `  • Optional git hooks (Husky + lint-staged) — see README "Optional git hooks"\n` +
+          `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n` +
+          `  • Use ${pc.bold('npm run wiki:*')} for wiki scripts (not ${pc.bold('npx run')} — that is a different package)\n`
+        : `  • Use ${pc.bold('npx llm-wiki-manager <command>')} for wiki tasks (no package.json — see README)\n`) +
       (showNpmInstallReminder
         ? `\n  ${pc.yellow('Final Step:')} ${pc.bold('npm install')} — required before ${pc.bold('npm run wiki:*')} works\n`
         : ''),

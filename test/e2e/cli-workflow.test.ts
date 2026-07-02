@@ -147,6 +147,9 @@ describe('CLI e2e workflow', () => {
     expect(existsSync(join(dir, 'AGENTS.md'))).toBe(true);
     expect(existsSync(join(dir, 'package.json'))).toBe(false);
     expect(existsSync(join(dir, '.llm-wiki-manager.json'))).toBe(true);
+    expect(result.stdout).toContain('npx llm-wiki-manager lint');
+    expect(result.stdout).not.toContain('npm run wiki:lint');
+    expect(result.stdout).not.toContain('npm run wiki:setup:husky');
   });
 
   it('re-init preserves existing log.md and schema.md', () => {

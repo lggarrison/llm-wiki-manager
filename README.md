@@ -168,11 +168,11 @@ If your project has no `package.json`, invoke the CLI directly (see [Managing th
 
 **Command patterns:**
 
-| Use case                    | Command                                     |
-| --------------------------- | ------------------------------------------- |
-| One-time scaffold / upgrade | `npx llm-wiki-manager init` or `upgrade`    |
-| Day-to-day wiki maintenance | `npm run wiki:*` (e.g. `npm run wiki:lint`) |
-| Before `npm install`        | `npx llm-wiki-manager lint` (direct CLI)    |
+| Use case                    | Command                                                       |
+| --------------------------- | ------------------------------------------------------------- |
+| One-time scaffold / upgrade | `npx llm-wiki-manager init` or `npx llm-wiki-manager upgrade` |
+| Day-to-day wiki maintenance | `npm run wiki:*` (e.g. `npm run wiki:lint`)                   |
+| Before `npm install`        | `npx llm-wiki-manager lint` (direct CLI)                      |
 
 Do not use `npx run wiki:*` — that invokes a different npm package named `run`.
 

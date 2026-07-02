@@ -94,10 +94,48 @@ describe('migrate-pages', () => {
     runMigrateWiki(wikiDir);
 
     expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).toContain(
-      '[caching](concepts/caching.md)',
+      '[caching](caching.md)',
     );
     expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).not.toContain(
       '[[caching]]',
+    );
+  });
+
+  it('converts path-style wikilinks to paths relative to the source page', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'entities/foo.md',
+      fm({ title: 'Foo', type: 'overview', tags: ['foo'] }) + '\n# Foo\n',
+    );
+    writePage(
+      wikiDir,
+      'entities/bar.md',
+      fm({ title: 'Bar', type: 'overview', tags: ['bar'] }) + '\nSee [[entities/foo|Foo]].\n',
+    );
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, 'entities', 'bar.md'), 'utf8')).toContain('[Foo](foo.md)');
+  });
+
+  it('prefers an existing bare-slug target outside concepts when it is unambiguous', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'entities/foo.md',
+      fm({ title: 'Foo', type: 'overview', tags: ['foo'] }) + '\n# Foo\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/links.md',
+      fm({ title: 'Links', type: 'concept' }) + '\nSee [[foo|Foo]].\n',
+    );
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).toContain(
+      '[Foo](../entities/foo.md)',
     );
   });
 

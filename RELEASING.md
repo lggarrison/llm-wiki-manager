@@ -2,6 +2,26 @@
 
 Day-to-day work happens on the **`develop`** branch; releases are cut from **`main`**. Releases are **automated** by a GitHub Actions workflow (`.github/workflows/release.yml`): when you push a `vX.Y.Z` tag whose commit is on `main`, the workflow runs the `release:check` gates, publishes the package to the **npm registry**, and creates a **GitHub Release** with auto-generated notes. You no longer run `gh release create` or `npm publish` by hand for normal releases.
 
+## Quick reference
+
+**v1.0.0 shipped** (July 2026). One-time npm setup is done; Trusted Publishing is configured. The repository is **public**.
+
+|        | Link                                                               |
+| ------ | ------------------------------------------------------------------ |
+| npm    | https://www.npmjs.com/package/llm-wiki-manager                     |
+| GitHub | https://github.com/lggarrison/llm-wiki-manager/releases/tag/v1.0.0 |
+
+### Next release (v1.0.1+)
+
+Merge `develop` into `main`, then on `main`:
+
+```bash
+npm version patch -m "Release %s"
+git push --follow-tags
+```
+
+CI handles npm publish and the GitHub Release automatically. Use `minor` or `major` instead of `patch` when appropriate. Optionally run `npm run release:check` first for a faster local signal.
+
 ## Branching model
 
 - **`develop`** — integration branch. Feature branches merge here.
@@ -23,9 +43,13 @@ npx github:lggarrison/llm-wiki-manager#v1.0.1 init
 
 ## One-time setup
 
+> **Done for v1.0.0** — you only need this section again if you fork the project or create a new npm package.
+
 Complete this before cutting **v1.0.0** (or any release that should appear on npm).
 
 ### GitHub
+
+The repository must be **public** for release pages and `npx github:…` installs to work for everyone.
 
 The release workflow authenticates with the repository's built-in `GITHUB_TOKEN`, so no setup is required for the normal (tag-triggered) flow. The [GitHub CLI](https://cli.github.com/) (`gh`) is only needed for the manual fallback below:
 

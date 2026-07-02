@@ -135,7 +135,7 @@ export async function init(): Promise<void> {
 
   // Generate index.md from the scaffolded pages so wiki:check passes immediately
   log.step('Building index.md…');
-  runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr }));
+  await runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr, repoRoot: cwd }));
 
   const pkgResult = mergePackageJsonScripts(cwd);
   const depResult = mergePackageJsonDevDependency(cwd);

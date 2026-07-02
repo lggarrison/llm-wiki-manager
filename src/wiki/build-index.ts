@@ -3,6 +3,7 @@ import { join, relative } from 'path';
 import { parseFrontmatter } from './frontmatter.js';
 import { walkMd } from './walk.js';
 import { BUILD_INDEX_SKIP } from './constants.js';
+import { formatIndexMarkdown } from './format-index.js';
 import type { Frontmatter } from './frontmatter.js';
 import type { WikiContext } from './context.js';
 
@@ -138,28 +139,38 @@ function normalizeEol(content: string): string {
   return content.replace(/\r\n/g, '\n');
 }
 
-export function isIndexStale(wikiDir: string): boolean {
-  const { output } = buildIndexOutput(wikiDir);
+async function buildFinalIndexOutput(
+  ctx: WikiContext,
+): Promise<{ output: string; pages: PageEntry[] }> {
+  const { wikiDir, repoRoot } = ctx;
+  const { output: rawOutput, pages } = buildIndexOutput(wikiDir);
   const indexPath = join(wikiDir, 'index.md');
-  const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
-  return normalizeEol(existing) !== normalizeEol(output);
+  const formatted = await formatIndexMarkdown(rawOutput, indexPath, repoRoot);
+  return { output: normalizeEol(formatted), pages };
 }
 
-export function runBuild(ctx: WikiContext): number {
+export async function isIndexStale(ctx: WikiContext): Promise<boolean> {
+  const { output } = await buildFinalIndexOutput(ctx);
+  const indexPath = join(ctx.wikiDir, 'index.md');
+  const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
+  return normalizeEol(existing) !== output;
+}
+
+export async function runBuild(ctx: WikiContext): Promise<number> {
   const { wikiDir } = ctx;
-  const { output, pages } = buildIndexOutput(wikiDir);
+  const { output, pages } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
   writeFileSync(indexPath, output, 'utf8');
   console.log(`✓ index.md written (${pages.length} page(s))`);
   return 0;
 }
 
-export function runCheck(ctx: WikiContext): number {
+export async function runCheck(ctx: WikiContext): Promise<number> {
   const { wikiDir } = ctx;
-  const { output, pages } = buildIndexOutput(wikiDir);
+  const { output, pages } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
   const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
-  if (normalizeEol(existing) !== normalizeEol(output)) {
+  if (normalizeEol(existing) !== output) {
     console.error('✗ index.md is stale — run npm run wiki:build');
     return 1;
   }

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `wiki:build` now formats `index.md` with Prettier (using the consumer repo's config) so output is idempotent under the documented lint-staged pre-commit pipeline.
 - `init` and `upgrade` now warn to run `npm install` when `node_modules` has a stale `llm-wiki-manager` version, not only when the local binary is missing.
 - `init` and `upgrade` update an existing `devDependencies` entry when the running CLI version is newer.
 - `doctor` suggests `npm install` when the scaffold version in `.llm-wiki-manager.json` does not match the installed package in `node_modules`.

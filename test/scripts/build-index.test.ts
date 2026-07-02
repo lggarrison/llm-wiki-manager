@@ -1,7 +1,11 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import { createRequire } from 'module';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
+import { PACKAGE_ROOT } from '../helpers/paths.js';
+
+const require = createRequire(import.meta.url);
 
 const dirs: string[] = [];
 function newWikiDir(): string {
@@ -14,8 +18,12 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) cleanup(dir);
 });
 
-function runBuild(wikiDir: string) {
-  return runWikiCliWithWikiDir(wikiDir, 'build');
+function runBuild(wikiDir: string, extraArgs: string[] = []) {
+  return runWikiCliWithWikiDir(wikiDir, 'build', extraArgs);
+}
+
+function runBuildWithRepoRoot(wikiDir: string, repoRoot: string) {
+  return runBuild(wikiDir, ['--repo-root', repoRoot]);
 }
 
 function runCheck(wikiDir: string) {
@@ -148,5 +156,30 @@ describe('build command', () => {
     writeFileSync(indexPath, lf.replace(/\n/g, '\r\n'), 'utf8');
     const result = runCheck(dir);
     expect(result.status).toBe(0);
+  });
+
+  it('build output is unchanged by a second Prettier pass', async () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'concepts/a.md',
+      fm({ type: 'concept', title: 'Long Title Here', tags: ['tag-one', 'tag-two'] }),
+    );
+    runBuildWithRepoRoot(dir, PACKAGE_ROOT);
+    const indexPath = join(dir, 'index.md');
+    const built = readFileSync(indexPath, 'utf8');
+    const prettier = require(require.resolve('prettier', { paths: [PACKAGE_ROOT] }));
+    const reformatted = await prettier.format(built, { filepath: indexPath, parser: 'markdown' });
+    expect(reformatted).toBe(built);
+  });
+
+  it('rebuild leaves prettier-formatted index.md unchanged (lint-staged idempotence)', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'Caching', tags: ['perf'] }));
+    runBuildWithRepoRoot(dir, PACKAGE_ROOT);
+    const first = readFileSync(join(dir, 'index.md'), 'utf8');
+    runBuildWithRepoRoot(dir, PACKAGE_ROOT);
+    const second = readFileSync(join(dir, 'index.md'), 'utf8');
+    expect(second).toBe(first);
   });
 });

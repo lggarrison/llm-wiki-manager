@@ -463,6 +463,8 @@ npm run wiki:check
 
 **3. Pre-commit — add lint-staged config to `package.json`**
 
+Merge this into the root `{ ... }` object (if `"lint-staged"` already exists, add the wiki glob inside it):
+
 ```json
 "lint-staged": {
   "wiki/**/*.md": [
@@ -473,7 +475,7 @@ npm run wiki:check
 }
 ```
 
-Adjust the glob if your wiki directory is not `wiki/`. lint-staged re-stages any files modified by these tasks (including regenerated `wiki/index.md`).
+Adjust the glob if your wiki directory is not `wiki/`. lint-staged re-stages any files modified by these tasks (including regenerated `wiki/index.md`). `wiki:build` emits Prettier-compatible `index.md`, so this pipeline is idempotent when the only change would have been table formatting.
 
 **4. Pre-commit — create `.husky/pre-commit`**
 

@@ -13,19 +13,34 @@ Day-to-day work happens on the **`develop`** branch; releases are cut from **`ma
 
 ### Next release (v1.0.1+)
 
-Merge `develop` into `main`, then on `main`:
+On `develop`, bump the version and push. Open a PR into `main` (CI must pass; use a **merge commit**, not squash). After the PR merges, push the tag:
 
 ```bash
+git checkout develop && git pull
 npm version patch -m "Release %s"
-git push --follow-tags
+git push origin develop
+# open PR develop → main, merge with "Create a merge commit"
+git checkout main && git pull
+git push origin v1.0.1   # replace with the version you just bumped to
 ```
 
-CI handles npm publish and the GitHub Release automatically. Use `minor` or `major` instead of `patch` when appropriate. Optionally run `npm run release:check` first for a faster local signal.
+CI handles npm publish and the GitHub Release when the tag lands. Use `minor` or `major` instead of `patch` when appropriate. See [Cutting a release](#cutting-a-release-normal-path) for the full walkthrough.
 
 ## Branching model
 
 - **`develop`** — integration branch. Feature branches merge here.
-- **`main`** — release branch. Merge `develop` into `main` (via PR) when you are ready to ship, then tag.
+- **`main`** — release branch. Merge `develop` into `main` (via PR) when you are ready to ship, then push the release tag.
+
+### Branch protection
+
+Both branches have active GitHub **rulesets** (Settings → Rules → Rulesets):
+
+| Branch        | Rules                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **`develop`** | Branch deletion and force-push blocked; direct pushes and PR merges still allowed                                                    |
+| **`main`**    | Branch deletion and force-push blocked; **PR required**; all four CI matrix jobs must pass (`verify` on Ubuntu/Windows × Node 20/24) |
+
+Direct pushes to `develop` are still allowed — only deletion and force-push are restricted there. Direct pushes to `main` are blocked — release changes reach `main` only through a PR. **Tag pushes are not blocked**, so you push the `vX.Y.Z` tag after the release PR merges. Use a **merge commit** when merging the release PR so the tagged commit remains on `main` (squash or rebase merges change the commit SHA and the release workflow will reject the tag).
 
 Users install from npm:
 
@@ -118,10 +133,10 @@ Tags use a `v` prefix to match npm convention: `v1.0.1` for version `1.0.1`.
 
 ## Pre-release checklist
 
-Run this on a clean `main` branch with all changes merged:
+Run this on a clean `develop` branch before opening the release PR:
 
 ```bash
-git checkout main
+git checkout develop
 git pull
 npm run release:check
 ```
@@ -136,20 +151,25 @@ Before the **first** npm release, confirm `"private"` is removed from `package.j
 
 Replace `patch` with `minor` or `major` as needed. On Windows PowerShell, run each command on its own line.
 
+Because `main` requires a PR, bump the version on `develop`, merge via PR, then push the tag separately (do not use `--follow-tags` until after the PR merges — pushing the tag early triggers the release workflow before the commit is on `main`).
+
 ```bash
-# 1. Get main up to date with the changes you want to ship
-git checkout main
+# 1. Bump version on develop (creates "Release x.y.z" commit + local vX.Y.Z tag)
+git checkout develop
 git pull
-git merge --ff-only develop        # or merge develop -> main via a PR on GitHub
-
-# 2. (optional) Verify locally — the workflow runs this too
-npm run release:check
-
-# 3. Bump version: updates package.json + package-lock.json, commits "Release x.y.z", tags vX.Y.Z
+npm run release:check              # optional — the workflow runs this too
 npm version patch -m "Release %s"
 
-# 4. Push the commit AND the tag — pushing the tag triggers the Release workflow
-git push --follow-tags
+# 2. Push the version commit to develop (not the tag yet)
+git push origin develop
+
+# 3. Open a PR: develop → main. Wait for CI. Merge with "Create a merge commit".
+#    Squash/rebase merges change the commit SHA and will break the release tag.
+
+# 4. After the PR merges, push the tag — this triggers the Release workflow
+git checkout main
+git pull
+git push origin v1.0.1             # use the version you just bumped to
 ```
 
 > **First release (v1.0.0):** Complete [one-time npm setup](#npm) steps 1–6 first (including the manual `npm publish` and Trusted Publisher configuration). Because `1.0.0` is already on npm after the manual publish, create the GitHub Release by hand instead of pushing a tag (pushing `v1.0.0` would trigger the workflow and fail at `npm publish` with a duplicate version):
@@ -160,7 +180,7 @@ git push --follow-tags
 > gh release create v1.0.0 --title "v1.0.0" --generate-notes
 > ```
 >
-> Automated npm + GitHub Release via the workflow begins with **v1.0.1** (`npm version patch`, then `git push --follow-tags`).
+> Automated npm + GitHub Release via the workflow begins with **v1.0.1** (version bump on `develop`, PR into `main`, then `git push origin v1.0.1`).
 
 That's it. Open the **Actions** tab to watch the run; when it succeeds, the release appears on the [Releases page](https://github.com/lggarrison/llm-wiki-manager/releases) and on [npm](https://www.npmjs.com/package/llm-wiki-manager).
 
@@ -235,8 +255,9 @@ npm pack
 
 | Step                       | What happens                                                                                                                                                                                                                                                                                   |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm version patch`        | Sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 1.0.1`, and tags it `v1.0.1`. Use `minor` or `major` instead of `patch` when appropriate.                                                                                                       |
-| `git push --follow-tags`   | Pushes the version-bump commit and the `v1.0.1` tag together. Pushing the tag triggers the Release workflow.                                                                                                                                                                                   |
+| `npm version patch`        | On `develop`: sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 1.0.1`, and tags it `v1.0.1` locally. Use `minor` or `major` instead of `patch` when appropriate.                                                                                 |
+| `git push origin develop`  | Pushes the version-bump commit to `develop`. Open a PR into `main` before pushing the tag.                                                                                                                                                                                                     |
+| `git push origin v1.0.1`   | After the release PR merges, pushes the tag. Pushing the tag triggers the Release workflow. Direct pushes to `main` are blocked by branch protection; the version commit reaches `main` through the PR.                                                                                        |
 | Release workflow           | Verifies the tag is on `main` and matches `package.json`, runs `release:check`, publishes to npm, then creates the GitHub Release with auto-generated notes. Users can install via `npx llm-wiki-manager@1.0.1` or browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases). |
 | `npm publish` _(fallback)_ | Manual publish from a tagged checkout when the workflow did not run or npm publish failed. Not needed for normal releases.                                                                                                                                                                     |
 
@@ -248,7 +269,7 @@ npm pack
 
 ### After pushing to GitHub
 
-- **Workflow failed (release:check or a guard)** — fix the issue on `main`, then either re-run the failed run from the **Actions** tab, or delete and re-push the tag: `git push origin --delete v1.0.1`, fix, re-tag, and `git push --follow-tags`.
+- **Workflow failed (release:check or a guard)** — fix the issue on `develop`, merge to `main` via PR, then either re-run the failed run from the **Actions** tab, or delete and re-push the tag: `git push origin --delete v1.0.1`, fix, re-tag, and `git push origin v1.0.1`.
 - **Wrong tag, nobody has used it yet** — delete the remote tag (`git push origin --delete v1.0.1`), delete the GitHub Release if one was created (Releases page → release → Delete), fix locally, and re-run the release steps.
 - **Tag exists but no GitHub Release** — re-run the workflow from the Actions tab, or create it manually with `gh release create v1.0.1 --generate-notes`.
 - **GitHub Release succeeded but npm publish failed** — common Trusted Publishing causes: Trusted Publisher not configured, workflow filename mismatch (`release.yml`), missing `id-token: write`, or npm CLI too old (need 11.5.1+ / Node 24). Fix the npm settings, re-run the workflow, or check out the tag and run `npm publish --access public` manually with `npm login`.

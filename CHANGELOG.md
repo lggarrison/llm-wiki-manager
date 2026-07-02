@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Release process now syncs `main` back into `develop` after each tagged release (automated in release workflow; manual fallback documented in RELEASING.md).
+
 ## [1.0.0] - 2026-07-01
 
 ### Added

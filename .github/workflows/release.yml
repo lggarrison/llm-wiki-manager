@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   id-token: write # Required for npm Trusted Publishing (OIDC)
+  pull-requests: write
 
 jobs:
   release:
@@ -48,3 +49,38 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+
+  sync-develop:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Merge main into develop
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main develop
+          git checkout develop
+          if git merge origin/main -m "chore: sync main into develop after ${{ github.ref_name }}"; then
+            git push origin develop
+            echo "merged=true" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "merged=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open sync PR on merge conflict
+        if: steps.merge.outputs.merged == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SYNC_BRANCH="sync/main-after-${{ github.ref_name }}"
+          git checkout -B "$SYNC_BRANCH" origin/main
+          git push -f origin "$SYNC_BRANCH"
+          gh pr create --base develop --head "$SYNC_BRANCH" \
+            --title "chore: sync main into develop after ${{ github.ref_name }}" \
+            --body "Automated post-release sync failed due to merge conflicts. Resolve manually and merge with a merge commit."

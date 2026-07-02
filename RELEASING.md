@@ -1,6 +1,6 @@
 # Releasing llm-wiki-manager
 
-Day-to-day work happens on the **`develop`** branch; releases are cut from **`main`**. Releases are **automated** by a GitHub Actions workflow (`.github/workflows/release.yml`): when you push a `vX.Y.Z` tag whose commit is on `main`, the workflow runs the `release:check` gates, publishes the package to the **npm registry**, and creates a **GitHub Release** with auto-generated notes. You no longer run `gh release create` or `npm publish` by hand for normal releases.
+Day-to-day work happens on the **`develop`** branch; releases are cut from **`main`**. Releases are **automated** by a GitHub Actions workflow (`.github/workflows/release.yml`): when you push a `vX.Y.Z` tag whose commit is on `main`, the workflow runs the `release:check` gates, publishes the package to the **npm registry**, creates a **GitHub Release** with auto-generated notes, and merges `main` back into `develop`. You no longer run `gh release create` or `npm publish` by hand for normal releases.
 
 ## Quick reference
 
@@ -22,14 +22,16 @@ git push origin develop
 # open PR develop → main, merge with "Create a merge commit"
 git checkout main && git pull
 git push origin v1.0.1   # replace with the version you just bumped to
+# CI merges main back into develop automatically; verify develop is up to date
 ```
 
-CI handles npm publish and the GitHub Release when the tag lands. Use `minor` or `major` instead of `patch` when appropriate. See [Cutting a release](#cutting-a-release-normal-path) for the full walkthrough.
+CI handles npm publish, the GitHub Release, and syncing `main` into `develop` when the tag lands. If the automated sync hits merge conflicts, the workflow opens a PR for you to resolve manually. Use `minor` or `major` instead of `patch` when appropriate. See [Cutting a release](#cutting-a-release-normal-path) for the full walkthrough.
 
 ## Branching model
 
 - **`develop`** — integration branch. Feature branches merge here.
 - **`main`** — release branch. Merge `develop` into `main` (via PR) when you are ready to ship, then push the release tag.
+- **After each release** — `main` is merged back into `develop` so both branches share the shipped commit graph. This is automated by the release workflow; see [Step 5](#5-sync-main-back-into-develop) for the manual fallback.
 
 ### Branch protection
 
@@ -170,7 +172,14 @@ git push origin develop
 git checkout main
 git pull
 git push origin v1.0.1             # use the version you just bumped to
+
+# 5. Sync main back into develop (automated by CI after publish; manual fallback below)
+git checkout develop && git pull
+git merge origin/main -m "chore: sync main into develop after v1.0.1"
+git push origin develop
 ```
+
+> **Step 5 is automated.** After npm publish and the GitHub Release succeed, the release workflow merges `main` into `develop` and pushes. You only need the commands above if automation failed or you are syncing outside a release. Before starting the next version bump, verify `develop` contains the release merge commit.
 
 > **First release (v1.0.0):** Complete [one-time npm setup](#npm) steps 1–6 first (including the manual `npm publish` and Trusted Publisher configuration). Because `1.0.0` is already on npm after the manual publish, create the GitHub Release by hand instead of pushing a tag (pushing `v1.0.0` would trigger the workflow and fail at `npm publish` with a duplicate version):
 >
@@ -192,6 +201,23 @@ Triggered by a pushed tag matching `v*.*.*`, the workflow:
 2. **Runs `npm run release:check`** — lint, format check, tests, and a production build.
 3. **Publishes to npm** — `npm publish` uploads `dist/` and `templates/` to the registry via [Trusted Publishing](https://docs.npmjs.com/trusted-publishers/) (OIDC; no stored token). `prepublishOnly` rebuilds `dist/` first; provenance is attached automatically.
 4. **Creates the GitHub Release** — `gh release create "$TAG" --generate-notes`, using the built-in `GITHUB_TOKEN`.
+5. **Syncs `main` into `develop`** — merges `origin/main` into `develop` and pushes. On merge conflicts, opens a PR (`sync/main-after-$TAG` → `develop`) for manual resolution.
+
+### 5. Sync main back into develop
+
+This step keeps `develop` aligned with what shipped on `main`. Without it, commits that land on `main` (release merge commits, hotfixes, or mistaken direct merges) can diverge from `develop`.
+
+**Automated (normal path):** the `sync-develop` job in `.github/workflows/release.yml` runs after publish and release creation. Watch the **Actions** tab — if it succeeds, `develop` is up to date.
+
+**Manual fallback:**
+
+```bash
+git checkout develop && git pull
+git merge origin/main -m "chore: sync main into develop after vX.Y.Z"
+git push origin develop
+```
+
+Use a **merge commit** (not squash) so the release merge commit is preserved on `develop`. If the automated sync opened a PR instead, resolve conflicts there and merge with "Create a merge commit".
 
 ## Manual release (fallback)
 
@@ -253,13 +279,14 @@ npm pack
 
 ## What each step does
 
-| Step                       | What happens                                                                                                                                                                                                                                                                                   |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm version patch`        | On `develop`: sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 1.0.1`, and tags it `v1.0.1` locally. Use `minor` or `major` instead of `patch` when appropriate.                                                                                 |
-| `git push origin develop`  | Pushes the version-bump commit to `develop`. Open a PR into `main` before pushing the tag.                                                                                                                                                                                                     |
-| `git push origin v1.0.1`   | After the release PR merges, pushes the tag. Pushing the tag triggers the Release workflow. Direct pushes to `main` are blocked by branch protection; the version commit reaches `main` through the PR.                                                                                        |
-| Release workflow           | Verifies the tag is on `main` and matches `package.json`, runs `release:check`, publishes to npm, then creates the GitHub Release with auto-generated notes. Users can install via `npx llm-wiki-manager@1.0.1` or browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases). |
-| `npm publish` _(fallback)_ | Manual publish from a tagged checkout when the workflow did not run or npm publish failed. Not needed for normal releases.                                                                                                                                                                     |
+| Step                       | What happens                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm version patch`        | On `develop`: sets `"version"` in `package.json` and `package-lock.json`, creates a git commit like `Release 1.0.1`, and tags it `v1.0.1` locally. Use `minor` or `major` instead of `patch` when appropriate.                                                                                                               |
+| `git push origin develop`  | Pushes the version-bump commit to `develop`. Open a PR into `main` before pushing the tag.                                                                                                                                                                                                                                   |
+| `git push origin v1.0.1`   | After the release PR merges, pushes the tag. Pushing the tag triggers the Release workflow. Direct pushes to `main` are blocked by branch protection; the version commit reaches `main` through the PR.                                                                                                                      |
+| Release workflow           | Verifies the tag is on `main` and matches `package.json`, runs `release:check`, publishes to npm, creates the GitHub Release with auto-generated notes, then merges `main` into `develop`. Users can install via `npx llm-wiki-manager@1.0.1` or browse [Releases](https://github.com/lggarrison/llm-wiki-manager/releases). |
+| Post-release sync          | Merges `main` into `develop` so both branches share the shipped commit graph. Automated by the release workflow; on conflicts, a PR is opened for manual resolution. See [Step 5](#5-sync-main-back-into-develop).                                                                                                           |
+| `npm publish` _(fallback)_ | Manual publish from a tagged checkout when the workflow did not run or npm publish failed. Not needed for normal releases.                                                                                                                                                                                                   |
 
 ## If something goes wrong
 
@@ -274,6 +301,12 @@ npm pack
 - **Tag exists but no GitHub Release** — re-run the workflow from the Actions tab, or create it manually with `gh release create v1.0.1 --generate-notes`.
 - **GitHub Release succeeded but npm publish failed** — common Trusted Publishing causes: Trusted Publisher not configured, workflow filename mismatch (`release.yml`), missing `id-token: write`, or npm CLI too old (need 11.5.1+ / Node 24). Fix the npm settings, re-run the workflow, or check out the tag and run `npm publish --access public` manually with `npm login`.
 - **npm succeeded but GitHub Release failed** — create the GitHub Release manually (see [Manual release](#manual-release-fallback)); the npm version is already live.
+
+### Sync conflicts (main → develop)
+
+- **Automated sync failed with merge conflicts** — the release workflow opens a PR from `sync/main-after-vX.Y.Z` into `develop`. Resolve conflicts, merge with "Create a merge commit", and delete the sync branch.
+- **Sync needed outside a release** (e.g. a hotfix landed on `main`) — run the [manual sync commands](#5-sync-main-back-into-develop) locally, or open a PR from `main` into `develop`.
+- **Branches diverged before this process existed** — merge `main` into `develop` once manually to reconcile, then rely on the automated post-release sync going forward.
 
 ### npm-specific
 

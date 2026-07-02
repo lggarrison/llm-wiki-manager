@@ -1,19 +1,19 @@
 ---
 type: concept
 title: Release
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-07-02T04:30:00Z
 tags: [release, maintainers]
 related: [concepts/dogfooding.md, concepts/repo-layout.md, concepts/node-version-and-types.md]
 code_refs: [RELEASING.md, .github/workflows/release.yml]
 status: active
-summary: Pointer to RELEASING.md — the sole maintainer runbook for cutting npm and GitHub releases.
+summary: Pointer to RELEASING.md — maintainer runbook for cutting releases and syncing main back into develop.
 ---
 
 # Release
 
 Release procedures for **llm-wiki-manager** are maintained outside the wiki vault.
 
-**Source of truth:** `RELEASING.md` at the repo root covers branching (`develop` / `main`), semver, tagging, npm Trusted Publishing, the release workflow (`.github/workflows/release.yml`), troubleshooting, and manual fallbacks.
+**Source of truth:** `RELEASING.md` at the repo root covers branching (`develop` / `main`), semver, tagging, npm Trusted Publishing, the release workflow (`.github/workflows/release.yml`), post-release sync of `main` back into `develop`, troubleshooting, and manual fallbacks.
 
 Do not duplicate that runbook here. When cutting a release or debugging a failed publish, read `RELEASING.md` directly.
 

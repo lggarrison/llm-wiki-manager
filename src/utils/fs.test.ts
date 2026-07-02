@@ -10,6 +10,10 @@ import {
   mergePackageJsonScripts,
   mergePackageJsonDevDependency,
   syncPackageJsonScripts,
+  getInstalledPackageVersion,
+  getPackageInstallStatus,
+  needsPackageInstall,
+  compareVersions,
   isPackageBinInstalled,
   packageBinPath,
   PACKAGE_NAME,
@@ -408,25 +412,64 @@ describe('mergePackageJsonDevDependency', () => {
     expect(pkg.devDependencies).toEqual({ [PACKAGE_NAME]: '^1.0.0' });
   });
 
-  it('does not overwrite an existing devDependency', () => {
+  it('updates an existing devDependency to match the running version', () => {
     const dir = makeTmpDir();
     writeFileSync(
       join(dir, 'package.json'),
       JSON.stringify(
         {
           name: 'acme',
-          devDependencies: { [PACKAGE_NAME]: '1.0.0' },
+          devDependencies: { [PACKAGE_NAME]: '^1.0.0' },
         },
         null,
         2,
       ) + '\n',
     );
 
-    const result = mergePackageJsonDevDependency(dir, '2.0.0');
+    const result = mergePackageJsonDevDependency(dir, '1.0.2');
+    expect(result).toEqual({ status: 'updated', version: '1.0.2', previous: '^1.0.0' });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.devDependencies[PACKAGE_NAME]).toBe('^1.0.2');
+  });
+
+  it('does not overwrite an existing devDependency when already on target version', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          devDependencies: { [PACKAGE_NAME]: '^1.0.2' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    const result = mergePackageJsonDevDependency(dir, '1.0.2');
+    expect(result).toEqual({ status: 'unchanged' });
+  });
+
+  it('does not downgrade an existing devDependency when the running version is older', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          devDependencies: { [PACKAGE_NAME]: '^2.0.0' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    const result = mergePackageJsonDevDependency(dir, '1.0.2');
     expect(result).toEqual({ status: 'unchanged' });
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    expect(pkg.devDependencies[PACKAGE_NAME]).toBe('1.0.0');
+    expect(pkg.devDependencies[PACKAGE_NAME]).toBe('^2.0.0');
   });
 
   it('does not overwrite an existing dependency entry', () => {
@@ -449,6 +492,104 @@ describe('mergePackageJsonDevDependency', () => {
   it('returns no-package-json when package.json is missing', () => {
     const dir = makeTmpDir();
     expect(mergePackageJsonDevDependency(dir)).toEqual({ status: 'no-package-json' });
+  });
+});
+
+describe('compareVersions', () => {
+  it('orders semver components numerically', () => {
+    expect(compareVersions('1.0.0', '1.0.0')).toBe(0);
+    expect(compareVersions('1.0.1', '1.0.0')).toBeGreaterThan(0);
+    expect(compareVersions('1.0.0', '1.0.2')).toBeLessThan(0);
+    expect(compareVersions('1.1.0', '1.0.9')).toBeGreaterThan(0);
+    expect(compareVersions('2.0.0', '1.9.9')).toBeGreaterThan(0);
+  });
+});
+
+describe('getPackageInstallStatus', () => {
+  it('reports missing when node_modules has no package', () => {
+    const dir = makeTmpDir();
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({
+      needsInstall: true,
+      reason: 'missing',
+    });
+    expect(needsPackageInstall(dir, '1.0.2')).toBe(true);
+  });
+
+  it('reports stale when installed version differs from target', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '1.0.0' }, null, 2) + '\n',
+    );
+    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+    writeFileSync(packageBinPath(dir), '');
+
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({
+      needsInstall: true,
+      reason: 'stale',
+      installedVersion: '1.0.0',
+      targetVersion: '1.0.2',
+    });
+  });
+
+  it('reports no install needed when versions match', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '1.0.2' }, null, 2) + '\n',
+    );
+    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+    writeFileSync(packageBinPath(dir), '');
+
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({ needsInstall: false });
+    expect(needsPackageInstall(dir, '1.0.2')).toBe(false);
+  });
+
+  it('reports no install needed when installed version is newer than target', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '2.0.0' }, null, 2) + '\n',
+    );
+    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+    writeFileSync(packageBinPath(dir), '');
+
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({ needsInstall: false });
+  });
+
+  it('reports missing when package version matches but the bin shim is absent', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '1.0.2' }, null, 2) + '\n',
+    );
+
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({
+      needsInstall: true,
+      reason: 'missing',
+    });
+  });
+});
+
+describe('getInstalledPackageVersion', () => {
+  it('reads the installed package version from node_modules', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '1.0.2' }, null, 2) + '\n',
+    );
+
+    expect(getInstalledPackageVersion(dir)).toBe('1.0.2');
   });
 });
 

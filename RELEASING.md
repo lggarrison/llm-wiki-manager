@@ -254,10 +254,10 @@ npm publish --access public
 gh release list
 
 # Smoke test from npm
-npx llm-wiki-manager@1.0.1 --help
+npx -y llm-wiki-manager@1.0.2 --version
 
 # Smoke test from GitHub tag
-npx github:lggarrison/llm-wiki-manager#v1.0.1 --help
+npx github:lggarrison/llm-wiki-manager#v1.0.2 --version
 ```
 
 ## npm publish details

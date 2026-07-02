@@ -76,8 +76,10 @@ npx llm-wiki-manager init
 Pin a specific version:
 
 ```bash
-npx llm-wiki-manager@1.0.0 init
+npx llm-wiki-manager@1.0.2 init
 ```
+
+Unpinned `npx llm-wiki-manager` uses your project's local `node_modules` install when one exists. After init, run `npm install` so the installed version matches what init recorded in `.llm-wiki-manager.json`.
 
 ### From GitHub
 

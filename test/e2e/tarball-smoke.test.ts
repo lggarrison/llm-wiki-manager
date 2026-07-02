@@ -145,4 +145,56 @@ describe('packed tarball smoke test', () => {
     expect(npmDoctor.status).toBe(0);
     expect(npmDoctor.stdout).toContain('No problems found');
   });
+
+  it('doctor fails after init with stale node_modules, then passes after npm install', () => {
+    const packDir = mkdtempSync(join(tmpdir(), 'llm-wiki-pack-stale-'));
+    tmpDirs.push(packDir);
+
+    const pack = run('npm', PACKAGE_ROOT, [
+      'pack',
+      '--pack-destination',
+      packDir,
+      '--ignore-scripts',
+    ]);
+    expect(pack.status).toBe(0);
+
+    const tarball = readdirSync(packDir).find((f) => f.endsWith('.tgz'));
+    expect(tarball).toBeTruthy();
+
+    const projectDir = mkdtempSync(join(tmpdir(), 'llm-wiki-stale-consumer-'));
+    tmpDirs.push(projectDir);
+    writeFileSync(
+      join(projectDir, 'package.json'),
+      JSON.stringify({ name: 'acme' }, null, 2) + '\n',
+    );
+
+    const installOld = run('npm', projectDir, ['install', join(packDir, tarball!)]);
+    expect(installOld.status).toBe(0);
+
+    const pkgDir = join(projectDir, 'node_modules', 'llm-wiki-manager');
+    const installedPkg = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8')) as {
+      version: string;
+    };
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ ...installedPkg, version: '1.0.0' }, null, 2) + '\n',
+    );
+
+    const init = runBuiltCli(projectDir, ['init', '--project-name', 'acme', '--wiki-dir', 'wiki']);
+    expect(init.status).toBe(0);
+    expect(init.stdout).toContain('local install is v1.0.0');
+
+    const doctorBefore = run('npx', projectDir, ['llm-wiki-manager', 'doctor']);
+    expect(doctorBefore.status).toBe(1);
+    expect(doctorBefore.stdout).toContain('node_modules has v1.0.0');
+    expect(doctorBefore.stdout).toContain('npm install');
+
+    rmSync(join(projectDir, 'node_modules', 'llm-wiki-manager'), { recursive: true, force: true });
+    const reinstall = run('npm', projectDir, ['install', join(packDir, tarball!)]);
+    expect(reinstall.status).toBe(0);
+
+    const doctorAfter = run('npx', projectDir, ['llm-wiki-manager', 'doctor']);
+    expect(doctorAfter.status).toBe(0);
+    expect(doctorAfter.stdout).toContain('No problems found');
+  });
 });

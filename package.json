@@ -21,7 +21,7 @@
   "bugs": {
     "url": "https://github.com/lggarrison/llm-wiki-manager/issues"
   },
-  "author": "lggarrison",
+  "author": "Lacy Garrison",
   "dependencies": {
     "@clack/prompts": "^1.6.0",
     "picocolors": "^1.1.1"

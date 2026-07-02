@@ -21,7 +21,7 @@ npm version patch -m "Release %s"
 git push origin develop
 # open PR develop → main, merge with "Create a merge commit"
 git checkout main && git pull
-git push origin v1.0.1
+git push origin v1.0.1   # replace with the version you just bumped to
 ```
 
 CI handles npm publish and the GitHub Release when the tag lands. Use `minor` or `major` instead of `patch` when appropriate. See [Cutting a release](#cutting-a-release-normal-path) for the full walkthrough.
@@ -37,10 +37,10 @@ Both branches have active GitHub **rulesets** (Settings → Rules → Rulesets):
 
 | Branch        | Rules                                                                                                                                |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| **`develop`** | Branch deletion and force-push blocked                                                                                               |
+| **`develop`** | Branch deletion and force-push blocked; direct pushes and PR merges still allowed                                                    |
 | **`main`**    | Branch deletion and force-push blocked; **PR required**; all four CI matrix jobs must pass (`verify` on Ubuntu/Windows × Node 20/24) |
 
-Direct pushes to `main` are blocked — release changes reach `main` only through a PR. **Tag pushes are not blocked**, so you push the `vX.Y.Z` tag after the release PR merges. Use a **merge commit** when merging the release PR so the tagged commit remains on `main` (squash or rebase merges change the commit SHA and the release workflow will reject the tag).
+Direct pushes to `develop` are still allowed — only deletion and force-push are restricted there. Direct pushes to `main` are blocked — release changes reach `main` only through a PR. **Tag pushes are not blocked**, so you push the `vX.Y.Z` tag after the release PR merges. Use a **merge commit** when merging the release PR so the tagged commit remains on `main` (squash or rebase merges change the commit SHA and the release workflow will reject the tag).
 
 Users install from npm:
 

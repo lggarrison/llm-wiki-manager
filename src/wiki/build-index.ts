@@ -4,6 +4,7 @@ import { parseFrontmatter } from './frontmatter.js';
 import { walkMd } from './walk.js';
 import { BUILD_INDEX_SKIP } from './constants.js';
 import { formatIndexMarkdown } from './format-index.js';
+import { resolveWikiContext } from './context.js';
 import type { Frontmatter } from './frontmatter.js';
 import type { WikiContext } from './context.js';
 
@@ -149,9 +150,10 @@ async function buildFinalIndexOutput(
   return { output: normalizeEol(formatted), pages };
 }
 
-export async function isIndexStale(ctx: WikiContext): Promise<boolean> {
+export async function isIndexStale(wikiDir: string, repoRoot: string): Promise<boolean> {
+  const ctx = resolveWikiContext({ repoRoot, wikiDir, cwd: repoRoot });
   const { output } = await buildFinalIndexOutput(ctx);
-  const indexPath = join(ctx.wikiDir, 'index.md');
+  const indexPath = join(wikiDir, 'index.md');
   const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
   return normalizeEol(existing) !== output;
 }

@@ -17,7 +17,6 @@ import {
 } from '../utils/fs.js';
 import type { InstallConfig } from '../utils/fs.js';
 import { isIndexStale } from './build-index.js';
-import { resolveWikiContext } from './context.js';
 
 const WIKI_META_FILES = ['schema.md', 'AGENTS.md', 'README.md', 'index.md', 'log.md'];
 
@@ -98,8 +97,7 @@ export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
       }
 
       if (existsSync(join(wikiDir, 'index.md'))) {
-        const ctx = resolveWikiContext({ cwd, wikiDir: config.wikiDir, repoRoot: cwd });
-        if (await isIndexStale(ctx)) {
+        if (await isIndexStale(wikiDir, cwd)) {
           report.problems.push('index.md is stale — run npm run wiki:build');
         } else {
           report.ok.push('index.md is up to date');

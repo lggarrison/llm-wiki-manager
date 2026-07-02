@@ -1,7 +1,5 @@
 import { createRequire } from 'module';
-import { dirname, join } from 'path';
-import { existsSync } from 'fs';
-import { fileURLToPath } from 'url';
+import { getPackageRoot } from '../utils/fs.js';
 
 type PrettierModule = {
   format: (source: string, options?: { filepath?: string; parser?: string }) => Promise<string>;
@@ -9,21 +7,8 @@ type PrettierModule = {
 
 const require = createRequire(import.meta.url);
 
-function findPackageRoot(startFile: string): string {
-  let dir = dirname(startFile);
-  for (;;) {
-    if (existsSync(join(dir, 'package.json'))) return dir;
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  throw new Error('llm-wiki-manager: could not locate package root');
-}
-
-const BUNDLED_PACKAGE_ROOT = findPackageRoot(fileURLToPath(import.meta.url));
-
 function loadPrettier(repoRoot: string): PrettierModule | null {
-  for (const root of [repoRoot, BUNDLED_PACKAGE_ROOT]) {
+  for (const root of [repoRoot, getPackageRoot()]) {
     try {
       const resolved = require.resolve('prettier', { paths: [root] });
       return require(resolved) as PrettierModule;

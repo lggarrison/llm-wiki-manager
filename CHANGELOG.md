@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-07-02
+
+### Fixed
+
+- `wiki:build` now formats `index.md` with Prettier (using the consumer repo's config) so output is idempotent under the documented lint-staged pre-commit pipeline.
+- Interactive `init` pre-fills `src` as the default focus directory so Enter accepts it without typing.
+- `init` and `upgrade` now warn to run `npm install` when `node_modules` has a stale `llm-wiki-manager` version, not only when the local binary is missing.
+- `init` and `upgrade` update an existing `devDependencies` entry when the running CLI version is newer.
+- `doctor` suggests `npm install` when the scaffold version in `.llm-wiki-manager.json` does not match the installed package in `node_modules`.
+
+### Changed
+
+- `prettier` is a runtime dependency so `wiki:build` can format `index.md` when the consumer has no local Prettier install (consumer Prettier is still preferred when present).
+
 ## [1.0.2] - 2026-07-02
 
 ### Added
@@ -22,6 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Release workflow now syncs `main` back into `develop` after each tagged release.
+
+## [1.0.1] - 2026-07-02
+
+### Fixed
+
+- Post-init and upgrade flows prompt for `npm install` when the local binary is missing.
 
 ## [1.0.0] - 2026-07-01
 
@@ -43,6 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The managed `AGENTS.md` section is bounded by an explicit end marker, so `upgrade` preserves user content added after it.
 - `package.json` files with a UTF-8 BOM (as written by PowerShell and some editors) are parsed instead of crashing.
 
-[Unreleased]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.2...develop
+[Unreleased]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.3...develop
+[1.0.3]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.1...v1.0.2
+[1.0.1]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/lggarrison/llm-wiki-manager/releases/tag/v1.0.0

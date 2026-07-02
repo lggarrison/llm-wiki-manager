@@ -15,7 +15,7 @@ import {
   writeInstallConfig,
   getPackageVersion,
   isExistingInstall,
-  isPackageBinInstalled,
+  getPackageInstallStatus,
   readInstallConfig,
 } from '../utils/fs.js';
 import { resolveWikiContext } from '../wiki/context.js';
@@ -27,7 +27,7 @@ type InitFlagValues = {
   focusDirs: string;
 };
 
-function parseInitArgs(argv: string[]): InitFlagValues | null {
+export function parseInitArgs(argv: string[]): InitFlagValues | null {
   const flagIndex = argv.indexOf('--project-name');
   if (flagIndex === -1) return null;
 
@@ -74,7 +74,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
 
   const focusDirs = await text({
     message: 'Directories this wiki should document (comma-separated, e.g. src, api)',
-    placeholder: 'src',
+    initialValue: 'src',
   });
   if (isCancel(focusDirs)) {
     cancel('Cancelled');
@@ -135,16 +135,21 @@ export async function init(): Promise<void> {
 
   // Generate index.md from the scaffolded pages so wiki:check passes immediately
   log.step('Building index.md…');
-  runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr }));
+  await runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr, repoRoot: cwd }));
 
   const pkgResult = mergePackageJsonScripts(cwd);
   const depResult = mergePackageJsonDevDependency(cwd);
+  const runningVersion = getPackageVersion();
   if (pkgResult.status === 'merged') {
     log.step(`Adding npm scripts to package.json (${pkgResult.added.join(', ')})…`);
   } else if (pkgResult.status === 'no-package-json') {
     log.warn('No package.json found — skipped npm scripts (see README for manual setup).');
   } else if (depResult.status === 'merged') {
     log.step(`Adding ${pc.bold('llm-wiki-manager')} to devDependencies…`);
+  } else if (depResult.status === 'updated') {
+    log.step(
+      `Updating ${pc.bold('llm-wiki-manager')} devDependency (${depResult.previous} → ^${depResult.version})…`,
+    );
   } else {
     log.warn('package.json already has wiki scripts — skipped.');
   }
@@ -169,7 +174,7 @@ export async function init(): Promise<void> {
   });
 
   const hasPackageJson = pkgResult.status !== 'no-package-json';
-  const showNpmInstallReminder = hasPackageJson && !isPackageBinInstalled(cwd);
+  const installStatus = hasPackageJson ? getPackageInstallStatus(cwd, runningVersion) : null;
   const wikiHelpCmd = hasPackageJson ? 'npm run wiki:help' : 'npx llm-wiki-manager help';
   const wikiLintCmd = hasPackageJson ? 'npm run wiki:lint' : 'npx llm-wiki-manager lint';
   const wikiBuildCmd = hasPackageJson ? 'npm run wiki:build' : 'npx llm-wiki-manager build';
@@ -177,6 +182,7 @@ export async function init(): Promise<void> {
 
   outro(
     pc.green('Done!') +
+      ` Scaffolded with llm-wiki-manager v${runningVersion}.\n` +
       ' Next steps:\n' +
       `  • Review ${pc.bold(join(wikiDirStr, 'schema.md'))} to understand wiki conventions\n` +
       `  • Run ${pc.bold(wikiHelpCmd)} for a list of wiki commands\n` +
@@ -192,8 +198,10 @@ export async function init(): Promise<void> {
           `            • ${pc.bold('npm run wiki:setup:husky')} wires pre-push wiki:check\n` +
           `  • Use ${pc.bold('npm run wiki:*')} for wiki scripts (not ${pc.bold('npx run')} — that is a different package)\n`
         : `  • Use ${pc.bold('npx llm-wiki-manager <command>')} for wiki tasks (no package.json — see README)\n`) +
-      (showNpmInstallReminder
-        ? `\n  ${pc.yellow('Final Step:')} ${pc.bold('npm install')} — required before ${pc.bold('npm run wiki:*')} works\n`
+      (installStatus?.needsInstall
+        ? installStatus.reason === 'stale'
+          ? `\n  ${pc.yellow('Final Step:')} ${pc.bold('npm install')} — local install is v${installStatus.installedVersion} but scaffold used v${installStatus.targetVersion}\n`
+          : `\n  ${pc.yellow('Final Step:')} ${pc.bold('npm install')} — required before ${pc.bold('npm run wiki:*')} works\n`
         : ''),
   );
 }

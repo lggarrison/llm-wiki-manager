@@ -53,6 +53,10 @@ function findPackageRoot(startFile: string): string {
 
 const PACKAGE_ROOT = findPackageRoot(fileURLToPath(import.meta.url));
 
+export function getPackageRoot(): string {
+  return PACKAGE_ROOT;
+}
+
 export function templatePath(...parts: string[]): string {
   return join(PACKAGE_ROOT, 'templates', ...parts);
 }
@@ -348,7 +352,31 @@ export type MergePackageJsonResult =
   { status: 'no-package-json' } | { status: 'merged'; added: string[] } | { status: 'unchanged' };
 
 export type MergeDevDependencyResult =
-  { status: 'no-package-json' } | { status: 'merged'; version: string } | { status: 'unchanged' };
+  | { status: 'no-package-json' }
+  | { status: 'merged'; version: string }
+  | { status: 'updated'; version: string; previous: string }
+  | { status: 'unchanged' };
+
+export type PackageInstallStatus =
+  | { needsInstall: false }
+  | { needsInstall: true; reason: 'missing' }
+  | { needsInstall: true; reason: 'stale'; installedVersion: string; targetVersion: string };
+
+function parsePinnedVersion(range: string): string | null {
+  const match = range.match(/(\d+\.\d+\.\d+)/);
+  return match?.[1] ?? null;
+}
+
+export function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map((part) => Number.parseInt(part, 10));
+  const pb = b.split('.').map((part) => Number.parseInt(part, 10));
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const da = pa[i] ?? 0;
+    const db = pb[i] ?? 0;
+    if (da !== db) return da - db;
+  }
+  return 0;
+}
 
 export function packageBinPath(projectRoot: string, packageName = PACKAGE_NAME): string {
   return join(projectRoot, 'node_modules', '.bin', packageName);
@@ -357,6 +385,44 @@ export function packageBinPath(projectRoot: string, packageName = PACKAGE_NAME):
 export function isPackageBinInstalled(projectRoot: string, packageName = PACKAGE_NAME): boolean {
   const binPath = packageBinPath(projectRoot, packageName);
   return existsSync(binPath) || existsSync(`${binPath}.cmd`);
+}
+
+export function getInstalledPackageVersion(
+  projectRoot: string,
+  packageName = PACKAGE_NAME,
+): string | null {
+  const pkgPath = join(projectRoot, 'node_modules', packageName, 'package.json');
+  if (!existsSync(pkgPath)) return null;
+  try {
+    return readJsonFile<{ version: string }>(pkgPath).version;
+  } catch {
+    return null;
+  }
+}
+
+export function getPackageInstallStatus(
+  projectRoot: string,
+  targetVersion: string = getPackageVersion(),
+  packageName = PACKAGE_NAME,
+): PackageInstallStatus {
+  const installedVersion = getInstalledPackageVersion(projectRoot, packageName);
+  if (!installedVersion) {
+    return { needsInstall: true, reason: 'missing' };
+  }
+  if (compareVersions(installedVersion, targetVersion) < 0) {
+    return { needsInstall: true, reason: 'stale', installedVersion, targetVersion };
+  }
+  if (!isPackageBinInstalled(projectRoot, packageName)) {
+    return { needsInstall: true, reason: 'missing' };
+  }
+  return { needsInstall: false };
+}
+
+export function needsPackageInstall(
+  projectRoot: string,
+  targetVersion: string = getPackageVersion(),
+): boolean {
+  return getPackageInstallStatus(projectRoot, targetVersion).needsInstall;
 }
 
 export function hasWikiScripts(scripts: Record<string, string> | undefined): boolean {
@@ -376,14 +442,30 @@ export function mergePackageJsonDevDependency(
     devDependencies?: Record<string, string>;
   }>(pkgPath);
 
-  if (pkg.dependencies?.[PACKAGE_NAME] || pkg.devDependencies?.[PACKAGE_NAME]) {
+  if (pkg.dependencies?.[PACKAGE_NAME]) {
     return { status: 'unchanged' };
   }
 
+  const desired = `^${version}`;
+  const existing = pkg.devDependencies?.[PACKAGE_NAME];
+  if (existing === desired) {
+    return { status: 'unchanged' };
+  }
+
+  if (existing) {
+    const existingVersion = parsePinnedVersion(existing);
+    if (existingVersion && compareVersions(version, existingVersion) <= 0) {
+      return { status: 'unchanged' };
+    }
+  }
+
   if (!pkg.devDependencies) pkg.devDependencies = {};
-  pkg.devDependencies[PACKAGE_NAME] = `^${version}`;
+  pkg.devDependencies[PACKAGE_NAME] = desired;
 
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+  if (existing) {
+    return { status: 'updated', version, previous: existing };
+  }
   return { status: 'merged', version };
 }
 

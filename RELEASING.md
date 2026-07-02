@@ -254,15 +254,17 @@ npm publish --access public
 gh release list
 
 # Smoke test from npm
-npx llm-wiki-manager@1.0.1 --help
+npx -y llm-wiki-manager@1.0.2 --version
 
 # Smoke test from GitHub tag
-npx github:lggarrison/llm-wiki-manager#v1.0.1 --help
+npx github:lggarrison/llm-wiki-manager#v1.0.2 --version
 ```
 
 ## npm publish details
 
 Only `dist/` and `templates/` are published (see `"files"` in `package.json`). The package is public (`--access public`).
+
+Runtime dependencies include `prettier` so `wiki:build` can emit formatted `index.md` in consumer projects that have not installed Prettier locally. Consumers with their own Prettier still get hook parity because build resolves the consumer's install first.
 
 **Dry run** — see what would be uploaded without publishing:
 

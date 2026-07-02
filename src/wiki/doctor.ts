@@ -6,6 +6,8 @@ import {
   MANAGED_SECTION_DELIMITER,
   WIKI_SCRIPT_KEYS,
   getPackageVersion,
+  getInstalledPackageVersion,
+  compareVersions,
   hasWikiScripts,
   inferInstallConfig,
   isPackageBinInstalled,
@@ -53,7 +55,7 @@ function readConfig(cwd: string, report: Report): InstallConfig | null {
   return null;
 }
 
-export function runDoctor(cwd: string = process.cwd()): number {
+export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
   const report: Report = { ok: [], problems: [] };
   const packageVersion = getPackageVersion();
 
@@ -62,7 +64,18 @@ export function runDoctor(cwd: string = process.cwd()): number {
   const config = readConfig(cwd, report);
 
   if (config) {
-    if (config.version === packageVersion) {
+    const installedVersion = getInstalledPackageVersion(cwd);
+    if (installedVersion && installedVersion !== config.version) {
+      if (compareVersions(installedVersion, config.version) > 0) {
+        report.problems.push(
+          `scaffold is v${config.version} but node_modules has v${installedVersion} — run npx llm-wiki-manager upgrade`,
+        );
+      } else {
+        report.problems.push(
+          `scaffold is v${config.version} but node_modules has v${installedVersion} — run npm install`,
+        );
+      }
+    } else if (config.version === packageVersion) {
       report.ok.push(`scaffold version matches package (v${packageVersion})`);
     } else {
       report.problems.push(
@@ -84,7 +97,7 @@ export function runDoctor(cwd: string = process.cwd()): number {
       }
 
       if (existsSync(join(wikiDir, 'index.md'))) {
-        if (isIndexStale(wikiDir)) {
+        if (await isIndexStale(wikiDir, cwd)) {
           report.problems.push('index.md is stale — run npm run wiki:build');
         } else {
           report.ok.push('index.md is up to date');

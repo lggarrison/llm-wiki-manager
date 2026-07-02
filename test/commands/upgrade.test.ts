@@ -90,7 +90,7 @@ describe('init safe re-run via scaffoldWikiTemplates', () => {
 });
 
 describe('migrate-pages via upgrade', () => {
-  it('remaps legacy status values', () => {
+  it('remaps legacy status values', async () => {
     const dir = makeTmpDir();
     const wikiDir = join(dir, 'wiki');
     mkdirSync(wikiDir, { recursive: true });
@@ -118,7 +118,7 @@ describe('migrate-pages via upgrade', () => {
         '\n# Status Migration\n\nCovers [legacy status values](legacy.md).\n',
     );
 
-    runPostUpgradeScripts(dir, {
+    await runPostUpgradeScripts(dir, {
       version: '0.0.0',
       projectName: 'acme',
       wikiDir: 'wiki',

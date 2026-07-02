@@ -4,7 +4,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
 import { fm, writePage } from '../helpers/wiki.js';
-import { packageBinPath } from '../../src/utils/fs.js';
+import { packageBinPath, PACKAGE_NAME, getPackageVersion } from '../../src/utils/fs.js';
 
 const tmpDirs: string[] = [];
 
@@ -15,9 +15,19 @@ function makeTmpProject(): string {
   return dir;
 }
 
-function stubInstalledCli(dir: string): void {
+function stubInstalledPackage(dir: string, version = getPackageVersion()): void {
+  const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
   mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+  mkdirSync(pkgDir, { recursive: true });
   writeFileSync(packageBinPath(dir), '');
+  writeFileSync(
+    join(pkgDir, 'package.json'),
+    JSON.stringify({ name: PACKAGE_NAME, version }, null, 2) + '\n',
+  );
+}
+
+function stubInstalledCli(dir: string): void {
+  stubInstalledPackage(dir);
 }
 
 function initProject(dir: string): ReturnType<typeof runBuiltCli> {
@@ -60,10 +70,42 @@ describe('doctor command', () => {
     expect(result.stdout).toContain('run npx llm-wiki-manager init');
   });
 
+  it('suggests npm install when node_modules lags the scaffold version', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir, '1.0.0');
+
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as { version: string };
+    config.version = '1.0.2';
+    writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('node_modules has v1.0.0');
+    expect(result.stdout).toContain('run npm install');
+  });
+
+  it('suggests upgrade when node_modules is ahead of the scaffold version', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir, '2.0.0');
+
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as { version: string };
+    config.version = '1.0.2';
+    writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('node_modules has v2.0.0');
+    expect(result.stdout).toContain('upgrade');
+  });
+
   it('suggests upgrade when the scaffold version is behind the package', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
-    stubInstalledCli(dir);
+    stubInstalledPackage(dir, '0.0.1');
 
     const configPath = join(dir, '.llm-wiki-manager.json');
     const config = JSON.parse(readFileSync(configPath, 'utf8')) as { version: string };

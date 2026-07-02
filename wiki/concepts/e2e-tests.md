@@ -10,6 +10,7 @@ code_refs:
     vitest.e2e.config.ts,
     test/e2e/cli-workflow.test.ts,
     test/e2e/tarball-smoke.test.ts,
+    test/e2e/lint-staged-idempotence.test.ts,
     test/e2e/global-setup.ts,
     test/helpers/cli.ts,
     dist/bin/cli.js,
@@ -59,7 +60,11 @@ Each test creates a temp directory with a minimal `package.json`, runs CLI comma
 
 ### `test/e2e/tarball-smoke.test.ts`
 
-Packs the package with `npm pack`, installs it into a temp consumer project, and verifies `lint`, `build`, `check`, `sync`, and `doctor` work from the published tarball layout. Also covers the npx-style workflow: `init` → verify `devDependencies` → `npm install` tarball → `npm run wiki:lint`.
+Packs the package with `npm pack`, installs it into a temp consumer project, and verifies `lint`, `build`, `check`, `sync`, and `doctor` work from the published tarball layout. Also covers the npx-style workflow: `init` → verify `devDependencies` → `npm install` tarball → `npm run wiki:lint`. After `build`, asserts bundled `prettier` is present and that `prettier --write` on `wiki/index.md` is a no-op.
+
+### `test/e2e/lint-staged-idempotence.test.ts`
+
+Reproduces the lint-staged empty-commit bug in a temp consumer project: `init` with `--focus-dirs src`, commit formatted `index.md`, then run `build` → `lint` → `prettier --write` and assert `index.md` is unchanged and `check` still passes.
 
 ## Helpers
 

@@ -76,7 +76,9 @@ describe('setup-husky command', () => {
     );
     expect(result.stdout).toContain('pre-push: created');
     expect(result.stdout).toContain('lint-staged');
+    expect(result.stdout).toContain('"lint-staged": {');
     expect(result.stdout).toContain('npm run wiki:build');
+    expect(result.stdout).toContain('merge into the root');
   });
 
   it('appends to existing pre-push without removing other commands', () => {

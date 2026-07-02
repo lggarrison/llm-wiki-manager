@@ -96,6 +96,22 @@ describe('packed tarball smoke test', () => {
     expect(build.status).toBe(0);
     expect(readFileSync(join(projectDir, 'wiki', 'index.md'), 'utf8')).toContain('Smoke');
 
+    const prettierPath = join(projectDir, 'node_modules', 'prettier');
+    const nestedPrettierPath = join(
+      projectDir,
+      'node_modules',
+      'llm-wiki-manager',
+      'node_modules',
+      'prettier',
+    );
+    expect(existsSync(prettierPath) || existsSync(nestedPrettierPath)).toBe(true);
+
+    const indexPath = join(projectDir, 'wiki', 'index.md');
+    const indexBeforePrettier = readFileSync(indexPath, 'utf8');
+    const formatIndex = run('npx', projectDir, ['prettier', '--write', 'wiki/index.md']);
+    expect(formatIndex.status).toBe(0);
+    expect(readFileSync(indexPath, 'utf8')).toBe(indexBeforePrettier);
+
     const check = run('npx', projectDir, ['llm-wiki-manager', 'check']);
     expect(check.status).toBe(0);
 

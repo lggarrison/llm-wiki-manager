@@ -27,7 +27,7 @@ type InitFlagValues = {
   focusDirs: string;
 };
 
-function parseInitArgs(argv: string[]): InitFlagValues | null {
+export function parseInitArgs(argv: string[]): InitFlagValues | null {
   const flagIndex = argv.indexOf('--project-name');
   if (flagIndex === -1) return null;
 
@@ -74,7 +74,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
 
   const focusDirs = await text({
     message: 'Directories this wiki should document (comma-separated, e.g. src, api)',
-    placeholder: 'src',
+    initialValue: 'src',
   });
   if (isCancel(focusDirs)) {
     cancel('Cancelled');
@@ -135,7 +135,7 @@ export async function init(): Promise<void> {
 
   // Generate index.md from the scaffolded pages so wiki:check passes immediately
   log.step('Building index.md…');
-  runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr }));
+  await runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr, repoRoot: cwd }));
 
   const pkgResult = mergePackageJsonScripts(cwd);
   const depResult = mergePackageJsonDevDependency(cwd);

@@ -95,10 +95,10 @@ export async function upgrade(): Promise<void> {
 
     if (!options.skipPages) {
       log.step('Migrating pages and running post-upgrade scripts…');
-      runPostUpgradeScripts(cwd, config, { skipPages: false });
+      await runPostUpgradeScripts(cwd, config, { skipPages: false });
     } else {
       log.step('Running sync, build, and lint…');
-      runPostUpgradeScripts(cwd, config, { skipPages: true });
+      await runPostUpgradeScripts(cwd, config, { skipPages: true });
     }
 
     appendUpgradeLog(cwd, config, packageVersion);

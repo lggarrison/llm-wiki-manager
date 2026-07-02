@@ -48,11 +48,11 @@ export function runUpgradeSteps(
   return { wikiMeta };
 }
 
-export function runPostUpgradeScripts(
+export async function runPostUpgradeScripts(
   projectRoot: string,
   config: InstallConfig,
   options: { skipPages?: boolean } = {},
-): void {
+): Promise<void> {
   const ctx = resolveWikiContext({
     cwd: projectRoot,
     wikiDir: config.wikiDir,
@@ -68,7 +68,7 @@ export function runPostUpgradeScripts(
   const syncStatus = runSync(ctx);
   if (syncStatus !== 0) throw new Error('sync-see-also failed');
 
-  const buildStatus = runBuild(ctx);
+  const buildStatus = await runBuild(ctx);
   if (buildStatus !== 0) throw new Error('build-index failed');
 
   const lintStatus = runLint(ctx, { warnOnly: true });

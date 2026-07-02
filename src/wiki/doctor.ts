@@ -55,7 +55,7 @@ function readConfig(cwd: string, report: Report): InstallConfig | null {
   return null;
 }
 
-export function runDoctor(cwd: string = process.cwd()): number {
+export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
   const report: Report = { ok: [], problems: [] };
   const packageVersion = getPackageVersion();
 
@@ -97,7 +97,7 @@ export function runDoctor(cwd: string = process.cwd()): number {
       }
 
       if (existsSync(join(wikiDir, 'index.md'))) {
-        if (isIndexStale(wikiDir)) {
+        if (await isIndexStale(wikiDir, cwd)) {
           report.problems.push('index.md is stale — run npm run wiki:build');
         } else {
           report.ok.push('index.md is up to date');

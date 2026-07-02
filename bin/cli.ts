@@ -65,15 +65,15 @@ async function dispatch(): Promise<number> {
     case 'lint':
       return runLint(wikiContextFromArgs(rest), { warnOnly: hasFlag(rest, '--warn-only') });
     case 'build':
-      return runBuild(wikiContextFromArgs(rest));
+      return await runBuild(wikiContextFromArgs(rest));
     case 'check':
-      return runCheck(wikiContextFromArgs(rest));
+      return await runCheck(wikiContextFromArgs(rest));
     case 'sync':
       return runSync(wikiContextFromArgs(rest), { dry: hasFlag(rest, '--dry') });
     case 'log':
       return runLog(wikiContextFromArgs(rest), rest);
     case 'doctor':
-      return runDoctor();
+      return await runDoctor();
     case 'setup-husky':
       return runSetupHusky();
     default:

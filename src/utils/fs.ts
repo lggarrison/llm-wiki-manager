@@ -53,6 +53,10 @@ function findPackageRoot(startFile: string): string {
 
 const PACKAGE_ROOT = findPackageRoot(fileURLToPath(import.meta.url));
 
+export function getPackageRoot(): string {
+  return PACKAGE_ROOT;
+}
+
 export function templatePath(...parts: string[]): string {
   return join(PACKAGE_ROOT, 'templates', ...parts);
 }

@@ -15,11 +15,11 @@ The `init` command in `src/commands/init.ts` interactively collects project sett
 
 ## Prompts and variables
 
-| Input             | Default                   | Used in                        |
-| ----------------- | ------------------------- | ------------------------------ |
-| Project name      | basename of cwd           | `AGENTS.md`, `schema.md`       |
-| Wiki directory    | `wiki`                    | paths, npm script targets      |
-| Focus directories | _(blank = whole project)_ | `schema.md`, `AGENTS.md` scope |
+| Input             | Default                                 | Used in                                          |
+| ----------------- | --------------------------------------- | ------------------------------------------------ |
+| Project name      | basename of cwd                         | `AGENTS.md`, `schema.md`                         |
+| Wiki directory    | `wiki`                                  | paths, npm script targets                        |
+| Focus directories | `src` (clear to document whole project) | `schema.md`, `AGENTS.md` scope, entity overviews |
 
 These become interpolation variables (`PROJECT_NAME`, `WIKI_DIR`, `FOCUS_DIRS`, `FOCUS_DIRS_LIST`, `INIT_TIMESTAMP`) passed to [Template System](template-system.md).
 

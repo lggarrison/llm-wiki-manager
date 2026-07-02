@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 import { readInstallConfig } from '../utils/fs.js';
+import { printLintStagedSetupGuide } from './lint-staged-snippet.js';
 
 const MARKER = '# llm-wiki-manager';
 const HUSKY_DIR = '.husky';
@@ -31,17 +32,7 @@ function amendHook(
 }
 
 function printLintStagedRecommendation(wikiDir: string): void {
-  console.log('\nRecommended pre-commit (Husky + lint-staged):\n');
-  console.log('  .husky/pre-commit');
-  console.log('    npx lint-staged\n');
-  console.log('  package.json → "lint-staged"');
-  console.log(`    "${wikiDir}/**/*.md": [`);
-  console.log('      "npm run wiki:build",');
-  console.log('      "npm run wiki:lint",');
-  console.log('      "prettier --write"');
-  console.log('    ]\n');
-  console.log('  lint-staged re-stages regenerated index.md after wiki:build.');
-  console.log('  See README § Optional git hooks for the full pattern.');
+  printLintStagedSetupGuide(wikiDir);
 }
 
 export async function runSetupHusky(cwd: string = process.cwd()): Promise<number> {

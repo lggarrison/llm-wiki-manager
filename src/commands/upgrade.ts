@@ -79,8 +79,7 @@ export async function upgrade(): Promise<void> {
 
     const pkgResult = syncPackageJsonScripts(cwd);
     const depResult = syncPackageJsonDevDependency(cwd);
-    const needsNpmInstall =
-      depResult.status === 'merged' && pkgResult.status !== 'no-package-json';
+    const needsNpmInstall = depResult.status === 'merged' && pkgResult.status !== 'no-package-json';
     if (pkgResult.status === 'synced') {
       const changes = [...pkgResult.added, ...pkgResult.updated.map((k) => `${k} (updated)`)];
       log.step(`Synced package.json wiki scripts (${changes.join(', ')})…`);

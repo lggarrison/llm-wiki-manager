@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { spawnSync } from 'child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
@@ -31,6 +31,29 @@ function makeTmpProject(): string {
   return dir;
 }
 
+function pinDevDependencyToPackedTarball(dir: string): void {
+  const packDir = mkdtempSync(join(tmpdir(), 'llm-wiki-pack-'));
+  tmpDirs.push(packDir);
+
+  const pack = run('npm', PACKAGE_ROOT, [
+    'pack',
+    '--pack-destination',
+    packDir,
+    '--ignore-scripts',
+  ]);
+  expect(pack.status).toBe(0);
+
+  const tarball = readdirSync(packDir).find((f) => f.endsWith('.tgz'));
+  expect(tarball).toBeTruthy();
+
+  const pkgPath = join(dir, 'package.json');
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+    devDependencies: Record<string, string>;
+  };
+  pkg.devDependencies['llm-wiki-manager'] = `file:${join(packDir, tarball!)}`;
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+}
+
 describe('lint-staged idempotence e2e', () => {
   it('build output survives the documented pre-commit pipeline in a temp consumer project', () => {
     const dir = makeTmpProject();
@@ -47,6 +70,8 @@ describe('lint-staged idempotence e2e', () => {
     expect(init.status).toBe(0);
 
     cpSync(join(PACKAGE_ROOT, '.prettierrc.json'), join(dir, '.prettierrc.json'));
+
+    pinDevDependencyToPackedTarball(dir);
 
     const installPrettier = run('npm', dir, ['install', '-D', 'prettier']);
     expect(installPrettier.status).toBe(0);

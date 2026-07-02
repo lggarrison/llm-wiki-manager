@@ -30,7 +30,12 @@ describe('packed tarball smoke test', () => {
     const packDir = mkdtempSync(join(tmpdir(), 'llm-wiki-pack-'));
     tmpDirs.push(packDir);
 
-    const pack = run('npm', PACKAGE_ROOT, ['pack', '--pack-destination', packDir]);
+    const pack = run('npm', PACKAGE_ROOT, [
+      'pack',
+      '--pack-destination',
+      packDir,
+      '--ignore-scripts',
+    ]);
     expect(pack.status).toBe(0);
 
     const tarball = readdirSync(packDir).find((f) => f.endsWith('.tgz'));
@@ -102,7 +107,12 @@ describe('packed tarball smoke test', () => {
     const packDir = mkdtempSync(join(tmpdir(), 'llm-wiki-pack-npx-'));
     tmpDirs.push(packDir);
 
-    const pack = run('npm', PACKAGE_ROOT, ['pack', '--pack-destination', packDir]);
+    const pack = run('npm', PACKAGE_ROOT, [
+      'pack',
+      '--pack-destination',
+      packDir,
+      '--ignore-scripts',
+    ]);
     expect(pack.status).toBe(0);
 
     const tarball = readdirSync(packDir).find((f) => f.endsWith('.tgz'));

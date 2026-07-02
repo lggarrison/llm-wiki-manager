@@ -44,7 +44,7 @@ Covers init, upgrade, and CLI meta behavior:
 | Init scaffold             | Creates wiki, `AGENTS.md`, install config, `wiki:*` npm scripts, and `devDependencies` entry |
 | Wiki CLI after init       | `lint`, `build`, and `check` on a fresh wiki with a user-added concept page                  |
 | Upgrade refresh           | Restores meta files without overwriting user content pages                                   |
-| Legacy page migration     | Upgrade calls internal `runMigrate` to rewrite deprecated frontmatter and wikilinks          |
+| Legacy page migration     | Upgrade calls internal `runMigrate` to rewrite deprecated frontmatter and body wikilinks     |
 | Init without package.json | Scaffold succeeds; no npm scripts added                                                      |
 | Re-init idempotency       | Preserves existing `log.md` and `schema.md`                                                  |
 | Upgrade dry-run           | `--dry-run` reports changes without writing files                                            |

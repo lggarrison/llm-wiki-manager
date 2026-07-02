@@ -79,6 +79,8 @@ export async function upgrade(): Promise<void> {
 
     const pkgResult = syncPackageJsonScripts(cwd);
     const depResult = syncPackageJsonDevDependency(cwd);
+    const needsNpmInstall =
+      depResult.status === 'merged' && pkgResult.status !== 'no-package-json';
     if (pkgResult.status === 'synced') {
       const changes = [...pkgResult.added, ...pkgResult.updated.map((k) => `${k} (updated)`)];
       log.step(`Synced package.json wiki scripts (${changes.join(', ')})…`);
@@ -97,13 +99,17 @@ export async function upgrade(): Promise<void> {
     appendUpgradeLog(cwd, config, packageVersion);
 
     writeInstallConfig(cwd, { ...config, version: packageVersion });
-  }
 
-  outro(
-    options.dryRun
-      ? pc.yellow('Dry run complete — no changes written.')
-      : pc.green('Upgrade complete!') +
-          `\n  • Run ${pc.bold('npm run wiki:lint')} to review any remaining issues\n` +
-          `  • See ${pc.bold(join(config.wikiDir, 'AGENTS.md'))} for updated agent instructions`,
-  );
+    outro(
+      pc.green('Upgrade complete!') +
+        '\n' +
+        (needsNpmInstall
+          ? `  • Run ${pc.bold('npm install')} so ${pc.bold('npm run wiki:*')} commands work\n`
+          : '') +
+        `  • Run ${pc.bold('npm run wiki:lint')} to review any remaining issues\n` +
+        `  • See ${pc.bold(join(config.wikiDir, 'AGENTS.md'))} for updated agent instructions`,
+    );
+  } else {
+    outro(pc.yellow('Dry run complete — no changes written.'));
+  }
 }

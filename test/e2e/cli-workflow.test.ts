@@ -98,6 +98,31 @@ describe('CLI e2e workflow', () => {
     expect(readFileSync(userPage, 'utf8')).toBe(userContentBefore);
   });
 
+  it('upgrade tells npx-style installs to install the backfilled package dependency', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const pkgPath = join(dir, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      devDependencies?: Record<string, string>;
+    };
+    delete pkg.devDependencies?.['llm-wiki-manager'];
+    if (pkg.devDependencies && Object.keys(pkg.devDependencies).length === 0) {
+      delete pkg.devDependencies;
+    }
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+    expect(upgrade.status).toBe(0);
+    expect(upgrade.stdout).toContain('npm install');
+    expect(upgrade.stdout).toContain('npm run wiki:*');
+
+    const updatedPkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      devDependencies?: Record<string, string>;
+    };
+    expect(updatedPkg.devDependencies?.['llm-wiki-manager']).toMatch(/^\^/);
+  });
+
   it('upgrade migrates legacy status values on pages', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

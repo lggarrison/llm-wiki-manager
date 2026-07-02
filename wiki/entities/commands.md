@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-07-02T11:06:12Z
 tags: [commands]
 related:
   [entities/utils.md, concepts/init-command.md, concepts/dogfooding.md, concepts/wiki-scripts.md]
@@ -17,7 +17,7 @@ Scope tag: **`commands`** (first tag).
 | File         | Role                                                                                       |
 | ------------ | ------------------------------------------------------------------------------------------ |
 | `init.ts`    | Interactive or flag-driven wiki scaffold (see [Init Command](../concepts/init-command.md)) |
-| `upgrade.ts` | Refresh templates, sync npm scripts, migrate pages, post-upgrade pipeline                  |
+| `upgrade.ts` | Refresh templates, sync npm scripts/dependency, migrate pages, post-upgrade pipeline       |
 
 ## Init flags
 

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: E2E Tests
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-02T11:06:12Z
 tags: [testing, vitest, cli]
 related:
   [concepts/unit-tests.md, concepts/init-command.md, concepts/dogfooding.md, entities/commands.md]
@@ -44,6 +44,7 @@ Covers init, upgrade, and CLI meta behavior:
 | Init scaffold             | Creates wiki, `AGENTS.md`, install config, `wiki:*` npm scripts, and `devDependencies` entry |
 | Wiki CLI after init       | `lint`, `build`, and `check` on a fresh wiki with a user-added concept page                  |
 | Upgrade refresh           | Restores meta files without overwriting user content pages                                   |
+| Upgrade dependency notice | Legacy npx-style projects are told to run `npm install` when upgrade backfills the package   |
 | Legacy page migration     | Upgrade calls internal `runMigrate` to rewrite deprecated frontmatter and wikilinks          |
 | Init without package.json | Scaffold succeeds; no npm scripts added                                                      |
 | Re-init idempotency       | Preserves existing `log.md` and `schema.md`                                                  |

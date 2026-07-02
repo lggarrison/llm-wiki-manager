@@ -378,6 +378,16 @@ function stripManagedMarkers(section: string): string {
   return body;
 }
 
+function stripLeadingManagedEndMarkers(text: string): string {
+  let result = text;
+  while (true) {
+    const trimmed = result.trimStart();
+    if (!trimmed.startsWith(MANAGED_SECTION_END)) break;
+    result = trimmed.slice(MANAGED_SECTION_END.length);
+  }
+  return result;
+}
+
 function managedBlock(section: string): string {
   return `${MANAGED_SECTION_DELIMITER}\n${stripManagedMarkers(section)}\n${MANAGED_SECTION_END}`;
 }
@@ -410,8 +420,9 @@ export function replaceManagedSection(filePath: string, section: string): boolea
 
   let afterSection: string;
   if (endIdx >= 0) {
-    afterSection = existing.slice(endIdx + MANAGED_SECTION_END.length);
-    if (afterSection.trim() === MANAGED_SECTION_END) afterSection = '';
+    afterSection = stripLeadingManagedEndMarkers(
+      existing.slice(endIdx + MANAGED_SECTION_END.length),
+    );
   } else {
     // Legacy blocks had no end marker. Preserve an unbounded tail rather than
     // risk deleting user-authored notes appended after the generated section.

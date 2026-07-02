@@ -469,6 +469,25 @@ describe('replaceManagedSection', () => {
     expect(content.match(/<!-- llm-wiki-manager -->/g)).toHaveLength(1);
     expect(content.match(/<!-- \/llm-wiki-manager -->/g)).toHaveLength(1);
   });
+
+  it('strips stray end markers from nested-marker upgrades while preserving user content', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    writeFileSync(
+      target,
+      '# My Project\n\n<!-- llm-wiki-manager -->\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n<!-- /llm-wiki-manager -->\n<!-- /llm-wiki-manager -->\n\n## My own section\n\nKeep these notes.\n',
+    );
+
+    const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh.');
+    expect(ok).toBe(true);
+
+    const content = readFileSync(target, 'utf8');
+    expect(content).toContain('Fresh.');
+    expect(content).not.toContain('Stale.');
+    expect(content).toContain('## My own section');
+    expect(content).toContain('Keep these notes.');
+    expect(content.match(/<!-- \/llm-wiki-manager -->/g)).toHaveLength(1);
+  });
 });
 
 describe('scaffoldWikiTemplates', () => {

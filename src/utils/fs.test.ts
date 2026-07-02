@@ -13,6 +13,7 @@ import {
   getInstalledPackageVersion,
   getPackageInstallStatus,
   needsPackageInstall,
+  compareVersions,
   isPackageBinInstalled,
   packageBinPath,
   PACKAGE_NAME,
@@ -491,6 +492,16 @@ describe('mergePackageJsonDevDependency', () => {
   it('returns no-package-json when package.json is missing', () => {
     const dir = makeTmpDir();
     expect(mergePackageJsonDevDependency(dir)).toEqual({ status: 'no-package-json' });
+  });
+});
+
+describe('compareVersions', () => {
+  it('orders semver components numerically', () => {
+    expect(compareVersions('1.0.0', '1.0.0')).toBe(0);
+    expect(compareVersions('1.0.1', '1.0.0')).toBeGreaterThan(0);
+    expect(compareVersions('1.0.0', '1.0.2')).toBeLessThan(0);
+    expect(compareVersions('1.1.0', '1.0.9')).toBeGreaterThan(0);
+    expect(compareVersions('2.0.0', '1.9.9')).toBeGreaterThan(0);
   });
 });
 

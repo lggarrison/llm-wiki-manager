@@ -100,6 +100,59 @@ describe('CLI e2e workflow', () => {
     expect(result.stdout).toContain('local install is v1.0.0');
   });
 
+  it('init surfaces stale node_modules across config, devDependency, outro, and doctor', () => {
+    const dir = makeTmpProject();
+    const runningVersion = getPackageVersion();
+    stubInstalledPackage(dir, '1.0.0');
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          devDependencies: { [PACKAGE_NAME]: '^1.0.0' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    const init = initProject(dir);
+    expect(init.status).toBe(0);
+    expect(init.stdout).toContain(`Scaffolded with llm-wiki-manager v${runningVersion}`);
+    expect(init.stdout).toContain('local install is v1.0.0');
+    expect(init.stdout).toContain(`scaffold used v${runningVersion}`);
+
+    const config = JSON.parse(readFileSync(join(dir, '.llm-wiki-manager.json'), 'utf8')) as {
+      version: string;
+    };
+    expect(config.version).toBe(runningVersion);
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
+      devDependencies: Record<string, string>;
+    };
+    expect(pkg.devDependencies[PACKAGE_NAME]).toBe(`^${runningVersion}`);
+
+    const doctorBefore = runBuiltCli(dir, ['doctor']);
+    expect(doctorBefore.status).toBe(1);
+    expect(doctorBefore.stdout).toContain('node_modules has v1.0.0');
+    expect(doctorBefore.stdout).toContain('npm install');
+
+    stubInstalledPackage(dir, runningVersion);
+    const doctorAfter = runBuiltCli(dir, ['doctor']);
+    expect(doctorAfter.status).toBe(0);
+    expect(doctorAfter.stdout).toContain('No problems found');
+  });
+
+  it('init outro omits Final Step when node_modules is newer than the running CLI', () => {
+    const dir = makeTmpProject();
+    stubInstalledPackage(dir, '99.0.0');
+
+    const result = initProject(dir);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).not.toContain('Final Step:');
+  });
+
   it('wiki CLI lint, build, and check after init', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
@@ -187,6 +240,16 @@ describe('CLI e2e workflow', () => {
     expect(upgrade.status).toBe(0);
     expect(upgrade.stdout).toContain('Final Step:');
     expect(upgrade.stdout).toContain('local install is v1.0.0');
+  });
+
+  it('upgrade outro omits Final Step when node_modules is newer than the running CLI', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir, '99.0.0');
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+    expect(upgrade.status).toBe(0);
+    expect(upgrade.stdout).not.toContain('Final Step:');
   });
 
   it('upgrade migrates legacy status values on pages', () => {

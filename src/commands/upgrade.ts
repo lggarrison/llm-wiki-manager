@@ -13,6 +13,7 @@ import {
   amendFile,
   syncPackageJsonScripts,
   syncPackageJsonDevDependency,
+  isPackageBinInstalled,
   MANAGED_SECTION_DELIMITER,
 } from '../utils/fs.js';
 import {
@@ -79,6 +80,8 @@ export async function upgrade(): Promise<void> {
 
     const pkgResult = syncPackageJsonScripts(cwd);
     const depResult = syncPackageJsonDevDependency(cwd);
+    const hasPackageJson = pkgResult.status !== 'no-package-json';
+    const showNpmInstallReminder = hasPackageJson && !isPackageBinInstalled(cwd);
     if (pkgResult.status === 'synced') {
       const changes = [...pkgResult.added, ...pkgResult.updated.map((k) => `${k} (updated)`)];
       log.step(`Synced package.json wiki scripts (${changes.join(', ')})…`);
@@ -97,13 +100,16 @@ export async function upgrade(): Promise<void> {
     appendUpgradeLog(cwd, config, packageVersion);
 
     writeInstallConfig(cwd, { ...config, version: packageVersion });
-  }
 
-  outro(
-    options.dryRun
-      ? pc.yellow('Dry run complete — no changes written.')
-      : pc.green('Upgrade complete!') +
-          `\n  • Run ${pc.bold('npm run wiki:lint')} to review any remaining issues\n` +
-          `  • See ${pc.bold(join(config.wikiDir, 'AGENTS.md'))} for updated agent instructions`,
-  );
+    outro(
+      pc.green('Upgrade complete!') +
+        (showNpmInstallReminder
+          ? `\n  ${pc.yellow('Final Step:')} ${pc.bold('npm install')} — required before ${pc.bold('npm run wiki:*')} works\n`
+          : '') +
+        `\n  • Run ${pc.bold('npm run wiki:lint')} to review any remaining issues\n` +
+        `  • See ${pc.bold(join(config.wikiDir, 'AGENTS.md'))} for updated agent instructions`,
+    );
+  } else {
+    outro(pc.yellow('Dry run complete — no changes written.'));
+  }
 }

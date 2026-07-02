@@ -54,13 +54,13 @@ Only `dist/` and `templates/` ship via npm (`"files"` allowlist). Dogfooded `wik
 
 ## Toolchain
 
-| Path                            | Role                                                   |
-| ------------------------------- | ------------------------------------------------------ |
-| `.nvmrc`                        | Node pin for version managers and CI (currently 24)    |
-| `package.json` `engines.node`   | npm minimum Node version (`>=20.12.0`)                 |
-| `.github/workflows/ci.yml`      | Lint, test, wiki checks on push/PR                     |
-| `.github/workflows/release.yml` | Release automation (see [Release](release.md))         |
-| `.github/dependabot.yml`        | Weekly dependency PRs (with `@types/node` major guard) |
+| Path                            | Role                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------- |
+| `.nvmrc`                        | Node pin for version managers and CI (currently 24)                                     |
+| `package.json` `engines.node`   | npm minimum Node version (`>=20.12.0`)                                                  |
+| `.github/workflows/ci.yml`      | Lint, test, wiki checks on push/PR                                                      |
+| `.github/workflows/release.yml` | Release automation and post-release `main` → `develop` sync (see [Release](release.md)) |
+| `.github/dependabot.yml`        | Weekly dependency PRs (with `@types/node` major guard)                                  |
 
 See [Node Version and @types/node Alignment](node-version-and-types.md) for how the Node pin, `@types/node`, Dependabot, and CI fit together.
 

@@ -1,9 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
 import { fm, writePage, PACKAGE_ROOT } from '../helpers/wiki.js';
+import { packageBinPath } from '../../src/utils/fs.js';
 
 const tmpDirs: string[] = [];
 
@@ -48,9 +49,11 @@ describe('CLI e2e workflow', () => {
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
+      devDependencies?: Record<string, string>;
     };
     expect(pkg.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
     expect(pkg.scripts['wiki:check']).toBe('llm-wiki-manager check');
+    expect(pkg.devDependencies?.['llm-wiki-manager']).toMatch(/^\^/);
   });
 
   it('wiki CLI lint, build, and check after init', () => {
@@ -194,6 +197,8 @@ describe('CLI e2e workflow', () => {
     );
 
     expect(initProject(dir).status).toBe(0);
+    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+    writeFileSync(packageBinPath(dir), '');
 
     const doctor = runBuiltCli(dir, ['doctor']);
     expect(doctor.status).toBe(0);

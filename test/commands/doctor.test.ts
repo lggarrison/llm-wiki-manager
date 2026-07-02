@@ -1,9 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
 import { fm, writePage } from '../helpers/wiki.js';
+import { packageBinPath } from '../../src/utils/fs.js';
 
 const tmpDirs: string[] = [];
 
@@ -12,6 +13,11 @@ function makeTmpProject(): string {
   writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
   tmpDirs.push(dir);
   return dir;
+}
+
+function stubInstalledCli(dir: string): void {
+  mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+  writeFileSync(packageBinPath(dir), '');
 }
 
 function initProject(dir: string): ReturnType<typeof runBuiltCli> {
@@ -28,10 +34,21 @@ describe('doctor command', () => {
   it('reports no problems on a fresh init', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
+    stubInstalledCli(dir);
 
     const result = runBuiltCli(dir, ['doctor']);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('No problems found');
+  });
+
+  it('reports a missing local install when wiki scripts exist', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('llm-wiki-manager is not installed locally');
+    expect(result.stdout).toContain('npm install');
   });
 
   it('fails and suggests init when nothing is scaffolded', () => {
@@ -44,6 +61,7 @@ describe('doctor command', () => {
   it('suggests upgrade when the scaffold version is behind the package', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
+    stubInstalledCli(dir);
 
     const configPath = join(dir, '.llm-wiki-manager.json');
     const config = JSON.parse(readFileSync(configPath, 'utf8')) as { version: string };
@@ -102,6 +120,7 @@ describe('doctor command', () => {
   it('accepts .llm-wiki-manager.json written with a UTF-8 BOM', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
+    stubInstalledCli(dir);
 
     const configPath = join(dir, '.llm-wiki-manager.json');
     const config = JSON.parse(readFileSync(configPath, 'utf8'));
@@ -130,6 +149,7 @@ describe('doctor command', () => {
     const indexPath = join(dir, 'wiki', 'index.md');
     const lf = readFileSync(indexPath, 'utf8');
     writeFileSync(indexPath, lf.replace(/\n/g, '\r\n'), 'utf8');
+    stubInstalledCli(dir);
 
     const result = runBuiltCli(dir, ['doctor']);
     expect(result.status).toBe(0);

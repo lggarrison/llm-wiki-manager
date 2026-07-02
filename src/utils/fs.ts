@@ -10,6 +10,7 @@ import {
 import { join, dirname, relative } from 'path';
 import { fileURLToPath } from 'url';
 
+export const PACKAGE_NAME = 'llm-wiki-manager';
 export const INSTALL_CONFIG_FILENAME = '.llm-wiki-manager.json';
 export const MANAGED_SECTION_DELIMITER = '<!-- llm-wiki-manager -->';
 export const MANAGED_SECTION_END = '<!-- /llm-wiki-manager -->';
@@ -343,6 +344,53 @@ export function wikiScriptCandidates(): Record<WikiScriptKey, string> {
 
 export type MergePackageJsonResult =
   { status: 'no-package-json' } | { status: 'merged'; added: string[] } | { status: 'unchanged' };
+
+export type MergeDevDependencyResult =
+  { status: 'no-package-json' } | { status: 'merged'; version: string } | { status: 'unchanged' };
+
+export function packageBinPath(projectRoot: string, packageName = PACKAGE_NAME): string {
+  return join(projectRoot, 'node_modules', '.bin', packageName);
+}
+
+export function isPackageBinInstalled(projectRoot: string, packageName = PACKAGE_NAME): boolean {
+  const binPath = packageBinPath(projectRoot, packageName);
+  return existsSync(binPath) || existsSync(`${binPath}.cmd`);
+}
+
+export function hasWikiScripts(scripts: Record<string, string> | undefined): boolean {
+  if (!scripts) return false;
+  return WIKI_SCRIPT_KEYS.some((key) => key in scripts);
+}
+
+export function mergePackageJsonDevDependency(
+  projectRoot: string,
+  version: string = getPackageVersion(),
+): MergeDevDependencyResult {
+  const pkgPath = join(projectRoot, 'package.json');
+  if (!existsSync(pkgPath)) return { status: 'no-package-json' };
+
+  const pkg = readJsonFile<{
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  }>(pkgPath);
+
+  if (pkg.dependencies?.[PACKAGE_NAME] || pkg.devDependencies?.[PACKAGE_NAME]) {
+    return { status: 'unchanged' };
+  }
+
+  if (!pkg.devDependencies) pkg.devDependencies = {};
+  pkg.devDependencies[PACKAGE_NAME] = `^${version}`;
+
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+  return { status: 'merged', version };
+}
+
+export function syncPackageJsonDevDependency(
+  projectRoot: string,
+  version: string = getPackageVersion(),
+): MergeDevDependencyResult {
+  return mergePackageJsonDevDependency(projectRoot, version);
+}
 
 export function mergePackageJsonScripts(projectRoot: string): MergePackageJsonResult {
   const pkgPath = join(projectRoot, 'package.json');

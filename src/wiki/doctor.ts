@@ -6,7 +6,9 @@ import {
   MANAGED_SECTION_DELIMITER,
   WIKI_SCRIPT_KEYS,
   getPackageVersion,
+  hasWikiScripts,
   inferInstallConfig,
+  isPackageBinInstalled,
   readInstallConfig,
   readJsonFile,
   wikiScriptCandidates,
@@ -113,6 +115,12 @@ export function runDoctor(cwd: string = process.cwd()): number {
         } else {
           report.problems.push(
             `package.json wiki script(s) missing or outdated: ${outdated.join(', ')} — run upgrade to sync`,
+          );
+        }
+
+        if (hasWikiScripts(scripts) && !isPackageBinInstalled(cwd)) {
+          report.problems.push(
+            'llm-wiki-manager is not installed locally — run npm install (or npm install --save-dev llm-wiki-manager)',
           );
         }
       } catch {

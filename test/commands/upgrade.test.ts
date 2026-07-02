@@ -108,7 +108,14 @@ describe('migrate-pages via upgrade', () => {
     writePage(
       wikiDir,
       'concepts/legacy.md',
-      fm({ status: 'draft', title: 'Legacy', type: 'concept' }) + '\n# Legacy\n',
+      fm({ status: 'draft', title: 'Legacy', type: 'concept' }) +
+        '\n# Legacy\n\nSee also [Status Migration](status-migration.md).\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/status-migration.md',
+      fm({ title: 'Status Migration', type: 'concept' }) +
+        '\n# Status Migration\n\nCovers [legacy status values](legacy.md).\n',
     );
 
     runPostUpgradeScripts(dir, {

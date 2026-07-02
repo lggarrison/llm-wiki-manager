@@ -57,13 +57,16 @@ Install from [npm](https://www.npmjs.com/package/llm-wiki-manager) or [GitHub](h
 
 ### From npm (recommended)
 
-Run without adding a dependency:
+Run without adding a dependency first:
 
 ```bash
 npx llm-wiki-manager init
+npm install
 ```
 
-Or add it as a dev dependency in your project:
+`init` adds `llm-wiki-manager` to `devDependencies` and `wiki:*` npm scripts when `package.json` exists. Run `npm install` afterward so `npm run wiki:*` commands resolve the local CLI binary.
+
+Or install the package before init:
 
 ```bash
 npm install --save-dev llm-wiki-manager
@@ -147,10 +150,11 @@ npx llm-wiki-manager init \
 
 After `init` completes:
 
-1. Open `wiki/schema.md` to review the conventions your agent will follow
-2. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
-3. Run `npx llm-wiki-manager doctor` (or `npm run wiki:check`) to confirm the scaffold is healthy — `init` generates a fresh `index.md`, so `wiki:check` should pass immediately
-4. Run `npm run wiki:lint` to validate page structure
+1. Run `npm install` if you used `npx llm-wiki-manager init` without installing first — `init` records `llm-wiki-manager` in `devDependencies`, but the binary is not available until dependencies are installed
+2. Open `wiki/schema.md` to review the conventions your agent will follow
+3. Point your LLM agent at `AGENTS.md` (repo root) — it directs to `wiki/AGENTS.md` for full instructions
+4. Run `npx llm-wiki-manager doctor` (or `npm run wiki:check` after `npm install`) to confirm the scaffold is healthy — `init` generates a fresh `index.md`, so `wiki:check` should pass immediately
+5. Run `npm run wiki:lint` to validate page structure
 
 If your project has no `package.json`, invoke the CLI directly (see [Managing the wiki](#managing-the-wiki)).
 
@@ -411,8 +415,16 @@ status: wip # active | wip | deprecated
 
 **1. Install dependencies**
 
+If you used `npx llm-wiki-manager init`, `llm-wiki-manager` is already in `devDependencies` — install it along with hook tooling:
+
 ```bash
 npm install -D husky lint-staged prettier
+```
+
+If the package is not in `devDependencies` yet, include it in the install command:
+
+```bash
+npm install -D llm-wiki-manager husky lint-staged prettier
 ```
 
 **2. Pre-push — initialize Husky and wire `wiki:check`**

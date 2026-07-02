@@ -147,7 +147,7 @@ async function buildFinalIndexOutput(
   const { output: rawOutput, pages } = buildIndexOutput(wikiDir);
   const indexPath = join(wikiDir, 'index.md');
   const formatted = await formatIndexMarkdown(rawOutput, indexPath, repoRoot);
-  return { output: normalizeEol(formatted), pages };
+  return { output: formatted, pages };
 }
 
 export async function isIndexStale(wikiDir: string, repoRoot: string): Promise<boolean> {
@@ -155,7 +155,7 @@ export async function isIndexStale(wikiDir: string, repoRoot: string): Promise<b
   const { output } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
   const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
-  return normalizeEol(existing) !== output;
+  return normalizeEol(existing) !== normalizeEol(output);
 }
 
 export async function runBuild(ctx: WikiContext): Promise<number> {
@@ -172,7 +172,7 @@ export async function runCheck(ctx: WikiContext): Promise<number> {
   const { output, pages } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
   const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
-  if (normalizeEol(existing) !== output) {
+  if (normalizeEol(existing) !== normalizeEol(output)) {
     console.error('✗ index.md is stale — run npm run wiki:build');
     return 1;
   }

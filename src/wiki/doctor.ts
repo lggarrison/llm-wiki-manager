@@ -6,6 +6,7 @@ import {
   MANAGED_SECTION_DELIMITER,
   WIKI_SCRIPT_KEYS,
   getPackageVersion,
+  getInstalledPackageVersion,
   hasWikiScripts,
   inferInstallConfig,
   isPackageBinInstalled,
@@ -62,7 +63,12 @@ export function runDoctor(cwd: string = process.cwd()): number {
   const config = readConfig(cwd, report);
 
   if (config) {
-    if (config.version === packageVersion) {
+    const installedVersion = getInstalledPackageVersion(cwd);
+    if (installedVersion && installedVersion !== config.version) {
+      report.problems.push(
+        `scaffold is v${config.version} but node_modules has v${installedVersion} — run npm install`,
+      );
+    } else if (config.version === packageVersion) {
       report.ok.push(`scaffold version matches package (v${packageVersion})`);
     } else {
       report.problems.push(

@@ -348,7 +348,15 @@ export type MergePackageJsonResult =
   { status: 'no-package-json' } | { status: 'merged'; added: string[] } | { status: 'unchanged' };
 
 export type MergeDevDependencyResult =
-  { status: 'no-package-json' } | { status: 'merged'; version: string } | { status: 'unchanged' };
+  | { status: 'no-package-json' }
+  | { status: 'merged'; version: string }
+  | { status: 'updated'; version: string; previous: string }
+  | { status: 'unchanged' };
+
+export type PackageInstallStatus =
+  | { needsInstall: false }
+  | { needsInstall: true; reason: 'missing' }
+  | { needsInstall: true; reason: 'stale'; installedVersion: string; targetVersion: string };
 
 export function packageBinPath(projectRoot: string, packageName = PACKAGE_NAME): string {
   return join(projectRoot, 'node_modules', '.bin', packageName);
@@ -357,6 +365,41 @@ export function packageBinPath(projectRoot: string, packageName = PACKAGE_NAME):
 export function isPackageBinInstalled(projectRoot: string, packageName = PACKAGE_NAME): boolean {
   const binPath = packageBinPath(projectRoot, packageName);
   return existsSync(binPath) || existsSync(`${binPath}.cmd`);
+}
+
+export function getInstalledPackageVersion(
+  projectRoot: string,
+  packageName = PACKAGE_NAME,
+): string | null {
+  const pkgPath = join(projectRoot, 'node_modules', packageName, 'package.json');
+  if (!existsSync(pkgPath)) return null;
+  try {
+    return readJsonFile<{ version: string }>(pkgPath).version;
+  } catch {
+    return null;
+  }
+}
+
+export function getPackageInstallStatus(
+  projectRoot: string,
+  targetVersion: string = getPackageVersion(),
+  packageName = PACKAGE_NAME,
+): PackageInstallStatus {
+  const installedVersion = getInstalledPackageVersion(projectRoot, packageName);
+  if (!installedVersion) {
+    return { needsInstall: true, reason: 'missing' };
+  }
+  if (installedVersion !== targetVersion) {
+    return { needsInstall: true, reason: 'stale', installedVersion, targetVersion };
+  }
+  return { needsInstall: false };
+}
+
+export function needsPackageInstall(
+  projectRoot: string,
+  targetVersion: string = getPackageVersion(),
+): boolean {
+  return getPackageInstallStatus(projectRoot, targetVersion).needsInstall;
 }
 
 export function hasWikiScripts(scripts: Record<string, string> | undefined): boolean {
@@ -376,14 +419,23 @@ export function mergePackageJsonDevDependency(
     devDependencies?: Record<string, string>;
   }>(pkgPath);
 
-  if (pkg.dependencies?.[PACKAGE_NAME] || pkg.devDependencies?.[PACKAGE_NAME]) {
+  if (pkg.dependencies?.[PACKAGE_NAME]) {
+    return { status: 'unchanged' };
+  }
+
+  const desired = `^${version}`;
+  const existing = pkg.devDependencies?.[PACKAGE_NAME];
+  if (existing === desired) {
     return { status: 'unchanged' };
   }
 
   if (!pkg.devDependencies) pkg.devDependencies = {};
-  pkg.devDependencies[PACKAGE_NAME] = `^${version}`;
+  pkg.devDependencies[PACKAGE_NAME] = desired;
 
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+  if (existing) {
+    return { status: 'updated', version, previous: existing };
+  }
   return { status: 'merged', version };
 }
 

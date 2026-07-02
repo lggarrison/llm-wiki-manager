@@ -4,7 +4,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
 import { fm, writePage, PACKAGE_ROOT } from '../helpers/wiki.js';
-import { packageBinPath } from '../../src/utils/fs.js';
+import { packageBinPath, PACKAGE_NAME, getPackageVersion } from '../../src/utils/fs.js';
 
 const tmpDirs: string[] = [];
 
@@ -23,6 +23,17 @@ function makeTmpProject(): string {
 
 function initProject(dir: string, extraArgs: string[] = []): ReturnType<typeof runBuiltCli> {
   return runBuiltCli(dir, ['init', '--project-name', 'acme', '--wiki-dir', 'wiki', ...extraArgs]);
+}
+
+function stubInstalledPackage(dir: string, version = getPackageVersion()): void {
+  const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+  mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+  mkdirSync(pkgDir, { recursive: true });
+  writeFileSync(packageBinPath(dir), '');
+  writeFileSync(
+    join(pkgDir, 'package.json'),
+    JSON.stringify({ name: PACKAGE_NAME, version }, null, 2) + '\n',
+  );
 }
 
 afterEach(() => {
@@ -67,15 +78,26 @@ describe('CLI e2e workflow', () => {
     expect(result.stdout).toContain('required before');
   });
 
-  it('init outro omits Final Step npm install when local bin exists', () => {
+  it('init outro omits Final Step npm install when installed version matches', () => {
     const dir = makeTmpProject();
-    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
-    writeFileSync(packageBinPath(dir), '');
+    stubInstalledPackage(dir);
 
     const result = initProject(dir);
 
     expect(result.status).toBe(0);
     expect(result.stdout).not.toContain('Final Step:');
+  });
+
+  it('init outro shows stale npm install reminder when node_modules lags', () => {
+    const dir = makeTmpProject();
+    stubInstalledPackage(dir, '1.0.0');
+
+    const result = initProject(dir);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Final Step:');
+    expect(result.stdout).toContain('npm install');
+    expect(result.stdout).toContain('local install is v1.0.0');
   });
 
   it('wiki CLI lint, build, and check after init', () => {
@@ -146,16 +168,25 @@ describe('CLI e2e workflow', () => {
     expect(updatedPkg.devDependencies?.['llm-wiki-manager']).toMatch(/^\^/);
   });
 
-  it('upgrade outro omits Final Step npm install when local bin exists', () => {
+  it('upgrade outro omits Final Step npm install when installed version matches', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
-
-    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
-    writeFileSync(packageBinPath(dir), '');
+    stubInstalledPackage(dir);
 
     const upgrade = runBuiltCli(dir, ['upgrade']);
     expect(upgrade.status).toBe(0);
     expect(upgrade.stdout).not.toContain('Final Step:');
+  });
+
+  it('upgrade outro shows stale npm install reminder when node_modules lags', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir, '1.0.0');
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+    expect(upgrade.status).toBe(0);
+    expect(upgrade.stdout).toContain('Final Step:');
+    expect(upgrade.stdout).toContain('local install is v1.0.0');
   });
 
   it('upgrade migrates legacy status values on pages', () => {

@@ -10,6 +10,9 @@ import {
   mergePackageJsonScripts,
   mergePackageJsonDevDependency,
   syncPackageJsonScripts,
+  getInstalledPackageVersion,
+  getPackageInstallStatus,
+  needsPackageInstall,
   isPackageBinInstalled,
   packageBinPath,
   PACKAGE_NAME,
@@ -408,25 +411,43 @@ describe('mergePackageJsonDevDependency', () => {
     expect(pkg.devDependencies).toEqual({ [PACKAGE_NAME]: '^1.0.0' });
   });
 
-  it('does not overwrite an existing devDependency', () => {
+  it('updates an existing devDependency to match the running version', () => {
     const dir = makeTmpDir();
     writeFileSync(
       join(dir, 'package.json'),
       JSON.stringify(
         {
           name: 'acme',
-          devDependencies: { [PACKAGE_NAME]: '1.0.0' },
+          devDependencies: { [PACKAGE_NAME]: '^1.0.0' },
         },
         null,
         2,
       ) + '\n',
     );
 
-    const result = mergePackageJsonDevDependency(dir, '2.0.0');
-    expect(result).toEqual({ status: 'unchanged' });
+    const result = mergePackageJsonDevDependency(dir, '1.0.2');
+    expect(result).toEqual({ status: 'updated', version: '1.0.2', previous: '^1.0.0' });
 
     const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    expect(pkg.devDependencies[PACKAGE_NAME]).toBe('1.0.0');
+    expect(pkg.devDependencies[PACKAGE_NAME]).toBe('^1.0.2');
+  });
+
+  it('does not overwrite an existing devDependency when already on target version', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          devDependencies: { [PACKAGE_NAME]: '^1.0.2' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    const result = mergePackageJsonDevDependency(dir, '1.0.2');
+    expect(result).toEqual({ status: 'unchanged' });
   });
 
   it('does not overwrite an existing dependency entry', () => {
@@ -449,6 +470,63 @@ describe('mergePackageJsonDevDependency', () => {
   it('returns no-package-json when package.json is missing', () => {
     const dir = makeTmpDir();
     expect(mergePackageJsonDevDependency(dir)).toEqual({ status: 'no-package-json' });
+  });
+});
+
+describe('getPackageInstallStatus', () => {
+  it('reports missing when node_modules has no package', () => {
+    const dir = makeTmpDir();
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({
+      needsInstall: true,
+      reason: 'missing',
+    });
+    expect(needsPackageInstall(dir, '1.0.2')).toBe(true);
+  });
+
+  it('reports stale when installed version differs from target', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '1.0.0' }, null, 2) + '\n',
+    );
+    mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
+    writeFileSync(packageBinPath(dir), '');
+
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({
+      needsInstall: true,
+      reason: 'stale',
+      installedVersion: '1.0.0',
+      targetVersion: '1.0.2',
+    });
+  });
+
+  it('reports no install needed when versions match', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '1.0.2' }, null, 2) + '\n',
+    );
+
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({ needsInstall: false });
+    expect(needsPackageInstall(dir, '1.0.2')).toBe(false);
+  });
+});
+
+describe('getInstalledPackageVersion', () => {
+  it('reads the installed package version from node_modules', () => {
+    const dir = makeTmpDir();
+    const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(
+      join(pkgDir, 'package.json'),
+      JSON.stringify({ name: PACKAGE_NAME, version: '1.0.2' }, null, 2) + '\n',
+    );
+
+    expect(getInstalledPackageVersion(dir)).toBe('1.0.2');
   });
 });
 

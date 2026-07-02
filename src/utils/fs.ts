@@ -436,6 +436,28 @@ function stripLeadingManagedEndMarkers(text: string): string {
   return result;
 }
 
+function findManagedSectionEnd(text: string, fromIndex: number): number {
+  let inFence = false;
+  let position = fromIndex;
+
+  while (position < text.length) {
+    const newline = text.indexOf('\n', position);
+    const lineEnd = newline >= 0 ? newline + 1 : text.length;
+    const line = text.slice(position, lineEnd);
+    const lineWithoutEol = line.replace(/\r?\n$/, '');
+    const isFence = /^\s*(```|~~~)/.test(lineWithoutEol);
+
+    if (!inFence && lineWithoutEol.trim() === MANAGED_SECTION_END) {
+      return position + line.indexOf(MANAGED_SECTION_END);
+    }
+
+    if (isFence) inFence = !inFence;
+    position = lineEnd;
+  }
+
+  return -1;
+}
+
 function managedBlock(section: string): string {
   return `${MANAGED_SECTION_DELIMITER}\n${stripManagedMarkers(section)}\n${MANAGED_SECTION_END}`;
 }
@@ -464,7 +486,7 @@ export function replaceManagedSection(filePath: string, section: string): boolea
   if (start < 0) return false;
 
   const afterDelimiter = start + MANAGED_SECTION_DELIMITER.length;
-  const endIdx = existing.indexOf(MANAGED_SECTION_END, afterDelimiter);
+  const endIdx = findManagedSectionEnd(existing, afterDelimiter);
 
   let afterSection: string;
   if (endIdx >= 0) {

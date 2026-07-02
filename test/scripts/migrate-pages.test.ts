@@ -139,6 +139,54 @@ describe('migrate-pages', () => {
     );
   });
 
+  it('does not rewrite legacy syntax inside fenced code examples', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/caching.md',
+      fm({ title: 'Caching', type: 'concept' }) + '\n# Caching\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/examples.md',
+      fm({
+        status: 'draft',
+        title: 'Examples',
+        type: 'concept',
+        last_updated: '2026-01-15',
+      }) +
+        [
+          '',
+          '# Examples',
+          '',
+          'See [[caching]] for real docs.',
+          '',
+          '```markdown',
+          'status: draft',
+          'last_updated: 2026-01-15',
+          'Use [[caching]] in Obsidian examples.',
+          '```',
+          '',
+        ].join('\n'),
+    );
+
+    runMigrateWiki(wikiDir);
+
+    const content = readFileSync(join(wikiDir, 'concepts', 'examples.md'), 'utf8');
+    expect(content).toContain('status: wip');
+    expect(content).toContain('last_updated: 2026-01-15T00:00:00Z');
+    expect(content).toContain('[caching](caching.md)');
+    expect(content).toContain(
+      [
+        '```markdown',
+        'status: draft',
+        'last_updated: 2026-01-15',
+        'Use [[caching]] in Obsidian examples.',
+        '```',
+      ].join('\n'),
+    );
+  });
+
   it('supports --dry-run without writing files', () => {
     const { wikiDir } = makeTmpProject();
     writePage(

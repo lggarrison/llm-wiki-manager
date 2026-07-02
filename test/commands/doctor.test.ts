@@ -86,6 +86,22 @@ describe('doctor command', () => {
     expect(result.stdout).toContain('run npm install');
   });
 
+  it('suggests upgrade when node_modules is ahead of the scaffold version', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir, '2.0.0');
+
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as { version: string };
+    config.version = '1.0.2';
+    writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('node_modules has v2.0.0');
+    expect(result.stdout).toContain('upgrade');
+  });
+
   it('suggests upgrade when the scaffold version is behind the package', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

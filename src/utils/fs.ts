@@ -358,6 +358,22 @@ export type PackageInstallStatus =
   | { needsInstall: true; reason: 'missing' }
   | { needsInstall: true; reason: 'stale'; installedVersion: string; targetVersion: string };
 
+function parsePinnedVersion(range: string): string | null {
+  const match = range.match(/(\d+\.\d+\.\d+)/);
+  return match?.[1] ?? null;
+}
+
+export function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map((part) => Number.parseInt(part, 10));
+  const pb = b.split('.').map((part) => Number.parseInt(part, 10));
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const da = pa[i] ?? 0;
+    const db = pb[i] ?? 0;
+    if (da !== db) return da - db;
+  }
+  return 0;
+}
+
 export function packageBinPath(projectRoot: string, packageName = PACKAGE_NAME): string {
   return join(projectRoot, 'node_modules', '.bin', packageName);
 }
@@ -389,8 +405,11 @@ export function getPackageInstallStatus(
   if (!installedVersion) {
     return { needsInstall: true, reason: 'missing' };
   }
-  if (installedVersion !== targetVersion) {
+  if (compareVersions(installedVersion, targetVersion) < 0) {
     return { needsInstall: true, reason: 'stale', installedVersion, targetVersion };
+  }
+  if (!isPackageBinInstalled(projectRoot, packageName)) {
+    return { needsInstall: true, reason: 'missing' };
   }
   return { needsInstall: false };
 }
@@ -427,6 +446,13 @@ export function mergePackageJsonDevDependency(
   const existing = pkg.devDependencies?.[PACKAGE_NAME];
   if (existing === desired) {
     return { status: 'unchanged' };
+  }
+
+  if (existing) {
+    const existingVersion = parsePinnedVersion(existing);
+    if (existingVersion && compareVersions(version, existingVersion) <= 0) {
+      return { status: 'unchanged' };
+    }
   }
 
   if (!pkg.devDependencies) pkg.devDependencies = {};

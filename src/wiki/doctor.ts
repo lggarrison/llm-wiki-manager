@@ -7,6 +7,7 @@ import {
   WIKI_SCRIPT_KEYS,
   getPackageVersion,
   getInstalledPackageVersion,
+  compareVersions,
   hasWikiScripts,
   inferInstallConfig,
   isPackageBinInstalled,
@@ -65,9 +66,15 @@ export function runDoctor(cwd: string = process.cwd()): number {
   if (config) {
     const installedVersion = getInstalledPackageVersion(cwd);
     if (installedVersion && installedVersion !== config.version) {
-      report.problems.push(
-        `scaffold is v${config.version} but node_modules has v${installedVersion} — run npm install`,
-      );
+      if (compareVersions(installedVersion, config.version) > 0) {
+        report.problems.push(
+          `scaffold is v${config.version} but node_modules has v${installedVersion} — run npx llm-wiki-manager upgrade`,
+        );
+      } else {
+        report.problems.push(
+          `scaffold is v${config.version} but node_modules has v${installedVersion} — run npm install`,
+        );
+      }
     } else if (config.version === packageVersion) {
       report.ok.push(`scaffold version matches package (v${packageVersion})`);
     } else {

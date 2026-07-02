@@ -367,8 +367,19 @@ export function mergePackageJsonScripts(projectRoot: string): MergePackageJsonRe
   return { status: 'merged', added };
 }
 
+function stripManagedMarkers(section: string): string {
+  let body = section.trim();
+  if (body.startsWith(MANAGED_SECTION_DELIMITER)) {
+    body = body.slice(MANAGED_SECTION_DELIMITER.length).trim();
+  }
+  if (body.endsWith(MANAGED_SECTION_END)) {
+    body = body.slice(0, -MANAGED_SECTION_END.length).trim();
+  }
+  return body;
+}
+
 function managedBlock(section: string): string {
-  return `${MANAGED_SECTION_DELIMITER}\n${section.trim()}\n${MANAGED_SECTION_END}`;
+  return `${MANAGED_SECTION_DELIMITER}\n${stripManagedMarkers(section)}\n${MANAGED_SECTION_END}`;
 }
 
 export function amendFile(filePath: string, section: string): boolean {
@@ -400,11 +411,11 @@ export function replaceManagedSection(filePath: string, section: string): boolea
   let afterSection: string;
   if (endIdx >= 0) {
     afterSection = existing.slice(endIdx + MANAGED_SECTION_END.length);
+    if (afterSection.trim() === MANAGED_SECTION_END) afterSection = '';
   } else {
-    // Legacy block without an end marker: assume it runs to the next HTML
-    // comment, or to end of file when there is none.
-    const nextMarker = existing.indexOf('<!--', afterDelimiter);
-    afterSection = nextMarker >= 0 ? existing.slice(nextMarker) : '';
+    // Legacy blocks had no end marker. Preserve an unbounded tail rather than
+    // risk deleting user-authored notes appended after the generated section.
+    afterSection = existing.slice(afterDelimiter);
   }
 
   const before = existing.slice(0, start).trimEnd();

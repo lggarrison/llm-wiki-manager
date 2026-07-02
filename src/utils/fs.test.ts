@@ -389,7 +389,7 @@ describe('replaceManagedSection', () => {
     const target = join(dir, 'AGENTS.md');
     writeFileSync(
       target,
-      '# My Project\n\nCustom notes.\n\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n',
+      '# My Project\n\nCustom notes.\n\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n<!-- /llm-wiki-manager -->\n',
     );
 
     const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh instructions.');
@@ -429,17 +429,22 @@ describe('replaceManagedSection', () => {
     expect(content).toContain('Hand-written notes, no HTML comment anywhere.');
   });
 
-  it('upgrades a legacy block without an end marker and adds one', () => {
+  it('preserves an unbounded legacy block without an end marker', () => {
     const dir = makeTmpDir();
     const target = join(dir, 'AGENTS.md');
-    writeFileSync(target, '# My Project\n\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n');
+    writeFileSync(
+      target,
+      '# My Project\n\n<!-- llm-wiki-manager -->\n# Old Wiki\n\nStale.\n\n## My own section\n\nKeep these notes.\n',
+    );
 
     const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh.');
     expect(ok).toBe(true);
 
     const content = readFileSync(target, 'utf8');
     expect(content).toContain('Fresh.');
-    expect(content).not.toContain('Stale.');
+    expect(content).toContain('Stale.');
+    expect(content).toContain('## My own section');
+    expect(content).toContain('Keep these notes.');
     expect(content).toContain('<!-- /llm-wiki-manager -->');
   });
 
@@ -450,6 +455,19 @@ describe('replaceManagedSection', () => {
     const content = readFileSync(target, 'utf8');
     expect(content).toContain('<!-- llm-wiki-manager -->');
     expect(content).toContain('<!-- /llm-wiki-manager -->');
+  });
+
+  it('does not duplicate markers when the section template already includes them', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    amendFile(
+      target,
+      '<!-- llm-wiki-manager -->\n\n# LLM Wiki\n\nInstructions.\n\n<!-- /llm-wiki-manager -->',
+    );
+
+    const content = readFileSync(target, 'utf8');
+    expect(content.match(/<!-- llm-wiki-manager -->/g)).toHaveLength(1);
+    expect(content.match(/<!-- \/llm-wiki-manager -->/g)).toHaveLength(1);
   });
 });
 

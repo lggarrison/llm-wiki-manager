@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-07-02T01:15:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -45,7 +45,7 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 | `doctor`       | _(CLI only)_       | Health-check scaffold; suggest fixes for common issues   |
 | `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
 
-`migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand.
+`migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy wikilinks to markdown links relative to the page being migrated, preferring an unambiguous existing page for bare-slug targets.
 
 ## Flags
 

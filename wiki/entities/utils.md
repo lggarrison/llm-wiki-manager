@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Utils
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-07-02T01:15:00Z
 tags: [utils]
 related: [entities/commands.md, entities/templates.md, concepts/template-system.md]
 code_refs: [src/utils/fs.ts, src/utils/upgrade.ts, src/utils/fs.test.ts]
@@ -22,7 +22,7 @@ Scope tag: **`utils`** (first tag).
 | Install config | `readInstallConfig`, `writeInstallConfig`, `isExistingInstall`, `inferInstallConfig`            |
 | Entity stubs   | `scaffoldEntityOverviews`, `entityOverviewStub`, `scopeSlugFromFocusDir`                        |
 | package.json   | `mergePackageJsonScripts`, `syncPackageJsonScripts`, `wikiScriptCandidates`, `WIKI_SCRIPT_KEYS` |
-| AGENTS.md      | `amendFile`, `replaceManagedSection`, `MANAGED_SECTION_DELIMITER`                               |
+| AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization and legacy-tail preservation  |
 | Misc           | `getPackageVersion`, `scaffoldWikiEmptyDirs`, `WIKI_EMPTY_DIRS`                                 |
 
 ## `upgrade.ts` — upgrade orchestration
@@ -35,7 +35,7 @@ Scope tag: **`utils`** (first tag).
 
 ## Tests
 
-`fs.test.ts` covers template copy, interpolation, install config, and scaffold helpers.
+`fs.test.ts` covers template copy, interpolation, install config, scaffold helpers, and managed `AGENTS.md` marker behavior.
 
 ## See also
 

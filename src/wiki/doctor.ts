@@ -120,7 +120,7 @@ export function runDoctor(cwd: string = process.cwd()): number {
 
         if (hasWikiScripts(scripts) && !isPackageBinInstalled(cwd)) {
           report.problems.push(
-            'llm-wiki-manager is not installed locally — run npm install, then npm run wiki:lint (not npx run wiki:lint); or use npx llm-wiki-manager lint before installing',
+            'llm-wiki-manager is not installed locally — run npm install, then npm run wiki:* (not npx run wiki:*); or use npx llm-wiki-manager <command> before installing',
           );
         }
       } catch {

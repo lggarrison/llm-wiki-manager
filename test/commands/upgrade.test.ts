@@ -30,7 +30,10 @@ describe('upgrade helpers', () => {
   it('refreshes root AGENTS.md managed section', () => {
     const dir = makeTmpDir();
     const agentsPath = join(dir, 'AGENTS.md');
-    writeFileSync(agentsPath, '# Project\n\n<!-- llm-wiki-manager -->\n# Old\n\nStale pointer.\n');
+    writeFileSync(
+      agentsPath,
+      '# Project\n\n<!-- llm-wiki-manager -->\n# Old\n\nStale pointer.\n<!-- /llm-wiki-manager -->\n',
+    );
 
     const content = interpolate(readFileSync(templatePath('AGENTS.md'), 'utf8'), {
       PROJECT_NAME: 'acme',

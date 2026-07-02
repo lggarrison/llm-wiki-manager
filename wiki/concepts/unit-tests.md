@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-07-02T01:15:00Z
 tags: [testing, vitest]
 related:
   [
@@ -36,13 +36,13 @@ Configuration lives in `vitest.config.ts`: it includes `src/**/*.test.ts` and `t
 
 ## Layout
 
-| Path                            | Role                                                                      |
-| ------------------------------- | ------------------------------------------------------------------------- |
-| `src/utils/fs.test.ts`          | Template copy, interpolation, install config, scaffold helpers in `fs.ts` |
-| `test/commands/upgrade.test.ts` | Upgrade step orchestration, AGENTS.md managed section, page migration     |
-| `test/commands/doctor.test.ts`  | Health-check CLI: missing files, stale index, script mismatches           |
-| `test/scripts/*.test.ts`        | Behavior of each `llm-wiki-manager` subcommand via built CLI              |
-| `test/helpers/wiki.ts`          | Temp wiki dirs, frontmatter fixtures, CLI helpers                         |
+| Path                            | Role                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `src/utils/fs.test.ts`          | Template copy, interpolation, install config, scaffold helpers, managed markers |
+| `test/commands/upgrade.test.ts` | Upgrade step orchestration, AGENTS.md managed section, page migration           |
+| `test/commands/doctor.test.ts`  | Health-check CLI: missing files, stale index, script mismatches                 |
+| `test/scripts/*.test.ts`        | Behavior of each `llm-wiki-manager` subcommand via built CLI                    |
+| `test/helpers/wiki.ts`          | Temp wiki dirs, frontmatter fixtures, CLI helpers                               |
 
 Packed-install smoke tests live under `test/e2e/tarball-smoke.test.ts` and run via `npm run test:e2e`, not `npm test`.
 
@@ -52,16 +52,16 @@ Script tests invoke the **built CLI** (`dist/bin/cli.js`) so behavior matches wh
 
 Each wiki subcommand has a dedicated test file under `test/scripts/`:
 
-| Test file               | CLI subcommand          |
-| ----------------------- | ----------------------- |
-| `lint.test.ts`          | `lint`                  |
-| `build-index.test.ts`   | `build`, `check`        |
-| `sync-see-also.test.ts` | `sync`                  |
-| `log.test.ts`           | `log`                   |
-| `help.test.ts`          | `help`                  |
-| `setup-husky.test.ts`   | `setup-husky`           |
-| `migrate-pages.test.ts` | `runMigrate` (internal) |
-| `scripts.test.ts`       | npm alias smoke tests   |
+| Test file               | CLI subcommand                                         |
+| ----------------------- | ------------------------------------------------------ |
+| `lint.test.ts`          | `lint`                                                 |
+| `build-index.test.ts`   | `build`, `check`                                       |
+| `sync-see-also.test.ts` | `sync`                                                 |
+| `log.test.ts`           | `log`                                                  |
+| `help.test.ts`          | `help`                                                 |
+| `setup-husky.test.ts`   | `setup-husky`                                          |
+| `migrate-pages.test.ts` | `runMigrate` legacy frontmatter and wikilink migration |
+| `scripts.test.ts`       | npm alias smoke tests                                  |
 
 Tests use temporary wiki directories created by `makeTmpWikiDir()` and tear them down in `afterEach` hooks.
 

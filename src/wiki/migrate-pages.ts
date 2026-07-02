@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { relative } from 'path';
+import { basename, dirname, relative, resolve } from 'path';
 import { walkMdSkipDirs } from './walk.js';
 import { META_SKIP } from './constants.js';
 import type { WikiContext } from './context.js';
@@ -11,6 +11,30 @@ const STATUS_MAP: Record<string, string> = {
 };
 
 const SKIP_DIRS = ['raw', 'archive'];
+
+function slugify(input: string): string {
+  return input.trim().replace(/\s+/g, '-').toLowerCase();
+}
+
+function stripMarkdownExtension(input: string): string {
+  return input.replace(/\.md$/i, '');
+}
+
+function markdownLinkFromWikiRoot(wikiDir: string, file: string, wikiRootTarget: string): string {
+  return relative(dirname(file), resolve(wikiDir, wikiRootTarget)).replace(/\\/g, '/');
+}
+
+function buildSlugTargetMap(pages: string[], wikiDir: string): Map<string, string[]> {
+  const targets = new Map<string, string[]>();
+  for (const file of pages) {
+    const rel = relative(wikiDir, file).replace(/\\/g, '/');
+    const slug = basename(rel, '.md');
+    const existing = targets.get(slug) ?? [];
+    existing.push(rel);
+    targets.set(slug, existing);
+  }
+  return targets;
+}
 
 function migrateStatus(content: string): { updated: string; changed: boolean } {
   let updated = content;
@@ -44,16 +68,31 @@ function migrateTimestamps(content: string): { updated: string; changed: boolean
   return { updated, changed };
 }
 
-function migrateWikilinks(content: string): { updated: string; changed: boolean } {
+function migrateWikilinks(
+  content: string,
+  file: string,
+  wikiDir: string,
+  slugTargets: Map<string, string[]>,
+): { updated: string; changed: boolean } {
   let changed = false;
   const updated = content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => {
     changed = true;
-    const slug = target.trim().replace(/\s+/g, '-').toLowerCase();
+    const trimmedTarget = stripMarkdownExtension(target.trim());
+    const slug = slugify(trimmedTarget);
     const text = (label ?? target).trim();
-    if (target.includes('/')) {
-      return `[${text}](${target}.md)`;
+
+    let wikiRootTarget: string;
+    if (trimmedTarget.includes('/')) {
+      wikiRootTarget = `${trimmedTarget
+        .split('/')
+        .map((part) => slugify(part))
+        .join('/')}.md`;
+    } else {
+      const matches = slugTargets.get(slug) ?? [];
+      wikiRootTarget = matches.length === 1 ? matches[0] : `concepts/${slug}.md`;
     }
-    return `[${text}](concepts/${slug}.md)`;
+
+    return `[${text}](${markdownLinkFromWikiRoot(wikiDir, file, wikiRootTarget)})`;
   });
   return { updated, changed };
 }
@@ -67,6 +106,7 @@ export function runMigrate(ctx: WikiContext, options: MigrateOptions = {}): numb
   const dryRun = options.dryRun ?? false;
 
   const pages = walkMdSkipDirs(wikiDir, SKIP_DIRS);
+  const slugTargets = buildSlugTargetMap(pages, wikiDir);
   let migrated = 0;
 
   for (const file of pages) {
@@ -84,7 +124,7 @@ export function runMigrate(ctx: WikiContext, options: MigrateOptions = {}): numb
     content = timestampResult.updated;
     changed ||= timestampResult.changed;
 
-    const linkResult = migrateWikilinks(content);
+    const linkResult = migrateWikilinks(content, file, wikiDir, slugTargets);
     content = linkResult.updated;
     changed ||= linkResult.changed;
 

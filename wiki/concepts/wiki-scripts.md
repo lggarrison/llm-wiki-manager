@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-02T18:00:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -30,7 +30,7 @@ summary: llm-wiki-manager CLI subcommands that validate, index, sync, and log wi
 
 # Wiki Management Scripts
 
-After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts that delegate to `llm-wiki-manager` subcommands and records `llm-wiki-manager` in `devDependencies` when absent. Run `npm install` so `npm run wiki:*` resolves the local CLI binary in `node_modules/.bin/`. Implementation lives in `src/wiki/` inside the package — nothing is copied into consumer projects.
+After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts that delegate to `llm-wiki-manager` subcommands and records `llm-wiki-manager` in `devDependencies` when absent. Run `npm install` so `npm run wiki:*` resolves the local CLI binary in `node_modules/.bin/`. Both `init` and `upgrade` show a **Final Step: npm install** outro when the local bin is missing. Implementation lives in `src/wiki/` inside the package — nothing is copied into consumer projects.
 
 ## Commands
 

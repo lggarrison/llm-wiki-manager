@@ -7,9 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-07-02
+
+### Added
+
+- `wiki:doctor` npm script in scaffolded `package.json` for post-init health checks.
+
+### Fixed
+
+- Post-init guidance and `doctor` hints now point users to `wiki:*` npm scripts instead of raw CLI paths.
+- `upgrade` no longer corrupts wiki-managed content during template migration.
+- E2E tests run serially to avoid a `dist/` race during `npm pack`.
+
 ### Changed
 
-- Release process now syncs `main` back into `develop` after each tagged release (automated in release workflow; manual fallback documented in RELEASING.md).
+- Release workflow now syncs `main` back into `develop` after each tagged release.
 
 ## [1.0.0] - 2026-07-01
 
@@ -31,5 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The managed `AGENTS.md` section is bounded by an explicit end marker, so `upgrade` preserves user content added after it.
 - `package.json` files with a UTF-8 BOM (as written by PowerShell and some editors) are parsed instead of crashing.
 
-[Unreleased]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.0...develop
+[Unreleased]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.2...develop
+[1.0.2]: https://github.com/lggarrison/llm-wiki-manager/compare/v1.0.1...v1.0.2
 [1.0.0]: https://github.com/lggarrison/llm-wiki-manager/releases/tag/v1.0.0

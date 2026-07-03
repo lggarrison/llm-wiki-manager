@@ -1,9 +1,16 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-03T02:50:00Z
 tags: [cli, scaffold]
-related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
+related:
+  [
+    concepts/template-system.md,
+    concepts/repo-layout.md,
+    concepts/wiki-scripts.md,
+    sources/issue-66-init-formatter-choice.md,
+  ]
+sources: [sources/issue-66-init-formatter-choice.md]
 code_refs: [src/commands/init.ts]
 status: active
 summary: How the init CLI scaffolds a wiki, AGENTS.md, npm scripts, and install config into a consumer project.
@@ -37,6 +44,10 @@ llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 | `--wiki-dir`     | no       | `wiki`            |
 | `--focus-dirs`   | no       | _(whole project)_ |
 
+## Planned: formatter choice (issue #66)
+
+Today init does not ask which markdown formatter the consumer uses. `wiki:build` and the lint-staged guide assume Prettier. [Issue #66 source summary](../sources/issue-66-init-formatter-choice.md) tracks a request to add an interactive select (and `--formatter` flag) for Prettier, another supported formatter, or none, persisted in `.llm-wiki-manager.json` and reflected in hook snippets.
+
 ## Scaffold steps
 
 1. **Wiki directory** — copies `templates/wiki/` via `scaffoldWikiTemplates`, creates empty dirs, and writes entity overview stubs when focus dirs are provided.
@@ -59,3 +70,4 @@ Re-running `init` on an already-initialized project only creates missing scaffol
 - [Template System](template-system.md)
 - [Repo Layout](repo-layout.md)
 - [Wiki Management Scripts](wiki-scripts.md)
+- [Issue #66 — Init formatter choice](../sources/issue-66-init-formatter-choice.md)

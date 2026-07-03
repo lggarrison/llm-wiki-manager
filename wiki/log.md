@@ -20,3 +20,5 @@ Wiki scaffolded by llm-wiki-manager.
 ## [2026-07-01T21:01:40Z] maintenance | Align Node requirement to >=24 and document toolchain
 
 ## [2026-07-01T23:40:39Z] maintenance | Refresh wiki pages; add concepts/release.md pointer to RELEASING.md
+
+## [2026-07-03T02:47:20Z] ingest | Issue #66 — init formatter choice

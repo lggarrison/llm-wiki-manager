@@ -32,6 +32,20 @@ function markdownLinkFromWikiRoot(wikiDir: string, file: string, wikiRootTarget:
   return relative(dirname(file), resolve(wikiDir, wikiRootTarget)).replace(/\\/g, '/');
 }
 
+function existingPathStyleTarget(
+  trimmedTarget: string,
+  slugTargets: Map<string, string[]>,
+): string | null {
+  const candidate = `${trimmedTarget
+    .split('/')
+    .map((part) => slugify(part))
+    .join('/')}.md`;
+  const normalizedCandidate = candidate.replace(/\\/g, '/');
+  const slug = basename(normalizedCandidate, '.md');
+  const matches = slugTargets.get(slug) ?? [];
+  return matches.includes(normalizedCandidate) ? normalizedCandidate : null;
+}
+
 function buildSlugTargetMap(pages: string[], wikiDir: string): Map<string, string[]> {
   const targets = new Map<string, string[]>();
   for (const file of pages) {
@@ -105,22 +119,20 @@ function migrateWikilinks(
   let changed = false;
   const replaceLinks = (text: string): string =>
     text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, target, label) => {
-      changed = true;
       const trimmedTarget = stripMarkdownExtension(target.trim());
       const slug = slugify(trimmedTarget);
       const linkText = (label ?? target).trim();
 
-      let wikiRootTarget: string;
+      let wikiRootTarget: string | null;
       if (trimmedTarget.includes('/')) {
-        wikiRootTarget = `${trimmedTarget
-          .split('/')
-          .map((part) => slugify(part))
-          .join('/')}.md`;
+        wikiRootTarget = existingPathStyleTarget(trimmedTarget, slugTargets);
       } else {
         const matches = slugTargets.get(slug) ?? [];
-        wikiRootTarget = matches.length === 1 ? matches[0] : `concepts/${slug}.md`;
+        wikiRootTarget = matches.length === 1 ? matches[0] : null;
       }
 
+      if (!wikiRootTarget) return _;
+      changed = true;
       return `[${linkText}](${markdownLinkFromWikiRoot(wikiDir, file, wikiRootTarget)})`;
     });
 

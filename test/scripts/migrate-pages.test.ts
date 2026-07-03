@@ -87,6 +87,11 @@ describe('migrate-pages', () => {
     const { wikiDir } = makeTmpProject();
     writePage(
       wikiDir,
+      'concepts/caching.md',
+      fm({ title: 'Caching', type: 'concept' }) + '\n# Caching\n',
+    );
+    writePage(
+      wikiDir,
       'concepts/links.md',
       fm({ title: 'Links', type: 'concept' }) + '\nSee [[caching]] for details.\n',
     );
@@ -98,6 +103,46 @@ describe('migrate-pages', () => {
     );
     expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).not.toContain(
       '[[caching]]',
+    );
+  });
+
+  it('leaves bare wikilinks unchanged when no matching page exists', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/links.md',
+      fm({ title: 'Links', type: 'concept' }) + '\nSee [[missing|Missing]].\n',
+    );
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).toContain(
+      'See [[missing|Missing]].',
+    );
+  });
+
+  it('leaves bare wikilinks unchanged when the slug is ambiguous', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/foo.md',
+      fm({ title: 'Foo Concept', type: 'concept' }) + '\n# Foo Concept\n',
+    );
+    writePage(
+      wikiDir,
+      'entities/foo.md',
+      fm({ title: 'Foo Entity', type: 'overview', tags: ['foo'] }) + '\n# Foo Entity\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/links.md',
+      fm({ title: 'Links', type: 'concept' }) + '\nSee [[foo|Foo]].\n',
+    );
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).toContain(
+      'See [[foo|Foo]].',
     );
   });
 
@@ -117,6 +162,22 @@ describe('migrate-pages', () => {
     runMigrateWiki(wikiDir);
 
     expect(readFileSync(join(wikiDir, 'entities', 'bar.md'), 'utf8')).toContain('[Foo](foo.md)');
+  });
+
+  it('leaves path-style wikilinks unchanged when the page does not exist', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'entities/bar.md',
+      fm({ title: 'Bar', type: 'overview', tags: ['bar'] }) +
+        '\nSee [[entities/missing|Missing]].\n',
+    );
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, 'entities', 'bar.md'), 'utf8')).toContain(
+      'See [[entities/missing|Missing]].',
+    );
   });
 
   it('prefers an existing bare-slug target outside concepts when it is unambiguous', () => {

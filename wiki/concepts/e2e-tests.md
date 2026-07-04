@@ -1,7 +1,7 @@
 ---
 type: concept
 title: E2E Tests
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-04T11:08:00Z
 tags: [testing, vitest, cli]
 related:
   [concepts/unit-tests.md, concepts/init-command.md, concepts/dogfooding.md, entities/commands.md]
@@ -46,6 +46,7 @@ Covers init, upgrade, and CLI meta behavior:
 | Init npm install outro    | Shows **Final Step: npm install** when local bin is missing; omits it when bin exists        |
 | Wiki CLI after init       | `lint`, `build`, and `check` on a fresh wiki with a user-added concept page                  |
 | Upgrade refresh           | Restores meta files without overwriting user content pages                                   |
+| Upgrade version guard     | Refuses to run when `.llm-wiki-manager.json` records a newer scaffold version than the CLI   |
 | Upgrade npm install outro | Shows **Final Step: npm install** when local bin is missing; omits it when bin exists        |
 | Legacy page migration     | Upgrade calls internal `runMigrate` to rewrite deprecated frontmatter and body wikilinks     |
 | Init without package.json | Scaffold succeeds; no npm scripts added                                                      |

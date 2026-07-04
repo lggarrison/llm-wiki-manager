@@ -242,6 +242,43 @@ describe('CLI e2e workflow', () => {
     expect(upgrade.stdout).toContain('local install is v1.0.0');
   });
 
+  it('upgrade refuses to run when the scaffold was created by a newer CLI', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir);
+
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const config = JSON.parse(readFileSync(configPath, 'utf8')) as {
+      version: string;
+      projectName: string;
+      wikiDir: string;
+      focusDirs: string[];
+    };
+    writeFileSync(configPath, JSON.stringify({ ...config, version: '99.0.0' }, null, 2) + '\n');
+
+    const pkgPath = join(dir, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      devDependencies: Record<string, string>;
+    };
+    pkg.devDependencies[PACKAGE_NAME] = '^99.0.0';
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+
+    const schemaPath = join(dir, 'wiki', 'schema.md');
+    const schemaBefore = '# schema from newer release\n';
+    writeFileSync(schemaPath, schemaBefore);
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+
+    expect(upgrade.status).toBe(1);
+    expect(upgrade.stderr).toContain('newer version of llm-wiki-manager');
+    expect(readFileSync(schemaPath, 'utf8')).toBe(schemaBefore);
+    expect(JSON.parse(readFileSync(configPath, 'utf8')).version).toBe('99.0.0');
+    expect(
+      (JSON.parse(readFileSync(pkgPath, 'utf8')) as { devDependencies: Record<string, string> })
+        .devDependencies[PACKAGE_NAME],
+    ).toBe('^99.0.0');
+  });
+
   it('upgrade outro omits Final Step when node_modules is newer than the running CLI', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

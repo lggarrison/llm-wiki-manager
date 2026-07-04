@@ -14,6 +14,7 @@ import {
   syncPackageJsonScripts,
   syncPackageJsonDevDependency,
   getPackageInstallStatus,
+  compareVersions,
   MANAGED_SECTION_DELIMITER,
 } from '../utils/fs.js';
 import {
@@ -49,6 +50,11 @@ export async function upgrade(): Promise<void> {
   }
 
   const fromVersion = config.version;
+  if (compareVersions(fromVersion, packageVersion) > 0) {
+    throw new Error(
+      `This scaffold was last managed by a newer version of llm-wiki-manager (v${fromVersion}), but this CLI is v${packageVersion}. Run npm install before upgrading, or rerun with npx llm-wiki-manager@${fromVersion} upgrade.`,
+    );
+  }
   log.info(`Upgrading scaffold ${pc.bold(fromVersion)} → ${pc.bold(packageVersion)}`);
 
   if (options.dryRun) {

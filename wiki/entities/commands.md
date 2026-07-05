@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-05T11:07:00Z
 tags: [commands]
 related:
   [entities/utils.md, concepts/init-command.md, concepts/dogfooding.md, concepts/wiki-scripts.md]
@@ -14,10 +14,10 @@ summary: Overview of src/commands/ — CLI command implementations.
 
 Scope tag: **`commands`** (first tag).
 
-| File         | Role                                                                                                                                                |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `init.ts`    | Interactive or flag-driven wiki scaffold (see [Init Command](../concepts/init-command.md))                                                          |
-| `upgrade.ts` | Refresh templates, sync npm scripts, migrate pages, post-upgrade pipeline; outro reminds `npm install` when local bin is missing (parity with init) |
+| File         | Role                                                                                                                         |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `init.ts`    | Interactive or flag-driven wiki scaffold (see [Init Command](../concepts/init-command.md))                                   |
+| `upgrade.ts` | Preflights local package version, refreshes templates, syncs npm scripts, migrates pages, and runs the post-upgrade pipeline |
 
 ## Init flags
 
@@ -37,6 +37,8 @@ Non-interactive init (used in tests and CI):
 | `--skip-pages` | Skip page migration step             |
 
 Upgrade orchestration helpers live in `src/utils/upgrade.ts`.
+
+Upgrade refuses to run when `node_modules` contains a newer `llm-wiki-manager` than the invoked CLI, preventing older templates from overwriting a newer scaffold.
 
 ## See also
 

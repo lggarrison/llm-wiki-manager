@@ -242,14 +242,34 @@ describe('CLI e2e workflow', () => {
     expect(upgrade.stdout).toContain('local install is v1.0.0');
   });
 
-  it('upgrade outro omits Final Step when node_modules is newer than the running CLI', () => {
+  it('upgrade refuses to overwrite newer installed wiki templates with an older CLI', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
     stubInstalledPackage(dir, '99.0.0');
+    const schemaPath = join(dir, 'wiki', 'schema.md');
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    writeFileSync(schemaPath, '# schema from newer install\n');
+    writeFileSync(
+      configPath,
+      JSON.stringify(
+        {
+          version: '99.0.0',
+          projectName: 'acme',
+          wikiDir: 'wiki',
+          focusDirs: [],
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+    const configBefore = readFileSync(configPath, 'utf8');
 
     const upgrade = runBuiltCli(dir, ['upgrade']);
-    expect(upgrade.status).toBe(0);
-    expect(upgrade.stdout).not.toContain('Final Step:');
+    expect(upgrade.status).toBe(1);
+    expect(upgrade.stderr).toContain('Local llm-wiki-manager install is v99.0.0');
+    expect(upgrade.stderr).toContain('this upgrade command is v');
+    expect(readFileSync(schemaPath, 'utf8')).toBe('# schema from newer install\n');
+    expect(readFileSync(configPath, 'utf8')).toBe(configBefore);
   });
 
   it('upgrade migrates legacy status values on pages', () => {

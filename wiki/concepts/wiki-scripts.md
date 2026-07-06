@@ -34,16 +34,16 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 
 ## Commands
 
-| CLI subcommand | npm command        | Purpose                                                  |
-| -------------- | ------------------ | -------------------------------------------------------- |
-| `help`         | `wiki:help`        | List commands and typical workflows                      |
-| `lint`         | `wiki:lint`        | Validate frontmatter, links, orphans; scan AGENTS.md     |
-| `build`        | `wiki:build`       | Regenerate `index.md` tables while preserving preamble prose |
+| CLI subcommand | npm command        | Purpose                                                       |
+| -------------- | ------------------ | ------------------------------------------------------------- |
+| `help`         | `wiki:help`        | List commands and typical workflows                           |
+| `lint`         | `wiki:lint`        | Validate frontmatter, links, orphans; scan AGENTS.md          |
+| `build`        | `wiki:build`       | Regenerate `index.md` tables while preserving preamble prose  |
 | `check`        | `wiki:check`       | Verify `index.md` generated tables are up to date (read-only) |
-| `sync`         | `wiki:sync`        | Add body links for `related:` frontmatter entries        |
-| `log`          | `wiki:log`         | Append ingest/query/lint/maintenance entries to `log.md` |
-| `doctor`       | `wiki:doctor`      | Health-check scaffold; suggest fixes for common issues   |
-| `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
+| `sync`         | `wiki:sync`        | Add body links for `related:` frontmatter entries             |
+| `log`          | `wiki:log`         | Append ingest/query/lint/maintenance entries to `log.md`      |
+| `doctor`       | `wiki:doctor`      | Health-check scaffold; suggest fixes for common issues        |
+| `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide           |
 
 `doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
 

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Repository Layout
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-06T11:02:26Z
 tags: [architecture]
 related:
   [
@@ -24,18 +24,18 @@ This repo is both the **llm-wiki-manager npm package** and a **dogfooded consume
 
 ## Package source
 
-| Path                      | Role                                                                                                      |
-| ------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `bin/cli.ts`              | CLI entry; dispatches init, upgrade, doctor, and wiki subcommands; compiled to `dist/bin/cli.js`          |
-| `src/commands/init.ts`    | Init command implementation                                                                               |
-| `src/commands/upgrade.ts` | Upgrade command — refresh templates, migrate pages, sync scripts                                          |
-| `src/wiki/`               | Wiki lint, build, check, sync, log, help, doctor, setup-husky, migrate-pages implementations              |
-| `src/utils/fs.ts`         | Template copy, interpolation, package.json merge, AGENTS.md amend/managed replacement, install config     |
-| `src/utils/upgrade.ts`    | Upgrade step orchestration and post-upgrade pipeline                                                      |
-| `templates/`              | Published scaffold templates (shipped in npm tarball)                                                     |
-| `test/`                   | Vitest unit tests and e2e CLI workflow tests (see [Unit Tests](unit-tests.md), [E2E Tests](e2e-tests.md)) |
-| `vitest.config.ts`        | Default test config — `src/` and `test/` except `test/e2e/`                                               |
-| `vitest.e2e.config.ts`    | E2e-only config with global build setup                                                                   |
+| Path                      | Role                                                                                                       |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `bin/cli.ts`              | CLI entry; dispatches init, upgrade, doctor, and wiki subcommands; compiled to `dist/bin/cli.js`           |
+| `src/commands/init.ts`    | Init command implementation                                                                                |
+| `src/commands/upgrade.ts` | Upgrade command — refresh templates, migrate pages, sync scripts                                           |
+| `src/wiki/`               | Wiki lint, build, check, sync, log, help, doctor, setup-husky, migrate-pages implementations               |
+| `src/utils/fs.ts`         | Template copy, interpolation, safe package.json merge, AGENTS.md amend/managed replacement, install config |
+| `src/utils/upgrade.ts`    | Upgrade step orchestration and post-upgrade pipeline                                                       |
+| `templates/`              | Published scaffold templates (shipped in npm tarball)                                                      |
+| `test/`                   | Vitest unit tests and e2e CLI workflow tests (see [Unit Tests](unit-tests.md), [E2E Tests](e2e-tests.md))  |
+| `vitest.config.ts`        | Default test config — `src/` and `test/` except `test/e2e/`                                                |
+| `vitest.e2e.config.ts`    | E2e-only config with global build setup                                                                    |
 
 ## Dogfooded wiki (this repo)
 

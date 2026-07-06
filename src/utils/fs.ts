@@ -362,8 +362,13 @@ export type PackageInstallStatus =
   | { needsInstall: true; reason: 'missing' }
   | { needsInstall: true; reason: 'stale'; installedVersion: string; targetVersion: string };
 
-function parsePinnedVersion(range: string): string | null {
-  const match = range.match(/(\d+\.\d+\.\d+)/);
+function parseRegistrySemverVersion(range: string): string | null {
+  const trimmed = range.trim();
+  if (trimmed.includes(':') || trimmed.includes('/') || trimmed.startsWith('.')) {
+    return null;
+  }
+
+  const match = trimmed.match(/(\d+\.\d+\.\d+)/);
   return match?.[1] ?? null;
 }
 
@@ -453,8 +458,11 @@ export function mergePackageJsonDevDependency(
   }
 
   if (existing) {
-    const existingVersion = parsePinnedVersion(existing);
+    const existingVersion = parseRegistrySemverVersion(existing);
     if (existingVersion && compareVersions(version, existingVersion) <= 0) {
+      return { status: 'unchanged' };
+    }
+    if (!existingVersion) {
       return { status: 'unchanged' };
     }
   }

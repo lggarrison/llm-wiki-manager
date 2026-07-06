@@ -472,6 +472,37 @@ describe('mergePackageJsonDevDependency', () => {
     expect(pkg.devDependencies[PACKAGE_NAME]).toBe('^2.0.0');
   });
 
+  it('preserves non-registry devDependency specs', () => {
+    const specs = [
+      'github:lggarrison/llm-wiki-manager#develop',
+      'git+ssh://git@github.com/lggarrison/llm-wiki-manager.git#develop',
+      'file:../llm-wiki-manager',
+      'workspace:*',
+      'latest',
+    ];
+
+    for (const spec of specs) {
+      const dir = makeTmpDir();
+      writeFileSync(
+        join(dir, 'package.json'),
+        JSON.stringify(
+          {
+            name: 'acme',
+            devDependencies: { [PACKAGE_NAME]: spec },
+          },
+          null,
+          2,
+        ) + '\n',
+      );
+
+      const result = mergePackageJsonDevDependency(dir, '9.0.0');
+      expect(result).toEqual({ status: 'unchanged' });
+
+      const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+      expect(pkg.devDependencies[PACKAGE_NAME]).toBe(spec);
+    }
+  });
+
   it('does not overwrite an existing dependency entry', () => {
     const dir = makeTmpDir();
     writeFileSync(

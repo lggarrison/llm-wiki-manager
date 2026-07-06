@@ -792,6 +792,40 @@ describe('scaffoldWikiTemplates', () => {
     expect(readFileSync(schemaPath, 'utf8')).toContain('Wiki Schema — acme');
     expect(readFileSync(schemaPath, 'utf8')).not.toContain('# Old schema');
   });
+
+  it('preserves an existing .entity-scopes file when overwrite is true', () => {
+    const dest = makeTmpDir();
+    const vars = buildTemplateVars({
+      projectName: 'acme',
+      wikiDir: 'wiki',
+      focusDirs: [],
+      initTimestamp: '2026-06-30T00:00:00Z',
+    });
+
+    scaffoldWikiTemplates(dest, vars, { overwrite: false });
+    const scopesPath = join(dest, '.entity-scopes');
+    writeFileSync(scopesPath, 'commands\ncustom-scope\n');
+
+    const result = scaffoldWikiTemplates(dest, vars, { overwrite: true });
+
+    expect(result.skipped).toContain('.entity-scopes');
+    expect(readFileSync(scopesPath, 'utf8')).toBe('commands\ncustom-scope\n');
+  });
+
+  it('creates .entity-scopes on upgrade when it is missing', () => {
+    const dest = makeTmpDir();
+    const vars = buildTemplateVars({
+      projectName: 'acme',
+      wikiDir: 'wiki',
+      focusDirs: ['src/commands'],
+      initTimestamp: '2026-06-30T00:00:00Z',
+    });
+
+    const result = scaffoldWikiTemplates(dest, vars, { overwrite: true });
+
+    expect(result.created).toContain('.entity-scopes');
+    expect(readFileSync(join(dest, '.entity-scopes'), 'utf8')).toContain('commands');
+  });
 });
 
 describe('syncPackageJsonScripts', () => {

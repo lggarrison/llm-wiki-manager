@@ -472,6 +472,36 @@ describe('mergePackageJsonDevDependency', () => {
     expect(pkg.devDependencies[PACKAGE_NAME]).toBe('^2.0.0');
   });
 
+  it.each([
+    'workspace:*',
+    'file:../llm-wiki-manager',
+    'github:lggarrison/llm-wiki-manager#v0.1.0',
+    'npm:@scope/fork@1.0.0',
+    'latest',
+  ])(
+    'does not overwrite an existing custom devDependency spec (%s)',
+    (specifier) => {
+      const dir = makeTmpDir();
+      writeFileSync(
+        join(dir, 'package.json'),
+        JSON.stringify(
+          {
+            name: 'acme',
+            devDependencies: { [PACKAGE_NAME]: specifier },
+          },
+          null,
+          2,
+        ) + '\n',
+      );
+
+      const result = mergePackageJsonDevDependency(dir, '1.0.2');
+      expect(result).toEqual({ status: 'unchanged' });
+
+      const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+      expect(pkg.devDependencies[PACKAGE_NAME]).toBe(specifier);
+    },
+  );
+
   it('does not overwrite an existing dependency entry', () => {
     const dir = makeTmpDir();
     writeFileSync(

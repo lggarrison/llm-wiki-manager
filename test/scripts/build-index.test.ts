@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createRequire } from 'module';
-import { readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 import { PACKAGE_ROOT } from '../helpers/paths.js';
@@ -28,6 +29,10 @@ function runBuildWithRepoRoot(wikiDir: string, repoRoot: string) {
 
 function runCheck(wikiDir: string) {
   return runWikiCliWithWikiDir(wikiDir, 'check');
+}
+
+function runCheckWithRepoRoot(wikiDir: string, repoRoot: string) {
+  return runWikiCliWithWikiDir(wikiDir, 'check', ['--repo-root', repoRoot]);
 }
 
 describe('build command', () => {
@@ -171,6 +176,40 @@ describe('build command', () => {
     const prettier = require(require.resolve('prettier', { paths: [PACKAGE_ROOT] }));
     const reformatted = await prettier.format(built, { filepath: indexPath, parser: 'markdown' });
     expect(reformatted).toBe(built);
+  });
+
+  it('honors consumer Prettier config for generated index.md', async () => {
+    const repoRoot = mkdtempSync(join(tmpdir(), 'llm-wiki-repo-'));
+    dirs.push(repoRoot);
+    const wikiDir = join(repoRoot, 'wiki');
+    for (const sub of ['concepts', 'sources', 'entities', 'raw/articles']) {
+      mkdirSync(join(wikiDir, sub), { recursive: true });
+    }
+    writeFileSync(
+      join(repoRoot, '.prettierrc'),
+      JSON.stringify({ printWidth: 40, proseWrap: 'always' }, null, 2),
+    );
+    writePage(
+      wikiDir,
+      'concepts/a.md',
+      fm({ type: 'concept', title: 'Long Title Here', tags: ['tag-one', 'tag-two'] }),
+    );
+
+    runBuildWithRepoRoot(wikiDir, repoRoot);
+    const indexPath = join(wikiDir, 'index.md');
+    const built = readFileSync(indexPath, 'utf8');
+    const prettier = require(require.resolve('prettier', { paths: [PACKAGE_ROOT] }));
+    const config = await prettier.resolveConfig(indexPath);
+    const reformatted = await prettier.format(built, {
+      ...config,
+      filepath: indexPath,
+      parser: 'markdown',
+    });
+
+    expect(reformatted).toBe(built);
+    writeFileSync(indexPath, reformatted, 'utf8');
+    const check = runCheckWithRepoRoot(wikiDir, repoRoot);
+    expect(check.status).toBe(0);
   });
 
   it('rebuild leaves prettier-formatted index.md unchanged (lint-staged idempotence)', () => {

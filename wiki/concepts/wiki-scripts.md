@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-07T11:03:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -16,6 +16,7 @@ code_refs:
     bin/cli.ts,
     src/wiki/lint.ts,
     src/wiki/build-index.ts,
+    src/wiki/format-index.ts,
     src/wiki/sync-see-also.ts,
     src/wiki/log.ts,
     src/wiki/help.ts,
@@ -61,6 +62,8 @@ Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution. Addi
 ## Path resolution
 
 Subcommands resolve the wiki directory from `--wiki-dir`, then `.llm-wiki-manager.json`, then root `AGENTS.md`, defaulting to `wiki/`. All paths are relative to the consumer's project root (`process.cwd()`).
+
+`build` and `check` format generated `index.md` through `src/wiki/format-index.ts`, loading Prettier from the consumer repo first and then the package fallback. When a consumer Prettier config applies to `wiki/index.md`, the generator resolves and applies that config so a later `prettier --write` pass does not make `wiki:check` report a stale index.
 
 ## Meta files excluded from page lint
 

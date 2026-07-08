@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, relative } from 'path';
 import { parseFrontmatter } from './frontmatter.js';
 import { walkMd } from './walk.js';
-import { BUILD_INDEX_SKIP } from './constants.js';
+import { BUILD_INDEX_SKIP, ENTITY_TYPES } from './constants.js';
 import { formatIndexMarkdown } from './format-index.js';
 import { resolveWikiContext } from './context.js';
 import type { Frontmatter } from './frontmatter.js';
@@ -33,7 +33,7 @@ function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[]
 
   for (const page of pages) {
     if (page.fm.type === 'hub') byType.hub.push(page);
-    else if (page.fm.type === 'overview' && page.rel.startsWith('entities/'))
+    else if (ENTITY_TYPES.has(page.fm.type as string) && page.rel.startsWith('entities/'))
       byType.entity.push(page);
     else if (page.fm.type === 'concept') byType.concept.push(page);
     else if (page.fm.type === 'source') byType.source.push(page);

@@ -15,8 +15,11 @@ function makeTmpProject(): { root: string; wikiDir: string } {
   return { root, wikiDir };
 }
 
-function runMigrateWiki(wikiDir: string, args: { dryRun?: boolean } = {}): void {
-  const ctx = resolveWikiContext({ cwd: wikiDir, wikiDir });
+function runMigrateWiki(
+  project: { root: string; wikiDir: string },
+  args: { dryRun?: boolean } = {},
+): void {
+  const ctx = resolveWikiContext({ cwd: project.root, repoRoot: project.root, wikiDir: 'wiki' });
   const status = runMigrate(ctx, args);
   expect(status).toBe(0);
 }
@@ -30,7 +33,8 @@ afterEach(async () => {
 
 describe('migrate-pages', () => {
   it('remaps draft → wip and stable → active', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'concepts/draft-page.md',
@@ -42,7 +46,7 @@ describe('migrate-pages', () => {
       fm({ status: 'stable', title: 'Stable', type: 'concept' }) + '\n# Stable\n',
     );
 
-    runMigrateWiki(wikiDir);
+    runMigrateWiki(project);
 
     expect(readFileSync(join(wikiDir, 'concepts', 'draft-page.md'), 'utf8')).toContain(
       'status: wip',
@@ -53,14 +57,15 @@ describe('migrate-pages', () => {
   });
 
   it('converts a date-only last_updated to a UTC ISO timestamp', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'concepts/dated.md',
       fm({ title: 'Dated', type: 'concept', last_updated: '2026-01-15' }) + '\n# Dated\n',
     );
 
-    runMigrateWiki(wikiDir);
+    runMigrateWiki(project);
 
     expect(readFileSync(join(wikiDir, 'concepts', 'dated.md'), 'utf8')).toContain(
       'last_updated: 2026-01-15T00:00:00Z',
@@ -68,7 +73,8 @@ describe('migrate-pages', () => {
   });
 
   it('leaves an existing timestamp last_updated untouched', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'concepts/stamped.md',
@@ -76,7 +82,7 @@ describe('migrate-pages', () => {
         '\n# Stamped\n',
     );
 
-    runMigrateWiki(wikiDir);
+    runMigrateWiki(project);
 
     expect(readFileSync(join(wikiDir, 'concepts', 'stamped.md'), 'utf8')).toContain(
       'last_updated: 2026-01-15T09:30:00Z',
@@ -84,14 +90,15 @@ describe('migrate-pages', () => {
   });
 
   it('converts wikilinks to markdown links', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'concepts/links.md',
       fm({ title: 'Links', type: 'concept' }) + '\nSee [[caching]] for details.\n',
     );
 
-    runMigrateWiki(wikiDir);
+    runMigrateWiki(project);
 
     expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).toContain(
       '[caching](caching.md)',
@@ -102,7 +109,8 @@ describe('migrate-pages', () => {
   });
 
   it('converts path-style wikilinks to paths relative to the source page', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'entities/foo.md',
@@ -114,13 +122,14 @@ describe('migrate-pages', () => {
       fm({ title: 'Bar', type: 'overview', tags: ['bar'] }) + '\nSee [[entities/foo|Foo]].\n',
     );
 
-    runMigrateWiki(wikiDir);
+    runMigrateWiki(project);
 
     expect(readFileSync(join(wikiDir, 'entities', 'bar.md'), 'utf8')).toContain('[Foo](foo.md)');
   });
 
   it('prefers an existing bare-slug target outside concepts when it is unambiguous', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'entities/foo.md',
@@ -132,7 +141,7 @@ describe('migrate-pages', () => {
       fm({ title: 'Links', type: 'concept' }) + '\nSee [[foo|Foo]].\n',
     );
 
-    runMigrateWiki(wikiDir);
+    runMigrateWiki(project);
 
     expect(readFileSync(join(wikiDir, 'concepts', 'links.md'), 'utf8')).toContain(
       '[Foo](../entities/foo.md)',
@@ -140,7 +149,8 @@ describe('migrate-pages', () => {
   });
 
   it('does not rewrite legacy syntax inside fenced code examples', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'concepts/caching.md',
@@ -170,7 +180,7 @@ describe('migrate-pages', () => {
         ].join('\n'),
     );
 
-    runMigrateWiki(wikiDir);
+    runMigrateWiki(project);
 
     const content = readFileSync(join(wikiDir, 'concepts', 'examples.md'), 'utf8');
     expect(content).toContain('status: wip');
@@ -188,14 +198,15 @@ describe('migrate-pages', () => {
   });
 
   it('supports --dry-run without writing files', () => {
-    const { wikiDir } = makeTmpProject();
+    const project = makeTmpProject();
+    const { wikiDir } = project;
     writePage(
       wikiDir,
       'concepts/keep.md',
       fm({ status: 'draft', title: 'Keep', type: 'concept' }) + '\n# Keep\n',
     );
 
-    runMigrateWiki(wikiDir, { dryRun: true });
+    runMigrateWiki(project, { dryRun: true });
 
     expect(readFileSync(join(wikiDir, 'concepts', 'keep.md'), 'utf8')).toContain('status: draft');
   });

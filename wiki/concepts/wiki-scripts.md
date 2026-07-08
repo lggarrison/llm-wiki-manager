@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-08T11:15:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -60,7 +60,7 @@ Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution. Addi
 
 ## Path resolution
 
-Subcommands resolve the wiki directory from `--wiki-dir`, then `.llm-wiki-manager.json`, then root `AGENTS.md`, defaulting to `wiki/`. All paths are relative to the consumer's project root (`process.cwd()`).
+Subcommands resolve the wiki directory from `--wiki-dir`, then `.llm-wiki-manager.json`, then root `AGENTS.md`, defaulting to `wiki/`. Public wiki-dir values must be relative child paths such as `wiki` or `docs/wiki`; internal helpers convert already-resolved child paths back to repo-relative form before checking stale indexes.
 
 ## Meta files excluded from page lint
 

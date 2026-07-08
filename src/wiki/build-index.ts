@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, relative } from 'path';
+import { isAbsolute, join, relative, resolve } from 'path';
 import { parseFrontmatter } from './frontmatter.js';
 import { walkMd } from './walk.js';
 import { BUILD_INDEX_SKIP } from './constants.js';
@@ -151,7 +151,10 @@ async function buildFinalIndexOutput(
 }
 
 export async function isIndexStale(wikiDir: string, repoRoot: string): Promise<boolean> {
-  const ctx = resolveWikiContext({ repoRoot, wikiDir, cwd: repoRoot });
+  const root = resolve(repoRoot);
+  const resolvedWikiDir = isAbsolute(wikiDir) ? resolve(wikiDir) : resolve(root, wikiDir);
+  const wikiDirRel = relative(root, resolvedWikiDir).replace(/\\/g, '/');
+  const ctx = resolveWikiContext({ repoRoot: root, wikiDir: wikiDirRel, cwd: root });
   const { output } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
   const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';

@@ -22,6 +22,7 @@ import {
   appendUpgradeLog,
   type UpgradeOptions,
 } from '../utils/upgrade.js';
+import { normalizeWikiDir } from '../wiki/context.js';
 
 function parseUpgradeArgs(argv: string[]): UpgradeOptions {
   return {
@@ -47,6 +48,7 @@ export async function upgrade(): Promise<void> {
     }
     log.warn('No install config found — inferred paths from existing files.');
   }
+  config = { ...config, wikiDir: normalizeWikiDir(config.wikiDir) };
 
   const fromVersion = config.version;
   log.info(`Upgrading scaffold ${pc.bold(fromVersion)} → ${pc.bold(packageVersion)}`);

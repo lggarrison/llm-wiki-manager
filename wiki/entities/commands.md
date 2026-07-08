@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-08T11:10:00Z
 tags: [commands]
 related:
   [entities/utils.md, concepts/init-command.md, concepts/dogfooding.md, concepts/wiki-scripts.md]
@@ -23,11 +23,11 @@ Scope tag: **`commands`** (first tag).
 
 Non-interactive init (used in tests and CI):
 
-| Flag             | Required |
-| ---------------- | -------- |
-| `--project-name` | yes      |
-| `--wiki-dir`     | no       |
-| `--focus-dirs`   | no       |
+| Flag             | Required                                                             |
+| ---------------- | -------------------------------------------------------------------- |
+| `--project-name` | yes                                                                  |
+| `--wiki-dir`     | no; must be a relative child directory such as `wiki` or `docs/wiki` |
+| `--focus-dirs`   | no                                                                   |
 
 ## Upgrade flags
 

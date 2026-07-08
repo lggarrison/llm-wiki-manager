@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Repository Layout
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-08T11:10:00Z
 tags: [architecture]
 related:
   [
@@ -29,7 +29,7 @@ This repo is both the **llm-wiki-manager npm package** and a **dogfooded consume
 | `bin/cli.ts`              | CLI entry; dispatches init, upgrade, doctor, and wiki subcommands; compiled to `dist/bin/cli.js`          |
 | `src/commands/init.ts`    | Init command implementation                                                                               |
 | `src/commands/upgrade.ts` | Upgrade command — refresh templates, migrate pages, sync scripts                                          |
-| `src/wiki/`               | Wiki lint, build, check, sync, log, help, doctor, setup-husky, migrate-pages implementations              |
+| `src/wiki/`               | Wiki context resolution plus lint, build, check, sync, log, help, doctor, setup-husky, migrate-pages      |
 | `src/utils/fs.ts`         | Template copy, interpolation, package.json merge, AGENTS.md amend/managed replacement, install config     |
 | `src/utils/upgrade.ts`    | Upgrade step orchestration and post-upgrade pipeline                                                      |
 | `templates/`              | Published scaffold templates (shipped in npm tarball)                                                     |

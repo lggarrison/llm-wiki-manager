@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-08T11:10:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -31,15 +31,15 @@ For CI and tests, pass all values via flags (skips prompts):
 llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 ```
 
-| Flag             | Required | Default           |
-| ---------------- | -------- | ----------------- |
-| `--project-name` | yes      | —                 |
-| `--wiki-dir`     | no       | `wiki`            |
-| `--focus-dirs`   | no       | _(whole project)_ |
+| Flag             | Required | Default                                         |
+| ---------------- | -------- | ----------------------------------------------- |
+| `--project-name` | yes      | —                                               |
+| `--wiki-dir`     | no       | `wiki`; must stay in a relative child directory |
+| `--focus-dirs`   | no       | _(whole project)_                               |
 
 ## Scaffold steps
 
-1. **Wiki directory** — copies `templates/wiki/` via `scaffoldWikiTemplates`, creates empty dirs, and writes entity overview stubs when focus dirs are provided.
+1. **Wiki directory** — validates that the wiki path is a relative child directory, copies `templates/wiki/` via `scaffoldWikiTemplates`, creates empty dirs, and writes entity overview stubs when focus dirs are provided.
 2. **index.md** — runs `runBuild` so `wiki:check` passes immediately after init.
 3. **package.json** — when present:
    - merges missing `wiki:*` npm scripts (skipped if all wiki scripts already exist)

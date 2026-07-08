@@ -1,4 +1,3 @@
-import { resolve } from 'path';
 import type { InstallConfig } from './fs.js';
 import {
   buildTemplateVars,
@@ -6,7 +5,7 @@ import {
   scaffoldEntityOverviews,
   scaffoldWikiTemplates,
 } from './fs.js';
-import { resolveWikiContext } from '../wiki/context.js';
+import { resolveSafeWikiDir, resolveWikiContext } from '../wiki/context.js';
 import { runMigrate } from '../wiki/migrate-pages.js';
 import { runSync } from '../wiki/sync-see-also.js';
 import { runBuild } from '../wiki/build-index.js';
@@ -33,7 +32,7 @@ export function runUpgradeSteps(
     focusDirs: config.focusDirs,
   });
 
-  const wikiDest = resolve(projectRoot, config.wikiDir);
+  const wikiDest = resolveSafeWikiDir(projectRoot, config.wikiDir);
   const dryRun = options.dryRun ?? false;
 
   const wikiMeta = scaffoldWikiTemplates(wikiDest, vars, { overwrite: true, dryRun });

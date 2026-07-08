@@ -18,7 +18,7 @@ import {
   getPackageInstallStatus,
   readInstallConfig,
 } from '../utils/fs.js';
-import { resolveWikiContext } from '../wiki/context.js';
+import { normalizeWikiDir, resolveWikiContext } from '../wiki/context.js';
 import { runBuild } from '../wiki/build-index.js';
 
 type InitFlagValues = {
@@ -99,7 +99,7 @@ export async function init(): Promise<void> {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const wikiDirStr = values.wikiDir;
+  const wikiDirStr = normalizeWikiDir(values.wikiDir);
   const projectNameStr = values.projectName;
   const initTimestamp = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { isAbsolute, join, normalize, relative, resolve } from 'path';
 import { readInstallConfig } from '../utils/fs.js';
 
 export type WikiContext = {
@@ -16,19 +16,57 @@ function inferWikiDirFromAgents(projectRoot: string): string | null {
   return wikiLink ? wikiLink[1] : null;
 }
 
+function wikiDirError(wikiDir: string): Error {
+  return new Error(
+    `Unsafe wiki directory "${wikiDir}". Use a relative child directory such as "wiki" or "docs/wiki".`,
+  );
+}
+
+export function normalizeWikiDir(wikiDir: string): string {
+  const trimmed = wikiDir.trim();
+  if (!trimmed || isAbsolute(trimmed)) {
+    throw wikiDirError(wikiDir);
+  }
+
+  const segments = trimmed.split(/[\\/]+/).filter(Boolean);
+  if (segments.includes('..')) {
+    throw wikiDirError(wikiDir);
+  }
+
+  const normalized = normalize(trimmed).replace(/\\/g, '/');
+  if (!normalized || normalized === '.') {
+    throw wikiDirError(wikiDir);
+  }
+
+  return normalized;
+}
+
+export function resolveSafeWikiDir(projectRoot: string, wikiDir: string): string {
+  const root = resolve(projectRoot);
+  const normalized = normalizeWikiDir(wikiDir);
+  const resolved = resolve(root, normalized);
+  const rel = relative(root, resolved);
+
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) {
+    throw wikiDirError(wikiDir);
+  }
+
+  return resolved;
+}
+
 export function resolveWikiDir(projectRoot: string, wikiDirFlag?: string): string {
   if (wikiDirFlag) {
-    return resolve(projectRoot, wikiDirFlag);
+    return resolveSafeWikiDir(projectRoot, wikiDirFlag);
   }
   const config = readInstallConfig(projectRoot);
   if (config?.wikiDir) {
-    return resolve(projectRoot, config.wikiDir);
+    return resolveSafeWikiDir(projectRoot, config.wikiDir);
   }
   const inferred = inferWikiDirFromAgents(projectRoot);
   if (inferred) {
-    return resolve(projectRoot, inferred);
+    return resolveSafeWikiDir(projectRoot, inferred);
   }
-  return resolve(projectRoot, 'wiki');
+  return resolveSafeWikiDir(projectRoot, 'wiki');
 }
 
 export function resolveWikiContext(
@@ -40,7 +78,7 @@ export function resolveWikiContext(
 ): WikiContext {
   const cwd = options.cwd ?? process.cwd();
   const repoRoot = resolve(options.repoRoot ?? cwd);
-  const wikiDir = resolveWikiDir(cwd, options.wikiDir);
+  const wikiDir = resolveWikiDir(repoRoot, options.wikiDir);
   return { cwd, wikiDir, repoRoot };
 }
 

@@ -1,10 +1,10 @@
 ---
 type: overview
 title: Utils
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-08T11:10:00Z
 tags: [utils]
 related: [entities/commands.md, entities/templates.md, concepts/template-system.md]
-code_refs: [src/utils/fs.ts, src/utils/upgrade.ts, src/utils/fs.test.ts]
+code_refs: [src/utils/fs.ts, src/utils/upgrade.ts, src/utils/fs.test.ts, src/utils/upgrade.test.ts]
 status: active
 summary: Overview of src/utils/ — template copy, interpolation, package.json merge, and upgrade orchestration.
 ---
@@ -27,15 +27,15 @@ Scope tag: **`utils`** (first tag).
 
 ## `upgrade.ts` — upgrade orchestration
 
-| Export                  | Role                                               |
-| ----------------------- | -------------------------------------------------- |
-| `runUpgradeSteps`       | Refresh templates, scripts, and AGENTS.md sections |
-| `runPostUpgradeScripts` | Migrate pages, sync, build, warn-only lint         |
-| `appendUpgradeLog`      | Append upgrade entry to `wiki/log.md`              |
+| Export                  | Role                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| `runUpgradeSteps`       | Validate the configured wiki path, then refresh templates, scripts, and AGENTS.md sections |
+| `runPostUpgradeScripts` | Migrate pages, sync, build, warn-only lint                                                 |
+| `appendUpgradeLog`      | Append upgrade entry to `wiki/log.md`                                                      |
 
 ## Tests
 
-`fs.test.ts` covers template copy, interpolation, install config, scaffold helpers, managed `AGENTS.md` marker behavior (including fenced copied-marker examples), devDependency merging, and local binary detection.
+`fs.test.ts` covers template copy, interpolation, install config, scaffold helpers, managed `AGENTS.md` marker behavior (including fenced copied-marker examples), devDependency merging, and local binary detection. `upgrade.test.ts` locks in that unsafe persisted wiki paths abort before upgrade overwrites project-root files.
 
 ## See also
 

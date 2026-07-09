@@ -45,12 +45,8 @@ describe('assertInitCompatibleWithExistingScaffold', () => {
   });
 
   it('allows re-init with an equal or newer running CLI', () => {
-    expect(() =>
-      assertInitCompatibleWithExistingScaffold(config('1.0.0'), '1.0.0'),
-    ).not.toThrow();
-    expect(() =>
-      assertInitCompatibleWithExistingScaffold(config('1.0.0'), '1.0.1'),
-    ).not.toThrow();
+    expect(() => assertInitCompatibleWithExistingScaffold(config('1.0.0'), '1.0.0')).not.toThrow();
+    expect(() => assertInitCompatibleWithExistingScaffold(config('1.0.0'), '1.0.1')).not.toThrow();
   });
 
   it('refuses to run older init against a newer scaffold config', () => {

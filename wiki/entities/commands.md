@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-09T11:15:00Z
 tags: [commands]
 related:
   [entities/utils.md, concepts/init-command.md, concepts/dogfooding.md, concepts/wiki-scripts.md]
@@ -16,7 +16,7 @@ Scope tag: **`commands`** (first tag).
 
 | File         | Role                                                                                                                                                |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `init.ts`    | Interactive or flag-driven wiki scaffold (see [Init Command](../concepts/init-command.md))                                                          |
+| `init.ts`    | Interactive or flag-driven wiki scaffold; refuses older CLI re-init over newer scaffold config (see [Init Command](../concepts/init-command.md))    |
 | `upgrade.ts` | Refresh templates, sync npm scripts, migrate pages, post-upgrade pipeline; outro reminds `npm install` when local bin is missing (parity with init) |
 
 ## Init flags

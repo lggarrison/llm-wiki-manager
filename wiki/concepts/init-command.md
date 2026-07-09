@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-09T11:15:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -38,6 +38,8 @@ llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 | `--focus-dirs`   | no       | _(whole project)_ |
 
 ## Scaffold steps
+
+Before writing any files, init reads `.llm-wiki-manager.json` when present and refuses to run if the existing scaffold version is newer than the executing CLI. This prevents an older cached or pinned `init` from lowering the recorded scaffold version before a later `upgrade`.
 
 1. **Wiki directory** — copies `templates/wiki/` via `scaffoldWikiTemplates`, creates empty dirs, and writes entity overview stubs when focus dirs are provided.
 2. **index.md** — runs `runBuild` so `wiki:check` passes immediately after init.

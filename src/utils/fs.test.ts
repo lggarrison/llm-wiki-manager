@@ -22,6 +22,7 @@ import {
   buildTemplateVars,
   readInstallConfig,
   writeInstallConfig,
+  inferWikiDirFromAgents,
   inferInstallConfig,
   isExistingInstall,
   WIKI_SCRIPT_KEYS,
@@ -885,6 +886,22 @@ describe('install config', () => {
 
     const inferred = inferInstallConfig(dir);
     expect(inferred?.wikiDir).toBe('docs');
+    expect(inferred?.projectName).toBe('my-app');
+  });
+
+  it('infers nested wiki paths from AGENTS.md', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n');
+    writeFileSync(
+      join(dir, 'AGENTS.md'),
+      '<!-- llm-wiki-manager -->\nRead [`docs/wiki/AGENTS.md`](docs/wiki/AGENTS.md)\n',
+    );
+    mkdirSync(join(dir, 'docs', 'wiki'), { recursive: true });
+    writeFileSync(join(dir, 'docs', 'wiki', 'schema.md'), '# schema\n');
+
+    expect(inferWikiDirFromAgents(dir)).toBe('docs/wiki');
+    const inferred = inferInstallConfig(dir);
+    expect(inferred?.wikiDir).toBe('docs/wiki');
     expect(inferred?.projectName).toBe('my-app');
   });
 

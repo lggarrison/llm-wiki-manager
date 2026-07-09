@@ -145,6 +145,28 @@ export function writeInstallConfig(projectRoot: string, config: InstallConfig): 
   writeFileSync(installConfigPath(projectRoot), `${JSON.stringify(config, null, 2)}\n`, 'utf8');
 }
 
+export function inferWikiDirFromAgents(projectRoot: string): string | null {
+  const agentsPath = join(projectRoot, 'AGENTS.md');
+  if (!existsSync(agentsPath)) return null;
+
+  const agents = readFileSync(agentsPath, 'utf8');
+  const linkMatch =
+    agents.match(/\[[^\]\n]*\]\(([^)\n]+\/AGENTS\.md)\)/) ??
+    agents.match(/`([^`\n]+\/AGENTS\.md)`/);
+  const agentsRel = linkMatch?.[1];
+  if (!agentsRel) return null;
+
+  const normalized = agentsRel.replace(/\\/g, '/').replace(/^\.\//, '');
+  if (normalized.startsWith('/') || /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(normalized)) {
+    return null;
+  }
+
+  const suffix = '/AGENTS.md';
+  if (!normalized.endsWith(suffix)) return null;
+  const wikiDir = normalized.slice(0, -suffix.length).replace(/\/+$/, '');
+  return wikiDir || null;
+}
+
 export function inferInstallConfig(projectRoot: string): InstallConfig | null {
   const pkgPath = join(projectRoot, 'package.json');
   let projectName = projectRoot.split(/[/\\]/).pop() ?? 'project';
@@ -155,14 +177,11 @@ export function inferInstallConfig(projectRoot: string): InstallConfig | null {
   }
 
   let wikiDir = 'wiki';
-  const agentsPath = join(projectRoot, 'AGENTS.md');
-  if (existsSync(agentsPath)) {
-    const agents = readFileSync(agentsPath, 'utf8');
-    const wikiLink = agents.match(/\[`([^/`]+)\/AGENTS\.md`\]/);
-    if (wikiLink) wikiDir = wikiLink[1];
-  }
+  const inferredWikiDir = inferWikiDirFromAgents(projectRoot);
+  if (inferredWikiDir) wikiDir = inferredWikiDir;
 
   const schemaPath = join(projectRoot, wikiDir, 'schema.md');
+  const agentsPath = join(projectRoot, 'AGENTS.md');
   if (!existsSync(schemaPath) && !existsSync(agentsPath)) return null;
 
   return {

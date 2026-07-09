@@ -14,9 +14,11 @@ import {
   buildTemplateVars,
   writeInstallConfig,
   getPackageVersion,
+  compareVersions,
   isExistingInstall,
   getPackageInstallStatus,
   readInstallConfig,
+  type InstallConfig,
 } from '../utils/fs.js';
 import { resolveWikiContext } from '../wiki/context.js';
 import { runBuild } from '../wiki/build-index.js';
@@ -49,6 +51,20 @@ export function parseInitArgs(argv: string[]): InitFlagValues | null {
     wikiDir: readFlag('--wiki-dir', 'wiki'),
     focusDirs: readFlag('--focus-dirs', ''),
   };
+}
+
+export function assertInitCompatibleWithExistingScaffold(
+  existingConfig: InstallConfig | null,
+  runningVersion: string,
+): void {
+  if (!existingConfig) return;
+
+  if (compareVersions(existingConfig.version, runningVersion) <= 0) return;
+
+  throw new Error(
+    `Refusing to run init with llm-wiki-manager v${runningVersion} because this wiki was scaffolded with newer v${existingConfig.version}. ` +
+      'Run npm install and use your project wiki scripts, or rerun init with a matching newer CLI.',
+  );
 }
 
 async function promptInitValues(): Promise<InitFlagValues> {
@@ -113,6 +129,9 @@ export async function init(): Promise<void> {
   const cwd = process.cwd();
   const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
+  const runningVersion = getPackageVersion();
+  const existingConfig = readInstallConfig(cwd);
+  assertInitCompatibleWithExistingScaffold(existingConfig, runningVersion);
   const reInit = isExistingInstall(cwd, wikiDirStr);
 
   if (reInit) {
@@ -139,7 +158,6 @@ export async function init(): Promise<void> {
 
   const pkgResult = mergePackageJsonScripts(cwd);
   const depResult = mergePackageJsonDevDependency(cwd);
-  const runningVersion = getPackageVersion();
   if (pkgResult.status === 'merged') {
     log.step(`Adding npm scripts to package.json (${pkgResult.added.join(', ')})…`);
   } else if (pkgResult.status === 'no-package-json') {
@@ -165,9 +183,8 @@ export async function init(): Promise<void> {
     );
   }
 
-  const existingConfig = readInstallConfig(cwd);
   writeInstallConfig(cwd, {
-    version: getPackageVersion(),
+    version: runningVersion,
     projectName: projectNameStr,
     wikiDir: wikiDirStr,
     focusDirs: focusDirList.length > 0 ? focusDirList : (existingConfig?.focusDirs ?? []),

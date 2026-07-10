@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-10T11:15:00Z
 tags: [testing, vitest]
 related:
   [
@@ -40,7 +40,7 @@ Configuration lives in `vitest.config.ts`: it includes `src/**/*.test.ts` and `t
 | Path                             | Role                                                                                                           |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `src/utils/fs.test.ts`           | Template copy, interpolation, install config, scaffold helpers, managed markers, devDependency merge           |
-| `test/commands/upgrade.test.ts`  | Upgrade step orchestration, AGENTS.md managed section, page migration                                          |
+| `test/commands/upgrade.test.ts`  | Upgrade step orchestration, AGENTS.md managed section, missing log recovery, page migration                    |
 | `test/commands/doctor.test.ts`   | Health-check CLI: missing files, stale index, script mismatches, missing local install when wiki scripts exist |
 | `test/scripts/*.test.ts`         | Behavior of each `llm-wiki-manager` subcommand via built CLI                                                   |
 | `test/workflows/release.test.ts` | Release workflow and RELEASING.md post-release sync invariants                                                 |

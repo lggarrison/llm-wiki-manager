@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Utils
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-10T11:15:00Z
 tags: [utils]
 related: [entities/commands.md, entities/templates.md, concepts/template-system.md]
 code_refs: [src/utils/fs.ts, src/utils/upgrade.ts, src/utils/fs.test.ts]
@@ -23,15 +23,15 @@ Scope tag: **`utils`** (first tag).
 | Entity stubs   | `scaffoldEntityOverviews`, `entityOverviewStub`, `scopeSlugFromFocusDir`                                                                                                                                                    |
 | package.json   | `mergePackageJsonScripts`, `syncPackageJsonScripts`, `mergePackageJsonDevDependency`, `syncPackageJsonDevDependency`, `isPackageBinInstalled`, `packageBinPath`, `PACKAGE_NAME`, `wikiScriptCandidates`, `WIKI_SCRIPT_KEYS` |
 | AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization, standalone end-marker detection, and legacy-tail preservation                                                                                           |
-| Misc           | `getPackageVersion`, `scaffoldWikiEmptyDirs`, `WIKI_EMPTY_DIRS`                                                                                                                                                             |
+| Misc           | `getPackageVersion`, `scaffoldWikiEmptyDirs`, `ensureWikiLog`, `WIKI_EMPTY_DIRS`                                                                                                                                            |
 
 ## `upgrade.ts` — upgrade orchestration
 
-| Export                  | Role                                               |
-| ----------------------- | -------------------------------------------------- |
-| `runUpgradeSteps`       | Refresh templates, scripts, and AGENTS.md sections |
-| `runPostUpgradeScripts` | Migrate pages, sync, build, warn-only lint         |
-| `appendUpgradeLog`      | Append upgrade entry to `wiki/log.md`              |
+| Export                  | Role                                                     |
+| ----------------------- | -------------------------------------------------------- |
+| `runUpgradeSteps`       | Refresh templates, scripts, and AGENTS.md sections       |
+| `runPostUpgradeScripts` | Migrate pages, sync, build, warn-only lint               |
+| `appendUpgradeLog`      | Restore a missing `wiki/log.md` and append upgrade entry |
 
 ## Tests
 

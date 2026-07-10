@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import {
@@ -9,7 +9,11 @@ import {
   interpolate,
   templatePath,
 } from '../../src/utils/fs.js';
-import { runUpgradeSteps, runPostUpgradeScripts } from '../../src/utils/upgrade.js';
+import {
+  appendUpgradeLog,
+  runUpgradeSteps,
+  runPostUpgradeScripts,
+} from '../../src/utils/upgrade.js';
 import { fm, writePage } from '../helpers/wiki.js';
 
 const tmpDirs: string[] = [];
@@ -64,6 +68,30 @@ describe('upgrade helpers', () => {
     runUpgradeSteps(dir, config);
 
     expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
+  });
+
+  it('restores a missing log before appending the upgrade entry', () => {
+    const dir = makeTmpDir();
+    const wikiDir = join(dir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+
+    const config = {
+      version: '0.0.0',
+      projectName: 'acme',
+      wikiDir: 'wiki',
+      focusDirs: [],
+    };
+
+    runUpgradeSteps(dir, config);
+
+    expect(existsSync(join(wikiDir, 'log.md'))).toBe(false);
+
+    appendUpgradeLog(dir, config, '1.0.3');
+
+    const log = readFileSync(join(wikiDir, 'log.md'), 'utf8');
+    expect(log).toContain('Wiki Log — acme');
+    expect(log).toContain('maintenance | Wiki initialized');
+    expect(log).toContain('maintenance | Upgraded llm-wiki-manager to v1.0.3');
   });
 });
 

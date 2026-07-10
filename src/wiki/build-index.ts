@@ -10,8 +10,12 @@ import type { WikiContext } from './context.js';
 
 type PageEntry = { file: string; rel: string; fm: Frontmatter };
 
+function tableCell(value: string): string {
+  return value.replace(/\r?\n/g, ' ').replace(/\|/g, '\\|');
+}
+
 function row(cells: string[]): string {
-  return `| ${cells.join(' | ')} |`;
+  return `| ${cells.map(tableCell).join(' | ')} |`;
 }
 
 function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[] } {

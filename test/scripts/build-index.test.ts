@@ -50,6 +50,20 @@ describe('build command', () => {
     expect(index).toContain('perf');
   });
 
+  it('escapes markdown table separators in generated cells', () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'concepts/oauth.md',
+      fm({ type: 'concept', title: 'OAuth | SAML', tags: ['auth|core', 'sso'] }),
+    );
+    runBuild(dir);
+    const index = readFileSync(join(dir, 'index.md'), 'utf8');
+    expect(index).toContain('[OAuth \\| SAML](concepts/oauth.md)');
+    expect(index).toContain('auth\\|core, sso');
+    expect(runCheck(dir).status).toBe(0);
+  });
+
   it('lists a source page under the Sources section', () => {
     const dir = newWikiDir();
     writePage(dir, 'sources/s.md', fm({ type: 'source', title: 'RFC 9110' }));

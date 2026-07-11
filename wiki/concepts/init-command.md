@@ -15,8 +15,8 @@ The `init` command in `src/commands/init.ts` interactively collects project sett
 
 ## Prompts and variables
 
-| Input             | Default                                 | Used in                                          |
-| ----------------- | --------------------------------------- | ------------------------------------------------ |
+| Input             | Default                                                     | Used in                                          |
+| ----------------- | ----------------------------------------------------------- | ------------------------------------------------ |
 | Project name      | existing config value on re-init; otherwise basename of cwd | `AGENTS.md`, `schema.md`                         |
 | Wiki directory    | existing config value on re-init; otherwise `wiki`          | paths, npm script targets                        |
 | Focus directories | existing config value on re-init; otherwise `src`           | `schema.md`, `AGENTS.md` scope, entity overviews |

@@ -27,6 +27,19 @@ type InitFlagValues = {
   focusDirs: string;
 };
 
+export function getInitPromptDefaults(cwd: string): InitFlagValues {
+  const existingConfig = readInstallConfig(cwd);
+
+  return {
+    projectName: existingConfig?.projectName ?? basename(cwd),
+    wikiDir: existingConfig?.wikiDir ?? 'wiki',
+    focusDirs:
+      existingConfig && existingConfig.focusDirs.length > 0
+        ? existingConfig.focusDirs.join(', ')
+        : 'src',
+  };
+}
+
 export function parseInitArgs(argv: string[]): InitFlagValues | null {
   const flagIndex = argv.indexOf('--project-name');
   if (flagIndex === -1) return null;
@@ -51,10 +64,10 @@ export function parseInitArgs(argv: string[]): InitFlagValues | null {
   };
 }
 
-async function promptInitValues(): Promise<InitFlagValues> {
+async function promptInitValues(defaults: InitFlagValues): Promise<InitFlagValues> {
   const projectName = await text({
     message: 'Project name (used in AGENTS.md and schema.md)',
-    initialValue: basename(process.cwd()),
+    initialValue: defaults.projectName,
     validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(projectName)) {
@@ -64,7 +77,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
 
   const wikiDir = await text({
     message: 'Wiki directory name',
-    initialValue: 'wiki',
+    initialValue: defaults.wikiDir,
     validate: (v) => ((v ?? '').trim().length === 0 ? 'Required' : undefined),
   });
   if (isCancel(wikiDir)) {
@@ -74,7 +87,7 @@ async function promptInitValues(): Promise<InitFlagValues> {
 
   const focusDirs = await text({
     message: 'Directories this wiki should document (comma-separated, e.g. src, api)',
-    initialValue: 'src',
+    initialValue: defaults.focusDirs,
   });
   if (isCancel(focusDirs)) {
     cancel('Cancelled');
@@ -91,8 +104,10 @@ async function promptInitValues(): Promise<InitFlagValues> {
 export async function init(): Promise<void> {
   intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
 
+  const cwd = process.cwd();
+  const existingConfig = readInstallConfig(cwd);
   const fromFlags = parseInitArgs(process.argv.slice(3));
-  const values = fromFlags ?? (await promptInitValues());
+  const values = fromFlags ?? (await promptInitValues(getInitPromptDefaults(cwd)));
 
   const focusDirList = values.focusDirs
     .split(',')
@@ -110,7 +125,6 @@ export async function init(): Promise<void> {
     initTimestamp,
   });
 
-  const cwd = process.cwd();
   const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
   const reInit = isExistingInstall(cwd, wikiDirStr);
@@ -165,7 +179,6 @@ export async function init(): Promise<void> {
     );
   }
 
-  const existingConfig = readInstallConfig(cwd);
   writeInstallConfig(cwd, {
     version: getPackageVersion(),
     projectName: projectNameStr,

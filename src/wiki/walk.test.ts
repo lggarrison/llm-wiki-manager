@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { shouldSkipWikiPath, walkMd, walkMdSkipDirs } from './walk.js';
@@ -74,6 +74,18 @@ describe('walkMd', () => {
     expect(rels).toContain('raw/raw.md');
     expect(rels).not.toContain('raw/articles/notes.md');
   });
+
+  it('does not follow directory symlinks', () => {
+    const wikiDir = makeWikiDir();
+    touch(wikiDir, 'concepts/drawing.md');
+    symlinkSync('..', join(wikiDir, 'concepts', 'loop'), 'dir');
+
+    const rels = walkMd(wikiDir)
+      .map((f) => relPath(wikiDir, f))
+      .sort();
+
+    expect(rels).toEqual(['concepts/drawing.md']);
+  });
 });
 
 describe('walkMdSkipDirs', () => {
@@ -90,5 +102,17 @@ describe('walkMdSkipDirs', () => {
     expect(rels).toContain('concepts/drawing.md');
     expect(rels).not.toContain('raw/raw.md');
     expect(rels).not.toContain('archive/old.md');
+  });
+
+  it('does not follow directory symlinks', () => {
+    const wikiDir = makeWikiDir();
+    touch(wikiDir, 'concepts/drawing.md');
+    symlinkSync('..', join(wikiDir, 'concepts', 'loop'), 'dir');
+
+    const rels = walkMdSkipDirs(wikiDir, ['raw', 'archive', '.obsidian'])
+      .map((f) => relPath(wikiDir, f))
+      .sort();
+
+    expect(rels).toEqual(['concepts/drawing.md']);
   });
 });

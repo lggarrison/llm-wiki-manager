@@ -1,9 +1,11 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createRequire } from 'module';
-import { readFileSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 import { PACKAGE_ROOT } from '../helpers/paths.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const require = createRequire(import.meta.url);
 
@@ -156,6 +158,37 @@ describe('build command', () => {
     writeFileSync(indexPath, lf.replace(/\n/g, '\r\n'), 'utf8');
     const result = runCheck(dir);
     expect(result.status).toBe(0);
+  });
+
+  it('resolves the default wiki directory from --repo-root instead of the caller cwd', () => {
+    const root = mkdtempSync(join(tmpdir(), 'llm-wiki-repo-root-test-'));
+    dirs.push(root);
+    const projectDir = join(root, 'project');
+    const otherDir = join(root, 'other');
+    const projectWiki = join(projectDir, 'wiki');
+    const otherWiki = join(otherDir, 'wiki');
+
+    mkdirSync(join(projectWiki, 'concepts'), { recursive: true });
+    mkdirSync(join(otherWiki, 'concepts'), { recursive: true });
+    writeFileSync(
+      join(projectDir, '.llm-wiki-manager.json'),
+      `${JSON.stringify({
+        version: '1.0.3',
+        projectName: 'target',
+        wikiDir: 'wiki',
+        focusDirs: [],
+      })}\n`,
+    );
+    writeFileSync(join(projectWiki, 'index.md'), '# stale target\n');
+    writeFileSync(join(otherWiki, 'index.md'), '# should stay stale\n');
+    writePage(projectWiki, 'concepts/target.md', fm({ type: 'concept', title: 'Target Page' }));
+    writePage(otherWiki, 'concepts/wrong.md', fm({ type: 'concept', title: 'Wrong Page' }));
+
+    const result = runBuiltCli(otherDir, ['build', '--repo-root', projectDir]);
+
+    expect(result.status).toBe(0);
+    expect(readFileSync(join(projectWiki, 'index.md'), 'utf8')).toContain('Target Page');
+    expect(readFileSync(join(otherWiki, 'index.md'), 'utf8')).toBe('# should stay stale\n');
   });
 
   it('build output is unchanged by a second Prettier pass', async () => {

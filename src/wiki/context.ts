@@ -40,7 +40,7 @@ export function resolveWikiContext(
 ): WikiContext {
   const cwd = options.cwd ?? process.cwd();
   const repoRoot = resolve(options.repoRoot ?? cwd);
-  const wikiDir = resolveWikiDir(cwd, options.wikiDir);
+  const wikiDir = resolveWikiDir(repoRoot, options.wikiDir);
   return { cwd, wikiDir, repoRoot };
 }
 

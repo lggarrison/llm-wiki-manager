@@ -5,7 +5,8 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 import { PACKAGE_ROOT } from '../helpers/paths.js';
-import { runBuiltCli } from '../helpers/cli.js';
+import { runBuild as runBuildIndex } from '../../src/wiki/build-index.js';
+import { resolveWikiContext } from '../../src/wiki/context.js';
 
 const require = createRequire(import.meta.url);
 
@@ -160,7 +161,7 @@ describe('build command', () => {
     expect(result.status).toBe(0);
   });
 
-  it('resolves the default wiki directory from --repo-root instead of the caller cwd', () => {
+  it('resolves the default wiki directory from --repo-root instead of the caller cwd', async () => {
     const root = mkdtempSync(join(tmpdir(), 'llm-wiki-repo-root-test-'));
     dirs.push(root);
     const projectDir = join(root, 'project');
@@ -184,9 +185,9 @@ describe('build command', () => {
     writePage(projectWiki, 'concepts/target.md', fm({ type: 'concept', title: 'Target Page' }));
     writePage(otherWiki, 'concepts/wrong.md', fm({ type: 'concept', title: 'Wrong Page' }));
 
-    const result = runBuiltCli(otherDir, ['build', '--repo-root', projectDir]);
+    const status = await runBuildIndex(resolveWikiContext({ cwd: otherDir, repoRoot: projectDir }));
 
-    expect(result.status).toBe(0);
+    expect(status).toBe(0);
     expect(readFileSync(join(projectWiki, 'index.md'), 'utf8')).toContain('Target Page');
     expect(readFileSync(join(otherWiki, 'index.md'), 'utf8')).toBe('# should stay stale\n');
   });

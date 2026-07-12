@@ -1,4 +1,4 @@
-import { readdirSync, statSync, existsSync } from 'fs';
+import { readdirSync, lstatSync, existsSync } from 'fs';
 import { join, relative } from 'path';
 import { RAW_ARTIFACT_DIRS } from './constants.js';
 
@@ -19,7 +19,9 @@ export function walkMd(wikiDir: string): string[] {
     for (const entry of readdirSync(dir)) {
       const full = join(dir, entry);
       if (shouldSkipWikiPath(wikiDir, full)) continue;
-      if (statSync(full).isDirectory()) walk(full);
+      const stats = lstatSync(full);
+      if (stats.isSymbolicLink()) continue;
+      if (stats.isDirectory()) walk(full);
       else if (entry.endsWith('.md')) results.push(full);
     }
   }
@@ -35,7 +37,9 @@ export function walkMdSkipDirs(wikiDir: string, skipDirs: string[]): string[] {
       const full = join(dir, entry);
       const rel = relative(wikiDir, full).replace(/\\/g, '/');
       if (skipDirs.some((d) => rel === d || rel.startsWith(`${d}/`))) continue;
-      if (statSync(full).isDirectory()) walk(full);
+      const stats = lstatSync(full);
+      if (stats.isSymbolicLink()) continue;
+      if (stats.isDirectory()) walk(full);
       else if (entry.endsWith('.md')) results.push(full);
     }
   }

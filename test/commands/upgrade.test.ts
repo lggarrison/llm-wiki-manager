@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { mkdtempSync, readFileSync, symlinkSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import {
@@ -64,6 +64,25 @@ describe('upgrade helpers', () => {
     runUpgradeSteps(dir, config);
 
     expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
+  });
+
+  it('refuses to refresh wiki meta through a symlink', () => {
+    const dir = makeTmpDir();
+    const wikiDir = join(dir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+    const target = join(dir, 'outside-schema.md');
+    writeFileSync(target, '# outside schema\n', 'utf8');
+    symlinkSync(target, join(wikiDir, 'schema.md'));
+
+    const config = {
+      version: '0.0.0',
+      projectName: 'acme',
+      wikiDir: 'wiki',
+      focusDirs: ['src'],
+    };
+
+    expect(() => runUpgradeSteps(dir, config)).toThrow('Refusing to write through symlink');
+    expect(readFileSync(target, 'utf8')).toBe('# outside schema\n');
   });
 });
 

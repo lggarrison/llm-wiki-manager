@@ -5,6 +5,7 @@ import { walkMd } from './walk.js';
 import { BUILD_INDEX_SKIP } from './constants.js';
 import { formatIndexMarkdown } from './format-index.js';
 import { resolveWikiContext } from './context.js';
+import { assertNotSymlinkWrite } from '../utils/fs.js';
 import type { Frontmatter } from './frontmatter.js';
 import type { WikiContext } from './context.js';
 
@@ -162,6 +163,7 @@ export async function runBuild(ctx: WikiContext): Promise<number> {
   const { wikiDir } = ctx;
   const { output, pages } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
+  assertNotSymlinkWrite(indexPath);
   writeFileSync(indexPath, output, 'utf8');
   console.log(`✓ index.md written (${pages.length} page(s))`);
   return 0;

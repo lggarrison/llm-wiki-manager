@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createRequire } from 'module';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, symlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 import { PACKAGE_ROOT } from '../helpers/paths.js';
@@ -145,6 +145,20 @@ describe('build command', () => {
     const before = readFileSync(join(dir, 'index.md'), 'utf8');
     runCheck(dir);
     expect(readFileSync(join(dir, 'index.md'), 'utf8')).toBe(before);
+  });
+
+  it('refuses to overwrite index.md through a symlink', () => {
+    const dir = newWikiDir();
+    const target = join(dir, '..', 'outside-index.md');
+    writeFileSync(target, 'do not overwrite\n', 'utf8');
+    symlinkSync(target, join(dir, 'index.md'));
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
+
+    const result = runBuild(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Refusing to write through symlink');
+    expect(readFileSync(target, 'utf8')).toBe('do not overwrite\n');
   });
 
   it('check passes when git checked index.md out with CRLF line endings', () => {

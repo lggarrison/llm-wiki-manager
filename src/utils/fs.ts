@@ -4,6 +4,7 @@ import {
   readdirSync,
   readFileSync,
   statSync,
+  lstatSync,
   writeFileSync,
   existsSync,
 } from 'fs';
@@ -97,6 +98,17 @@ export function readJsonFile<T>(path: string): T {
   return JSON.parse(raw) as T;
 }
 
+export function assertNotSymlinkWrite(path: string): void {
+  try {
+    if (lstatSync(path).isSymbolicLink()) {
+      throw new Error(`Refusing to write through symlink: ${path}`);
+    }
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw err;
+  }
+}
+
 export function getPackageVersion(): string {
   const pkg = readJsonFile<{ version: string }>(join(PACKAGE_ROOT, 'package.json'));
   return pkg.version;
@@ -175,6 +187,7 @@ export function inferInstallConfig(projectRoot: string): InstallConfig | null {
 
 function writeInterpolatedFile(src: string, dest: string, vars: Record<string, string>): void {
   mkdirSync(dirname(dest), { recursive: true });
+  assertNotSymlinkWrite(dest);
   const name = src.split(/[/\\]/).pop() ?? '';
   const raw = readFileSync(src, 'utf8');
   const content = shouldInterpolateFile(name) ? interpolate(raw, vars) : raw;

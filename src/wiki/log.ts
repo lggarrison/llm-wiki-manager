@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { assertNotSymlinkWrite } from '../utils/fs.js';
 import type { WikiContext } from './context.js';
 
 const VALID_OPS = new Set(['ingest', 'query', 'lint', 'maintenance']);
@@ -56,6 +57,7 @@ export function runLog(ctx: WikiContext, args: string[]): number {
   }
 
   const entry = `\n## [${date}] ${op} | ${title}\n`;
+  assertNotSymlinkWrite(logPath);
   const existing = readFileSync(logPath, 'utf8');
   writeFileSync(logPath, existing.trimEnd() + '\n' + entry, 'utf8');
   console.log(`✓ Logged: [${date}] ${op} | ${title}`);

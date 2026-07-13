@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
+import { readFileSync, symlinkSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { makeTmpWikiDir, cleanup } from '../helpers/wiki.js';
@@ -104,6 +104,20 @@ describe('log command', () => {
     const result = runLog(dir, ['add', 'ingest', 'Title']);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('log.md not found');
+  });
+
+  it('refuses to append log.md through a symlink', () => {
+    const dir = makeTmpWikiDir();
+    dirs.push(dir);
+    const target = join(dir, '..', 'outside-log.md');
+    writeFileSync(target, '# Outside log\n', 'utf8');
+    symlinkSync(target, join(dir, 'log.md'));
+
+    const result = runLog(dir, ['add', 'ingest', 'Title']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Refusing to write through symlink');
+    expect(readFileSync(target, 'utf8')).toBe('# Outside log\n');
   });
 
   it('appends without clobbering existing entries', () => {

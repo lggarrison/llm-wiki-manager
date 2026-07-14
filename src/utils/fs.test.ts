@@ -549,7 +549,7 @@ describe('getPackageInstallStatus', () => {
     expect(needsPackageInstall(dir, '1.0.2')).toBe(false);
   });
 
-  it('reports no install needed when installed version is newer than target', () => {
+  it('reports ahead when installed version is newer than target', () => {
     const dir = makeTmpDir();
     const pkgDir = join(dir, 'node_modules', PACKAGE_NAME);
     mkdirSync(pkgDir, { recursive: true });
@@ -560,7 +560,13 @@ describe('getPackageInstallStatus', () => {
     mkdirSync(join(dir, 'node_modules', '.bin'), { recursive: true });
     writeFileSync(packageBinPath(dir), '');
 
-    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({ needsInstall: false });
+    expect(getPackageInstallStatus(dir, '1.0.2')).toEqual({
+      needsInstall: false,
+      reason: 'ahead',
+      installedVersion: '2.0.0',
+      targetVersion: '1.0.2',
+    });
+    expect(needsPackageInstall(dir, '1.0.2')).toBe(false);
   });
 
   it('reports missing when package version matches but the bin shim is absent', () => {

@@ -55,6 +55,17 @@ export async function upgrade(): Promise<void> {
     log.warn('Dry run — no files will be modified.');
   }
 
+  const hasPackageJson = existsSync(join(cwd, 'package.json'));
+  const installStatus = hasPackageJson ? getPackageInstallStatus(cwd, packageVersion) : null;
+  if (installStatus?.reason === 'ahead') {
+    throw new Error(
+      `Local ${pc.bold('llm-wiki-manager')} install is v${installStatus.installedVersion}, ` +
+        `but this upgrade command is v${installStatus.targetVersion}. ` +
+        `Run ${pc.bold('npm exec llm-wiki-manager -- upgrade')} or ` +
+        `${pc.bold('npx llm-wiki-manager@latest upgrade')} so newer wiki templates are not overwritten by an older CLI.`,
+    );
+  }
+
   const { wikiMeta } = runUpgradeSteps(cwd, config, options);
 
   if (wikiMeta.created.length + wikiMeta.updated.length > 0) {
@@ -80,8 +91,6 @@ export async function upgrade(): Promise<void> {
 
     const pkgResult = syncPackageJsonScripts(cwd);
     const depResult = syncPackageJsonDevDependency(cwd);
-    const hasPackageJson = pkgResult.status !== 'no-package-json';
-    const installStatus = hasPackageJson ? getPackageInstallStatus(cwd, packageVersion) : null;
     if (pkgResult.status === 'synced') {
       const changes = [...pkgResult.added, ...pkgResult.updated.map((k) => `${k} (updated)`)];
       log.step(`Synced package.json wiki scripts (${changes.join(', ')})…`);

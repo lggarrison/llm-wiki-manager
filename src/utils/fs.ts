@@ -358,7 +358,8 @@ export type MergeDevDependencyResult =
   | { status: 'unchanged' };
 
 export type PackageInstallStatus =
-  | { needsInstall: false }
+  | { needsInstall: false; reason?: undefined }
+  | { needsInstall: false; reason: 'ahead'; installedVersion: string; targetVersion: string }
   | { needsInstall: true; reason: 'missing' }
   | { needsInstall: true; reason: 'stale'; installedVersion: string; targetVersion: string };
 
@@ -411,6 +412,9 @@ export function getPackageInstallStatus(
   }
   if (compareVersions(installedVersion, targetVersion) < 0) {
     return { needsInstall: true, reason: 'stale', installedVersion, targetVersion };
+  }
+  if (compareVersions(installedVersion, targetVersion) > 0) {
+    return { needsInstall: false, reason: 'ahead', installedVersion, targetVersion };
   }
   if (!isPackageBinInstalled(projectRoot, packageName)) {
     return { needsInstall: true, reason: 'missing' };

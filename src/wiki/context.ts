@@ -1,20 +1,11 @@
-import { existsSync, readFileSync } from 'fs';
-import { join, resolve } from 'path';
-import { readInstallConfig } from '../utils/fs.js';
+import { resolve } from 'path';
+import { inferWikiDirFromAgents, readInstallConfig } from '../utils/fs.js';
 
 export type WikiContext = {
   cwd: string;
   wikiDir: string;
   repoRoot: string;
 };
-
-function inferWikiDirFromAgents(projectRoot: string): string | null {
-  const agentsPath = join(projectRoot, 'AGENTS.md');
-  if (!existsSync(agentsPath)) return null;
-  const agents = readFileSync(agentsPath, 'utf8');
-  const wikiLink = agents.match(/\[`([^/`]+)\/AGENTS\.md`\]/);
-  return wikiLink ? wikiLink[1] : null;
-}
 
 export function resolveWikiDir(projectRoot: string, wikiDirFlag?: string): string {
   if (wikiDirFlag) {

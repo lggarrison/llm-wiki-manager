@@ -28,7 +28,7 @@ export type CopyTemplateResult = {
   updated: string[];
 };
 
-/** Wiki meta files refreshed by upgrade (not index.md or log.md). */
+/** Wiki meta files handled by upgrade (not index.md or log.md). */
 export const WIKI_META_UPGRADE_PATHS = [
   'schema.md',
   'AGENTS.md',
@@ -198,6 +198,7 @@ function shouldCopyWikiPath(relPath: string, overwrite: boolean, wikiDest: strin
   const dest = join(wikiDest, relPath);
   if (overwrite) {
     if (relPath === 'index.md' || relPath === 'log.md') return false;
+    if (relPath === '.entity-scopes') return !existsSync(dest);
     return (
       (WIKI_META_UPGRADE_PATHS as readonly string[]).includes(relPath) ||
       relPath.startsWith('.obsidian/')

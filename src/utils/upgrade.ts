@@ -2,6 +2,7 @@ import { resolve } from 'path';
 import type { InstallConfig } from './fs.js';
 import {
   buildTemplateVars,
+  ensureWikiLog,
   scaffoldWikiEmptyDirs,
   scaffoldEntityOverviews,
   scaffoldWikiTemplates,
@@ -80,6 +81,13 @@ export function appendUpgradeLog(
   config: InstallConfig,
   version: string,
 ): void {
+  const vars = buildTemplateVars({
+    projectName: config.projectName,
+    wikiDir: config.wikiDir,
+    focusDirs: config.focusDirs,
+  });
+  ensureWikiLog(resolve(projectRoot, config.wikiDir), vars);
+
   const ctx = resolveWikiContext({
     cwd: projectRoot,
     wikiDir: config.wikiDir,

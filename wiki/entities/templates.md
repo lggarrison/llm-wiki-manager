@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Templates
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-10T11:15:00Z
 tags: [templates]
 related: [entities/utils.md, concepts/template-system.md]
 code_refs:
@@ -46,7 +46,7 @@ Init copies **`templates/wiki/`** and amends root **`templates/AGENTS.md`** into
 | `raw/raw.md`     | Raw sources hub                         |
 | `.entity-scopes` | Required entity overview slugs for lint |
 
-Upgrade refreshes meta paths listed in `WIKI_META_UPGRADE_PATHS` in `src/utils/fs.ts`; init-only paths (`index.md`, `log.md`) are created on first init but not overwritten on re-init. Root `AGENTS.md` refreshes use managed markers and ignore copied end-marker examples inside fenced code.
+Upgrade refreshes meta paths listed in `WIKI_META_UPGRADE_PATHS` in `src/utils/fs.ts`; init-only paths (`index.md`, `log.md`) are created on first init but not overwritten on re-init, while upgrade restores `log.md` from the template if it is missing before appending its maintenance entry. Root `AGENTS.md` refreshes use managed markers and ignore copied end-marker examples inside fenced code.
 
 ## See also
 

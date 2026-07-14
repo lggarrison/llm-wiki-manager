@@ -249,6 +249,14 @@ export function scaffoldWikiTemplates(
   return result;
 }
 
+export function ensureWikiLog(wikiDest: string, vars: Record<string, string>): boolean {
+  const logPath = join(wikiDest, 'log.md');
+  if (existsSync(logPath)) return false;
+
+  writeInterpolatedFile(templatePath('wiki', 'log.md'), logPath, vars);
+  return true;
+}
+
 /** Derive a flat entity scope slug from a focus directory path (e.g. src/ui/_app/ → app). */
 export function scopeSlugFromFocusDir(focusDir: string): string {
   const normalized = focusDir.replace(/\\/g, '/').replace(/\/$/, '');

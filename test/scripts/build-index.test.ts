@@ -75,6 +75,38 @@ describe('build command', () => {
     expect(index).toContain('billing');
   });
 
+  it('lists all valid entity-family page types under the Entities section', () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'entities/billing.md',
+      fm({ type: 'overview', title: 'Billing', tags: ['billing'] }),
+    );
+    writePage(
+      dir,
+      'entities/invoices.md',
+      fm({ type: 'entity', title: 'Invoices', tags: ['billing'] }),
+    );
+    writePage(
+      dir,
+      'entities/payment-comparison.md',
+      fm({ type: 'comparison', title: 'Payment Comparison', tags: ['billing'] }),
+    );
+    writePage(
+      dir,
+      'entities/retry-deep-dive.md',
+      fm({ type: 'deep-dive', title: 'Retry Deep Dive', tags: ['billing'] }),
+    );
+
+    runBuild(dir);
+    const index = readFileSync(join(dir, 'index.md'), 'utf8');
+    expect(index).toMatch(/## Entities/);
+    expect(index).toContain('[Billing](entities/billing.md)');
+    expect(index).toContain('[Invoices](entities/invoices.md)');
+    expect(index).toContain('[Payment Comparison](entities/payment-comparison.md)');
+    expect(index).toContain('[Retry Deep Dive](entities/retry-deep-dive.md)');
+  });
+
   it('sorts pages within a section alphabetically by title', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/z.md', fm({ type: 'concept', title: 'Zebra' }));

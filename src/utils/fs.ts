@@ -362,8 +362,8 @@ export type PackageInstallStatus =
   | { needsInstall: true; reason: 'missing' }
   | { needsInstall: true; reason: 'stale'; installedVersion: string; targetVersion: string };
 
-function parsePinnedVersion(range: string): string | null {
-  const match = range.match(/(\d+\.\d+\.\d+)/);
+function parseRegistryVersionSpecifier(range: string): string | null {
+  const match = range.trim().match(/^(?:[\^~]|[<>=]=?)?v?(\d+\.\d+\.\d+)$/);
   return match?.[1] ?? null;
 }
 
@@ -453,8 +453,8 @@ export function mergePackageJsonDevDependency(
   }
 
   if (existing) {
-    const existingVersion = parsePinnedVersion(existing);
-    if (existingVersion && compareVersions(version, existingVersion) <= 0) {
+    const existingVersion = parseRegistryVersionSpecifier(existing);
+    if (!existingVersion || compareVersions(version, existingVersion) <= 0) {
       return { status: 'unchanged' };
     }
   }

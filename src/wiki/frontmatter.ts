@@ -1,6 +1,6 @@
 export type Frontmatter = Record<string, string | string[]>;
 
-const FM_BLOCK = /^---\r?\n([\s\S]*?)\r?\n---/;
+const FM_BLOCK = /^\uFEFF?---\r?\n([\s\S]*?)\r?\n---/;
 
 function parseInlineArray(raw: string): string[] {
   return raw

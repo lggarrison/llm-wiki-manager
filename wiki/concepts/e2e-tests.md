@@ -1,7 +1,7 @@
 ---
 type: concept
 title: E2E Tests
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-15T11:00:00Z
 tags: [testing, vitest, cli]
 related:
   [concepts/unit-tests.md, concepts/init-command.md, concepts/dogfooding.md, entities/commands.md]
@@ -56,7 +56,7 @@ Covers init, upgrade, and CLI meta behavior:
 | UTF-8 BOM package.json    | Init succeeds; `doctor` reports no problems (tests stub local bin when needed)               |
 | CLI meta flags            | `--version`, `--help`, and unknown-command error handling                                    |
 
-Each test creates a temp directory with a minimal `package.json`, runs CLI commands via helpers, and cleans up in `afterEach`.
+Each test creates a temp directory with a minimal `package.json`, runs CLI commands via helpers, and cleans up in `afterEach`. Unit coverage in `test/scripts/migrate-pages.test.ts` also exercises migration edge cases such as BOM-prefixed frontmatter.
 
 ### `test/e2e/tarball-smoke.test.ts`
 

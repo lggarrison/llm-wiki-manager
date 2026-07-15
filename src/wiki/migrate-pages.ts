@@ -45,7 +45,7 @@ function buildSlugTargetMap(pages: string[], wikiDir: string): Map<string, strin
 }
 
 function splitFrontmatter(content: string): FrontmatterParts | null {
-  const match = /^(---\r?\n)([\s\S]*?)(\r?\n---)(\r?\n|$)/.exec(content);
+  const match = /^(\uFEFF?---\r?\n)([\s\S]*?)(\r?\n---)(\r?\n|$)/.exec(content);
   if (!match) return null;
 
   return {

@@ -187,6 +187,39 @@ describe('migrate-pages', () => {
     );
   });
 
+  it('keeps wikilink migration out of BOM-prefixed frontmatter', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/other.md',
+      fm({ title: 'Other', type: 'concept' }) + '\n# Other\n',
+    );
+    const legacyPath = writePage(
+      wikiDir,
+      'concepts/legacy.md',
+      [
+        '\uFEFF---',
+        'type: concept',
+        'title: Legacy',
+        'related: [concepts/[[other]].md]',
+        'last_updated: 2026-01-15',
+        'status: draft',
+        '---',
+        'See [[other]].',
+        '',
+      ].join('\n'),
+    );
+
+    runMigrateWiki(wikiDir);
+
+    const content = readFileSync(legacyPath, 'utf8');
+    expect(content.charCodeAt(0)).toBe(0xfeff);
+    expect(content).toContain('related: [concepts/[[other]].md]');
+    expect(content).toContain('last_updated: 2026-01-15T00:00:00Z');
+    expect(content).toContain('status: wip');
+    expect(content).toContain('See [other](other.md).');
+  });
+
   it('supports --dry-run without writing files', () => {
     const { wikiDir } = makeTmpProject();
     writePage(

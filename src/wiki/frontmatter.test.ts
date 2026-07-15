@@ -11,6 +11,11 @@ describe('parseFrontmatter', () => {
     expect(fm).toEqual({ type: 'concept', title: 'A Page', tags: ['a', 'b'] });
   });
 
+  it('parses frontmatter with a leading UTF-8 BOM', () => {
+    const fm = parseFrontmatter(`\uFEFF${page('type: concept\ntitle: BOM Page')}`);
+    expect(fm).toEqual({ type: 'concept', title: 'BOM Page' });
+  });
+
   it('strips surrounding quotes from scalar values', () => {
     const fm = parseFrontmatter(page("title: 'Quoted Title'"));
     expect(fm?.title).toBe('Quoted Title');
@@ -44,6 +49,13 @@ describe('detectBlockListKeys', () => {
   it('finds keys written as block-style YAML lists', () => {
     const keys = detectBlockListKeys(
       page('type: concept\nrelated:\n  - concepts/a.md\n  - concepts/b.md\ntags: [x]'),
+    );
+    expect(keys).toEqual(['related']);
+  });
+
+  it('detects block-style YAML lists after a leading UTF-8 BOM', () => {
+    const keys = detectBlockListKeys(
+      `\uFEFF${page('type: concept\nrelated:\n  - concepts/a.md\n  - concepts/b.md')}`,
     );
     expect(keys).toEqual(['related']);
   });

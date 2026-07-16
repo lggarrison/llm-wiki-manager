@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-16T11:08:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -21,6 +21,7 @@ code_refs:
     src/wiki/help.ts,
     src/wiki/doctor.ts,
     src/wiki/setup-husky.ts,
+    src/wiki/lint-staged-snippet.ts,
     src/wiki/migrate-pages.ts,
     src/wiki/constants.ts,
   ]
@@ -80,7 +81,7 @@ Use `wiki:check` (read-only) in consumer CI and pre-push hooks to catch stale `i
 
 ## Git hooks
 
-- **Consumers:** `wiki:setup:husky` wires pre-push `wiki:check` and prints a lint-staged snippet for pre-commit wiki validation.
+- **Consumers:** `wiki:setup:husky` wires pre-push `wiki:check` and prints a lint-staged snippet for pre-commit wiki validation. The snippet runs `wiki:build`, explicitly stages the regenerated `index.md`, then runs `wiki:lint` and Prettier on the matched wiki pages.
 - **This repo (maintainers):** pre-push runs the full `release:check` chain (see [Dogfooding](dogfooding.md)), not just `wiki:check`.
 
 ## See also

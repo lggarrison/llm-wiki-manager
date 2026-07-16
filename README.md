@@ -469,13 +469,14 @@ Merge this into the root `{ ... }` object (if `"lint-staged"` already exists, ad
 "lint-staged": {
   "wiki/**/*.md": [
     "npm run wiki:build",
+    "git add -- \"wiki/index.md\"",
     "npm run wiki:lint",
     "prettier --write"
   ]
 }
 ```
 
-Adjust the glob if your wiki directory is not `wiki/`. lint-staged re-stages any files modified by these tasks (including regenerated `wiki/index.md`). `wiki:build` emits Prettier-compatible `index.md`, so this pipeline is idempotent when the only change would have been table formatting.
+Adjust the glob and `git add -- "wiki/index.md"` path if your wiki directory is not `wiki/`. The explicit `git add` stages the regenerated index because lint-staged only auto-stages the matched wiki pages it was asked to process. `wiki:build` emits Prettier-compatible `index.md`, so this pipeline is idempotent when the only change would have been table formatting.
 
 **4. Pre-commit — create `.husky/pre-commit`**
 

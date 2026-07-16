@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The recommended lint-staged wiki hook now explicitly stages regenerated `wiki/index.md` after `wiki:build`, preventing commits that include a new wiki page but omit the updated index.
+
 ## [1.0.3] - 2026-07-02
 
 ### Fixed

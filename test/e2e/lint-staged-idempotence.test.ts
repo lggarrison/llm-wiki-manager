@@ -5,6 +5,7 @@ import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
 import { PACKAGE_ROOT } from '../helpers/wiki.js';
+import { formatLintStagedPackageJsonSnippet } from '../../src/wiki/lint-staged-snippet.js';
 
 const tmpDirs: string[] = [];
 
@@ -51,6 +52,18 @@ function pinDevDependencyToPackedTarball(dir: string): void {
     devDependencies: Record<string, string>;
   };
   pkg.devDependencies['llm-wiki-manager'] = `file:${join(packDir, tarball!)}`;
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+}
+
+function configureLintStaged(dir: string): void {
+  const pkgPath = join(dir, 'package.json');
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+    'lint-staged'?: Record<string, string[]>;
+  };
+  const snippet = JSON.parse(`{${formatLintStagedPackageJsonSnippet('wiki')}}`) as {
+    'lint-staged': Record<string, string[]>;
+  };
+  pkg['lint-staged'] = snippet['lint-staged'];
   writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 }
 
@@ -102,5 +115,79 @@ describe('lint-staged idempotence e2e', () => {
     const secondBuild = runBuiltCli(dir, ['build', '--wiki-dir', 'wiki']);
     expect(secondBuild.status).toBe(0);
     expect(readFileSync(indexPath, 'utf8')).toBe(committed);
+  }, 60_000);
+
+  it('stages regenerated index.md when lint-staged runs for a new wiki page', () => {
+    const dir = makeTmpProject();
+
+    const init = runBuiltCli(dir, [
+      'init',
+      '--project-name',
+      'acme',
+      '--wiki-dir',
+      'wiki',
+      '--focus-dirs',
+      'src',
+    ]);
+    expect(init.status).toBe(0);
+
+    writeFileSync(join(dir, '.gitignore'), 'node_modules\n');
+    cpSync(join(PACKAGE_ROOT, '.prettierrc.json'), join(dir, '.prettierrc.json'));
+
+    pinDevDependencyToPackedTarball(dir);
+    configureLintStaged(dir);
+
+    const installHookDeps = run('npm', dir, ['install', '-D', 'lint-staged', 'prettier']);
+    expect(installHookDeps.status).toBe(0);
+
+    expect(run('git', dir, ['init']).status).toBe(0);
+    run('git', dir, ['config', 'user.email', 'test@example.com']);
+    run('git', dir, ['config', 'user.name', 'Test User']);
+    expect(run('git', dir, ['add', '-A']).status).toBe(0);
+    expect(run('git', dir, ['commit', '-m', 'init wiki']).status).toBe(0);
+
+    writeFileSync(
+      join(dir, 'wiki', 'concepts', 'new-runtime-page.md'),
+      [
+        '---',
+        'type: concept',
+        'title: New Runtime Page',
+        'last_updated: 2026-07-16T00:00:00Z',
+        'tags: []',
+        'related: []',
+        'status: active',
+        '---',
+        '',
+        'Runtime body.',
+        '',
+      ].join('\n'),
+    );
+    expect(run('git', dir, ['add', 'wiki/concepts/new-runtime-page.md']).status).toBe(0);
+
+    const lintStaged = run('npx', dir, ['lint-staged']);
+    expect(lintStaged.status).toBe(0);
+
+    const stagedNames = run('git', dir, ['diff', '--cached', '--name-only']);
+    expect(stagedNames.status).toBe(0);
+    expect(stagedNames.stdout.trim().split('\n').sort()).toEqual([
+      'wiki/concepts/new-runtime-page.md',
+      'wiki/index.md',
+    ]);
+
+    const unstagedNames = run('git', dir, ['diff', '--name-only']);
+    expect(unstagedNames.status).toBe(0);
+    expect(unstagedNames.stdout.trim()).toBe('');
+
+    const stagedTree = mkdtempSync(join(tmpdir(), 'llm-wiki-staged-tree-'));
+    tmpDirs.push(stagedTree);
+    const checkoutStaged = run('git', dir, ['checkout-index', '-a', `--prefix=${stagedTree}/`]);
+    expect(checkoutStaged.status).toBe(0);
+
+    const stagedInstall = run('npm', stagedTree, ['install']);
+    expect(stagedInstall.status).toBe(0);
+
+    const stagedCheck = run('npm', stagedTree, ['run', 'wiki:check']);
+    expect(stagedCheck.status).toBe(0);
+    expect(stagedCheck.stdout).toContain('index.md is up to date');
   }, 60_000);
 });

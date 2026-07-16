@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Dogfooding
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-07-16T11:08:00Z
 tags: [dogfooding, architecture]
 related:
   [
@@ -44,7 +44,7 @@ Do not migrate install docs into the wiki. Add concept pages when design decisio
 Dogfooding is enforced, not decorative:
 
 - **`release:check`** and **CI** run the full gate chain: `check:node-types` → `lint` → `format:check` → `test` → `build` → `test:e2e` → `wiki:lint` → `wiki:check` (see [Node Version and @types/node Alignment](node-version-and-types.md))
-- **pre-commit** runs `lint-staged`: on `wiki/**/*.md`, `wiki:build`, `wiki:lint`, and Prettier; on other staged files, ESLint and Prettier
+- **pre-commit** runs `lint-staged`: on `wiki/**/*.md`, `wiki:build`, explicit staging for regenerated `wiki/index.md`, `wiki:lint`, and Prettier; on other staged files, ESLint and Prettier
 - **pre-push** runs `npm run release:check` (`.husky/pre-push`)
 - **`test/scripts/*.test.ts`** exercise CLI subcommands via the built `dist/bin/cli.js`
 - **`test/e2e/tarball-smoke.test.ts`** verifies subcommands work from an npm-packed install

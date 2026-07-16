@@ -1,7 +1,7 @@
 ---
 type: concept
 title: E2E Tests
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-16T11:08:00Z
 tags: [testing, vitest, cli]
 related:
   [concepts/unit-tests.md, concepts/init-command.md, concepts/dogfooding.md, entities/commands.md]
@@ -64,7 +64,7 @@ Packs the package with `npm pack`, installs it into a temp consumer project, and
 
 ### `test/e2e/lint-staged-idempotence.test.ts`
 
-Reproduces the lint-staged empty-commit bug in a temp consumer project: `init` with `--focus-dirs src`, commit formatted `index.md`, then run `build` → `lint` → `prettier --write` and assert `index.md` is unchanged and `check` still passes.
+Reproduces lint-staged hook edge cases in temp consumer projects. One test covers the historical empty-commit bug by running `build` → `lint` → `prettier --write` and asserting `index.md` is unchanged. Another installs the packed CLI plus lint-staged, stages a newly added wiki page, runs `npx lint-staged`, and verifies the regenerated `index.md` is included in the staged tree that passes `wiki:check`.
 
 ## Helpers
 

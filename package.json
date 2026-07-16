@@ -70,6 +70,7 @@
     ],
     "wiki/**/*.md": [
       "npm run wiki:build",
+      "git add -- \"wiki/index.md\"",
       "npm run wiki:lint",
       "prettier --write"
     ],

@@ -97,7 +97,7 @@ export async function upgrade(): Promise<void> {
       log.step('Migrating pages and running post-upgrade scripts…');
       await runPostUpgradeScripts(cwd, config, { skipPages: false });
     } else {
-      log.step('Running sync, build, and lint…');
+      log.step('Skipping page migration, sync, build, and lint…');
       await runPostUpgradeScripts(cwd, config, { skipPages: true });
     }
 

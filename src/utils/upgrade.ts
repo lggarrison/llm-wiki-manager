@@ -53,16 +53,18 @@ export async function runPostUpgradeScripts(
   config: InstallConfig,
   options: { skipPages?: boolean } = {},
 ): Promise<void> {
+  if (options.skipPages) {
+    return;
+  }
+
   const ctx = resolveWikiContext({
     cwd: projectRoot,
     wikiDir: config.wikiDir,
   });
 
-  if (!options.skipPages) {
-    const migrateStatus = runMigrate(ctx);
-    if (migrateStatus !== 0) {
-      throw new Error('migrate-pages failed');
-    }
+  const migrateStatus = runMigrate(ctx);
+  if (migrateStatus !== 0) {
+    throw new Error('migrate-pages failed');
   }
 
   const syncStatus = runSync(ctx);

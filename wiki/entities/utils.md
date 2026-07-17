@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Utils
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-17T11:00:00Z
 tags: [utils]
 related: [entities/commands.md, entities/templates.md, concepts/template-system.md]
 code_refs: [src/utils/fs.ts, src/utils/upgrade.ts, src/utils/fs.test.ts]
@@ -27,11 +27,11 @@ Scope tag: **`utils`** (first tag).
 
 ## `upgrade.ts` — upgrade orchestration
 
-| Export                  | Role                                               |
-| ----------------------- | -------------------------------------------------- |
-| `runUpgradeSteps`       | Refresh templates, scripts, and AGENTS.md sections |
-| `runPostUpgradeScripts` | Migrate pages, sync, build, warn-only lint         |
-| `appendUpgradeLog`      | Append upgrade entry to `wiki/log.md`              |
+| Export                  | Role                                                                         |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `runUpgradeSteps`       | Refresh templates, scripts, and AGENTS.md sections                           |
+| `runPostUpgradeScripts` | Migrate pages, sync, build, warn-only lint unless page processing is skipped |
+| `appendUpgradeLog`      | Append upgrade entry to `wiki/log.md`                                        |
 
 ## Tests
 

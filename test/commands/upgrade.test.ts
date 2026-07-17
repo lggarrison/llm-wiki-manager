@@ -90,6 +90,52 @@ describe('init safe re-run via scaffoldWikiTemplates', () => {
 });
 
 describe('migrate-pages via upgrade', () => {
+  it('skipPages leaves wiki pages and index untouched', async () => {
+    const dir = makeTmpDir();
+    const wikiDir = join(dir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+    writeFileSync(
+      join(dir, '.llm-wiki-manager.json'),
+      JSON.stringify({
+        version: '0.0.0',
+        projectName: 'acme',
+        wikiDir: 'wiki',
+        focusDirs: [],
+      }) + '\n',
+    );
+
+    const legacyPath = writePage(
+      wikiDir,
+      'concepts/legacy.md',
+      fm({
+        status: 'draft',
+        title: 'Legacy',
+        type: 'concept',
+        related: ['concepts/target.md'],
+      }) + '\n# Legacy\n\nBody without generated links.\n',
+    );
+    writePage(wikiDir, 'concepts/target.md', fm({ title: 'Target', type: 'concept' }));
+    const indexPath = join(wikiDir, 'index.md');
+    writeFileSync(indexPath, '# Custom index\n\nHand-authored content.\n');
+
+    const beforeLegacy = readFileSync(legacyPath, 'utf8');
+    const beforeIndex = readFileSync(indexPath, 'utf8');
+
+    await runPostUpgradeScripts(
+      dir,
+      {
+        version: '0.0.0',
+        projectName: 'acme',
+        wikiDir: 'wiki',
+        focusDirs: [],
+      },
+      { skipPages: true },
+    );
+
+    expect(readFileSync(legacyPath, 'utf8')).toBe(beforeLegacy);
+    expect(readFileSync(indexPath, 'utf8')).toBe(beforeIndex);
+  });
+
   it('remaps legacy status values', async () => {
     const dir = makeTmpDir();
     const wikiDir = join(dir, 'wiki');

@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
-import { join, resolve, relative, dirname, basename } from 'path';
+import { join, resolve, relative, dirname, basename, isAbsolute } from 'path';
 import { parseFrontmatter, detectBlockListKeys } from './frontmatter.js';
 import { walkMd } from './walk.js';
 import {
@@ -30,6 +30,11 @@ function findRawArtifact(wikiDir: string, slug: string): string | null {
 function isInsideWiki(wikiDir: string, absPath: string): boolean {
   const rel = relative(wikiDir, absPath).replace(/\\/g, '/');
   return Boolean(rel && !rel.startsWith('..') && rel !== '..');
+}
+
+function isContainedPath(root: string, absPath: string): boolean {
+  const rel = relative(root, absPath).replace(/\\/g, '/');
+  return rel === '' || (!rel.startsWith('..') && rel !== '..');
 }
 
 function extractBodyLinks(content: string): string[] {
@@ -198,7 +203,9 @@ export function runLint(ctx: WikiContext, options: LintOptions = {}): number {
     const codeRefs = Array.isArray(fm.code_refs) ? fm.code_refs : [];
     for (const ref of codeRefs) {
       const target = resolve(repoRoot, ref);
-      if (!existsSync(target)) {
+      if (isAbsolute(ref) || !isContainedPath(repoRoot, target)) {
+        err(file, `code_refs: path must be relative to the repo root and stay inside it: ${ref}`);
+      } else if (!existsSync(target)) {
         err(file, `code_refs: path does not exist: ${ref}`);
       }
     }
@@ -214,7 +221,9 @@ export function runLint(ctx: WikiContext, options: LintOptions = {}): number {
     const related = Array.isArray(fm.related) ? fm.related : [];
     for (const rel of related) {
       const target = resolve(wikiDir, rel);
-      if (!existsSync(target)) {
+      if (isAbsolute(rel) || !isInsideWiki(wikiDir, target)) {
+        err(file, `related: path must be relative to the wiki root and stay inside it: ${rel}`);
+      } else if (!existsSync(target)) {
         err(file, `related: path does not exist: ${rel}`);
       } else if (inbound.has(target)) {
         inbound.set(target, (inbound.get(target) ?? 0) + 1);

@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { join, relative } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 
 const dirs: string[] = [];
@@ -101,6 +101,18 @@ describe('lint command', () => {
     expect(result.stdout).toContain('code_refs: path does not exist');
   });
 
+  it('fails when code_refs points outside the repo root', () => {
+    const dir = newWikiDir();
+    const outsideDir = newWikiDir();
+    const outsideFile = writePage(outsideDir, 'outside.ts', 'export const secret = true;\n');
+    writePage(dir, 'concepts/a.md', fm({ code_refs: [outsideFile] }));
+
+    const result = runLint(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('code_refs: path must be relative to the repo root');
+  });
+
   it('fails on body links to non-wiki paths', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', fm() + '\n[src](../src/foo.ts)\n');
@@ -131,6 +143,19 @@ describe('lint command', () => {
     const result = runLint(dir);
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('related: path does not exist');
+  });
+
+  it('fails when a related: path points outside the wiki root', () => {
+    const dir = newWikiDir();
+    const outsideDir = newWikiDir();
+    const outsidePage = writePage(outsideDir, 'outside.md', fm({ title: 'Outside' }));
+    const outsideRel = relative(dir, outsidePage).replace(/\\/g, '/');
+    writePage(dir, 'concepts/a.md', fm({ related: [outsideRel] }));
+
+    const result = runLint(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('related: path must be relative to the wiki root');
   });
 
   it('fails on a broken body link', () => {

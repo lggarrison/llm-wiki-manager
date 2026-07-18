@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { resolve, relative, dirname } from 'path';
+import { resolve, relative, dirname, isAbsolute } from 'path';
 import { parseFrontmatter } from './frontmatter.js';
 import { walkMdSkipDirs } from './walk.js';
 import type { WikiContext } from './context.js';
@@ -42,6 +42,11 @@ export type SyncOptions = {
 const SKIP_DIRS = ['raw', 'archive', '.obsidian'];
 const SKIP_FILES = new Set(['index.md', 'log.md']);
 
+function isInsideWiki(wikiDir: string, absPath: string): boolean {
+  const rel = relative(wikiDir, absPath).replace(/\\/g, '/');
+  return Boolean(rel && !rel.startsWith('..') && rel !== '..');
+}
+
 export function runSync(ctx: WikiContext, options: SyncOptions = {}): number {
   const { wikiDir, cwd } = ctx;
   const dry = options.dry ?? false;
@@ -56,6 +61,8 @@ export function runSync(ctx: WikiContext, options: SyncOptions = {}): number {
   }
 
   let changed = 0;
+  const errors: string[] = [];
+  const updates: { file: string; relPath: string; content: string; missing: string[] }[] = [];
 
   for (const file of pages) {
     const rel = relative(wikiDir, file).replace(/\\/g, '/');
@@ -74,6 +81,13 @@ export function runSync(ctx: WikiContext, options: SyncOptions = {}): number {
     const missing: string[] = [];
     for (const relTarget of related) {
       const absTarget = resolve(wikiDir, relTarget);
+      if (isAbsolute(relTarget) || !isInsideWiki(wikiDir, absTarget)) {
+        errors.push(
+          `  ${relative(cwd, file)}: related path must stay inside the wiki: ${relTarget}`,
+        );
+        continue;
+      }
+
       const relFromFile = relative(fileDir, absTarget).replace(/\\/g, '/');
       if (
         !bodyLinks.has(relTarget) &&
@@ -88,6 +102,16 @@ export function runSync(ctx: WikiContext, options: SyncOptions = {}): number {
     if (missing.length === 0) continue;
 
     const relPath = relative(cwd, file);
+    updates.push({ file, relPath, content, missing });
+  }
+
+  if (errors.length > 0) {
+    console.error('sync-see-also: unsafe related path(s) found:');
+    errors.forEach((e) => console.error(e));
+    return 1;
+  }
+
+  for (const { file, relPath, content, missing } of updates) {
     if (dry) {
       console.log(`  ${relPath}: would add ${missing.length} link(s)`);
       missing.forEach((l) => console.log(`    ${l}`));

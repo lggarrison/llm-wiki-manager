@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { readFileSync, mkdtempSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, relative } from 'path';
 import { tmpdir } from 'os';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 
@@ -121,6 +121,21 @@ describe('sync command', () => {
 
     expect(readFileSync(aPath, 'utf8')).toBe(before);
     expect(result.stdout).toContain('would add');
+  });
+
+  it('fails without writing when related points outside the wiki root', () => {
+    const dir = newWikiDir();
+    const outsideDir = newWikiDir();
+    const outsidePage = writePage(outsideDir, 'outside.md', fm({ title: 'Outside' }));
+    const outsideRel = relative(dir, outsidePage).replace(/\\/g, '/');
+    const aPath = writePage(dir, 'concepts/a.md', fm({ related: [outsideRel] }) + '\nBody.\n');
+    const before = readFileSync(aPath, 'utf8');
+
+    const result = runSync(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('unsafe related path');
+    expect(readFileSync(aPath, 'utf8')).toBe(before);
   });
 
   it('is idempotent: running twice does not duplicate links', () => {

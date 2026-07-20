@@ -78,6 +78,33 @@ describe('CLI e2e workflow', () => {
     expect(result.stdout).toContain('required before');
   });
 
+  it('non-interactive re-init preserves omitted custom wiki defaults', () => {
+    const dir = makeTmpProject();
+    const first = runBuiltCli(dir, [
+      'init',
+      '--project-name',
+      'acme',
+      '--wiki-dir',
+      'docs',
+      '--focus-dirs',
+      'src',
+    ]);
+    expect(first.status).toBe(0);
+
+    const second = runBuiltCli(dir, ['init', '--project-name', 'acme']);
+    expect(second.status).toBe(0);
+    expect(second.stdout).toContain('Existing wiki detected');
+
+    const config = JSON.parse(readFileSync(join(dir, '.llm-wiki-manager.json'), 'utf8')) as {
+      wikiDir: string;
+      focusDirs: string[];
+    };
+    expect(config.wikiDir).toBe('docs');
+    expect(config.focusDirs).toEqual(['src']);
+    expect(existsSync(join(dir, 'docs', 'schema.md'))).toBe(true);
+    expect(existsSync(join(dir, 'wiki', 'schema.md'))).toBe(false);
+  });
+
   it('init outro omits Final Step npm install when installed version matches', () => {
     const dir = makeTmpProject();
     stubInstalledPackage(dir);

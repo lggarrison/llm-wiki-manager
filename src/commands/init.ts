@@ -17,6 +17,7 @@ import {
   isExistingInstall,
   getPackageInstallStatus,
   readInstallConfig,
+  inferInstallConfig,
 } from '../utils/fs.js';
 import { resolveWikiContext } from '../wiki/context.js';
 import { runBuild } from '../wiki/build-index.js';
@@ -27,7 +28,21 @@ type InitFlagValues = {
   focusDirs: string;
 };
 
-export function parseInitArgs(argv: string[]): InitFlagValues | null {
+type InitFlagDefaults = Pick<InitFlagValues, 'wikiDir' | 'focusDirs'>;
+
+export function getInitFlagDefaults(cwd: string): InitFlagDefaults {
+  const existingConfig = readInstallConfig(cwd) ?? inferInstallConfig(cwd);
+
+  return {
+    wikiDir: existingConfig?.wikiDir ?? 'wiki',
+    focusDirs: existingConfig?.focusDirs.join(',') ?? '',
+  };
+}
+
+export function parseInitArgs(
+  argv: string[],
+  defaults: InitFlagDefaults = { wikiDir: 'wiki', focusDirs: '' },
+): InitFlagValues | null {
   const flagIndex = argv.indexOf('--project-name');
   if (flagIndex === -1) return null;
 
@@ -46,8 +61,8 @@ export function parseInitArgs(argv: string[]): InitFlagValues | null {
 
   return {
     projectName,
-    wikiDir: readFlag('--wiki-dir', 'wiki'),
-    focusDirs: readFlag('--focus-dirs', ''),
+    wikiDir: readFlag('--wiki-dir', defaults.wikiDir),
+    focusDirs: readFlag('--focus-dirs', defaults.focusDirs),
   };
 }
 
@@ -91,7 +106,8 @@ async function promptInitValues(): Promise<InitFlagValues> {
 export async function init(): Promise<void> {
   intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
 
-  const fromFlags = parseInitArgs(process.argv.slice(3));
+  const cwd = process.cwd();
+  const fromFlags = parseInitArgs(process.argv.slice(3), getInitFlagDefaults(cwd));
   const values = fromFlags ?? (await promptInitValues());
 
   const focusDirList = values.focusDirs
@@ -110,7 +126,6 @@ export async function init(): Promise<void> {
     initTimestamp,
   });
 
-  const cwd = process.cwd();
   const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
   const reInit = isExistingInstall(cwd, wikiDirStr);

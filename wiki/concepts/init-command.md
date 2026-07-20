@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-20T11:02:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -31,11 +31,11 @@ For CI and tests, pass all values via flags (skips prompts):
 llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 ```
 
-| Flag             | Required | Default           |
-| ---------------- | -------- | ----------------- |
-| `--project-name` | yes      | —                 |
-| `--wiki-dir`     | no       | `wiki`            |
-| `--focus-dirs`   | no       | _(whole project)_ |
+| Flag             | Required | Default                                                             |
+| ---------------- | -------- | ------------------------------------------------------------------- |
+| `--project-name` | yes      | —                                                                   |
+| `--wiki-dir`     | no       | existing install wiki dir on re-init; otherwise `wiki`              |
+| `--focus-dirs`   | no       | existing install focus dirs on re-init; otherwise _(whole project)_ |
 
 ## Scaffold steps
 
@@ -52,7 +52,7 @@ Wiki management logic lives in the published package (`src/wiki/`), not as copie
 
 ## Idempotency
 
-Re-running `init` on an already-initialized project only creates missing scaffold files. It does not overwrite existing wiki content, `log.md`, or `schema.md`. Use `upgrade` to refresh template files.
+Re-running `init` on an already-initialized project only creates missing scaffold files. Non-interactive re-runs inherit the existing wiki directory and focus directories when those optional flags are omitted, so a custom vault is not repointed to the first-install defaults. It does not overwrite existing wiki content, `log.md`, or `schema.md`. Use `upgrade` to refresh template files.
 
 ## See also
 

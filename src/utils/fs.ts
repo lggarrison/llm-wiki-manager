@@ -531,7 +531,7 @@ function findManagedSectionEnd(text: string, fromIndex: number): number {
     const lineWithoutEol = line.replace(/\r?\n$/, '');
     const isFence = /^\s*(```|~~~)/.test(lineWithoutEol);
 
-    if (!inFence && lineWithoutEol.trim() === MANAGED_SECTION_END) {
+    if (!inFence && lineWithoutEol === MANAGED_SECTION_END) {
       return position + line.indexOf(MANAGED_SECTION_END);
     }
 

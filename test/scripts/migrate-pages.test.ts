@@ -187,6 +187,37 @@ describe('migrate-pages', () => {
     );
   });
 
+  it('does not rewrite legacy syntax inside inline code examples', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/caching.md',
+      fm({ title: 'Caching', type: 'concept' }) + '\n# Caching\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/examples.md',
+      fm({ title: 'Examples', type: 'concept' }) +
+        [
+          '',
+          '# Examples',
+          '',
+          'See [[caching]] for real docs.',
+          '',
+          'Document literal syntax with `[[caching]]` and ``[[caching|Caching]]`` examples.',
+          '',
+        ].join('\n'),
+    );
+
+    runMigrateWiki(wikiDir);
+
+    const content = readFileSync(join(wikiDir, 'concepts', 'examples.md'), 'utf8');
+    expect(content).toContain('[caching](caching.md)');
+    expect(content).toContain(
+      'Document literal syntax with `[[caching]]` and ``[[caching|Caching]]`` examples.',
+    );
+  });
+
   it('supports --dry-run without writing files', () => {
     const { wikiDir } = makeTmpProject();
     writePage(

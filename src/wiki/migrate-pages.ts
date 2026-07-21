@@ -124,6 +124,35 @@ function migrateWikilinks(
       return `[${linkText}](${markdownLinkFromWikiRoot(wikiDir, file, wikiRootTarget)})`;
     });
 
+  const replaceLinksOutsideInlineCode = (text: string): string => {
+    let migrated = '';
+    let position = 0;
+
+    while (position < text.length) {
+      const codeStart = text.indexOf('`', position);
+      if (codeStart < 0) {
+        migrated += replaceLinks(text.slice(position));
+        break;
+      }
+
+      let delimiterEnd = codeStart + 1;
+      while (delimiterEnd < text.length && text[delimiterEnd] === '`') delimiterEnd += 1;
+
+      const delimiter = text.slice(codeStart, delimiterEnd);
+      const codeEnd = text.indexOf(delimiter, delimiterEnd);
+      if (codeEnd < 0) {
+        migrated += replaceLinks(text.slice(position));
+        break;
+      }
+
+      migrated += replaceLinks(text.slice(position, codeStart));
+      migrated += text.slice(codeStart, codeEnd + delimiter.length);
+      position = codeEnd + delimiter.length;
+    }
+
+    return migrated;
+  };
+
   const migrateBody = (body: string): string => {
     let migrated = '';
     let inFence = false;
@@ -142,7 +171,7 @@ function migrateWikilinks(
         continue;
       }
 
-      migrated += inFence ? line : replaceLinks(line);
+      migrated += inFence ? line : replaceLinksOutsideInlineCode(line);
     }
 
     return migrated;

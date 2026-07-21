@@ -715,6 +715,42 @@ describe('replaceManagedSection', () => {
     expect(content).toContain('```markdown\n<!-- /llm-wiki-manager -->\n```');
   });
 
+  it('ignores indented end markers when replacing a managed block', () => {
+    const dir = makeTmpDir();
+    const target = join(dir, 'AGENTS.md');
+    writeFileSync(
+      target,
+      [
+        '# My Project',
+        '',
+        '<!-- llm-wiki-manager -->',
+        '# Old Wiki',
+        '',
+        'Document the marker as an indented example:',
+        '',
+        '    <!-- /llm-wiki-manager -->',
+        '',
+        'Stale managed body after the example.',
+        '<!-- /llm-wiki-manager -->',
+        '',
+        '## My own section',
+        '',
+        'Keep these notes.',
+        '',
+      ].join('\n'),
+    );
+
+    const ok = replaceManagedSection(target, '# LLM Wiki\n\nFresh.');
+    expect(ok).toBe(true);
+
+    const content = readFileSync(target, 'utf8');
+    expect(content).toContain('Fresh.');
+    expect(content).not.toContain('Stale managed body after the example.');
+    expect(content).toContain('## My own section');
+    expect(content).toContain('Keep these notes.');
+    expect(content.match(/<!-- \/llm-wiki-manager -->/g)).toHaveLength(1);
+  });
+
   it('amendFile writes both start and end markers', () => {
     const dir = makeTmpDir();
     const target = join(dir, 'AGENTS.md');

@@ -5,6 +5,7 @@ import { walkMd } from './walk.js';
 import { BUILD_INDEX_SKIP } from './constants.js';
 import { formatIndexMarkdown } from './format-index.js';
 import { resolveWikiContext } from './context.js';
+import { markdownLink } from './markdown.js';
 import type { Frontmatter } from './frontmatter.js';
 import type { WikiContext } from './context.js';
 
@@ -12,6 +13,10 @@ type PageEntry = { file: string; rel: string; fm: Frontmatter };
 
 function row(cells: string[]): string {
   return `| ${cells.join(' | ')} |`;
+}
+
+function titleLink(fm: Frontmatter, rel: string): string {
+  return markdownLink(String(fm.title ?? rel), rel);
 }
 
 function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[] } {
@@ -55,11 +60,7 @@ function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[]
   } else {
     for (const { rel, fm } of byType.hub) {
       sections.push(
-        row([
-          `[${fm.title ?? rel}](${rel})`,
-          (fm.status as string) ?? '',
-          (fm.last_updated as string) ?? '',
-        ]),
+        row([titleLink(fm, rel), (fm.status as string) ?? '', (fm.last_updated as string) ?? '']),
       );
     }
   }
@@ -75,7 +76,7 @@ function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[]
       const scopeTag = tags[0] ?? '';
       sections.push(
         row([
-          `[${fm.title ?? rel}](${rel})`,
+          titleLink(fm, rel),
           scopeTag,
           (fm.status as string) ?? '',
           (fm.last_updated as string) ?? '',
@@ -94,7 +95,7 @@ function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[]
       const tags = Array.isArray(fm.tags) ? fm.tags.join(', ') : ((fm.tags as string) ?? '');
       sections.push(
         row([
-          `[${fm.title ?? rel}](${rel})`,
+          titleLink(fm, rel),
           tags,
           (fm.status as string) ?? '',
           (fm.last_updated as string) ?? '',
@@ -111,11 +112,7 @@ function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[]
   } else {
     for (const { rel, fm } of byType.source) {
       sections.push(
-        row([
-          `[${fm.title ?? rel}](${rel})`,
-          (fm.status as string) ?? '',
-          (fm.last_updated as string) ?? '',
-        ]),
+        row([titleLink(fm, rel), (fm.status as string) ?? '', (fm.last_updated as string) ?? '']),
       );
     }
   }

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-21T11:00:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -17,6 +17,7 @@ code_refs:
     src/wiki/lint.ts,
     src/wiki/build-index.ts,
     src/wiki/sync-see-also.ts,
+    src/wiki/markdown.ts,
     src/wiki/log.ts,
     src/wiki/help.ts,
     src/wiki/doctor.ts,
@@ -48,6 +49,8 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 `doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
 
 `migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy frontmatter status/timestamp fields only inside YAML frontmatter, and rewrites body wikilinks to markdown links relative to the page being migrated while leaving fenced code examples untouched. Bare-slug wikilinks prefer an unambiguous existing page target.
+
+`build` and `sync` escape bracket characters in generated Markdown link labels so page titles like `OAuth [legacy]` remain parseable in `index.md` and synchronized See also lists.
 
 ## Flags
 

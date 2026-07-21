@@ -50,6 +50,17 @@ describe('build command', () => {
     expect(index).toContain('perf');
   });
 
+  it('escapes bracket characters in generated page links', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'OAuth [legacy] ] notes' }));
+
+    runBuild(dir);
+
+    const index = readFileSync(join(dir, 'index.md'), 'utf8');
+    expect(index).toContain('[OAuth &#91;legacy&#93; &#93; notes](concepts/a.md)');
+    expect(index).not.toContain('[OAuth [legacy] ] notes](concepts/a.md)');
+  });
+
   it('lists a source page under the Sources section', () => {
     const dir = newWikiDir();
     writePage(dir, 'sources/s.md', fm({ type: 'source', title: 'RFC 9110' }));

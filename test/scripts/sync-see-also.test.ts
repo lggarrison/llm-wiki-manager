@@ -33,6 +33,23 @@ describe('sync command', () => {
     expect(content).toContain('[B Page](b.md)');
   });
 
+  it('escapes bracket characters in inserted related links and remains idempotent', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'Link] break [legacy]' }));
+    const aPath = writePage(dir, 'concepts/a.md', fm({ related: ['concepts/b.md'] }) + '\nBody.\n');
+
+    const first = runSync(dir);
+    expect(first.status).toBe(0);
+
+    const afterFirst = readFileSync(aPath, 'utf8');
+    expect(afterFirst).toContain('[Link&#93; break &#91;legacy&#93;](b.md)');
+    expect(afterFirst).not.toContain('[Link] break [legacy]](b.md)');
+
+    const second = runSync(dir);
+    expect(second.stdout).toContain('0 file(s) updated');
+    expect(readFileSync(aPath, 'utf8')).toBe(afterFirst);
+  });
+
   it('appends to an existing "## See also" section instead of duplicating it', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));

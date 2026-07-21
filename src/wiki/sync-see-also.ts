@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { resolve, relative, dirname } from 'path';
 import { parseFrontmatter } from './frontmatter.js';
 import { walkMdSkipDirs } from './walk.js';
+import { markdownLink } from './markdown.js';
 import type { WikiContext } from './context.js';
 
 function extractBodyLinks(content: string): Set<string> {
@@ -81,7 +82,7 @@ export function runSync(ctx: WikiContext, options: SyncOptions = {}): number {
         !bodyLinks.has('./' + relFromFile)
       ) {
         const title = titleMap.get(absTarget) ?? relTarget;
-        missing.push(`- [${title}](${relFromFile})`);
+        missing.push(`- ${markdownLink(title, relFromFile)}`);
       }
     }
 

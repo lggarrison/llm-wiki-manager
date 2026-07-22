@@ -187,6 +187,27 @@ describe('migrate-pages', () => {
     );
   });
 
+  it('does not rewrite legacy syntax inside inline code examples', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'concepts/caching.md',
+      fm({ title: 'Caching', type: 'concept' }) + '\n# Caching\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/examples.md',
+      fm({ title: 'Examples', type: 'concept' }) +
+        '\nUse `[[caching]]` in Obsidian examples, but see [[caching]] for real docs.\n',
+    );
+
+    runMigrateWiki(wikiDir);
+
+    const content = readFileSync(join(wikiDir, 'concepts', 'examples.md'), 'utf8');
+    expect(content).toContain('Use `[[caching]]` in Obsidian examples');
+    expect(content).toContain('see [caching](caching.md) for real docs');
+  });
+
   it('supports --dry-run without writing files', () => {
     const { wikiDir } = makeTmpProject();
     writePage(

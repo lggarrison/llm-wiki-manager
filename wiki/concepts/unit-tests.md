@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-22T11:10:00Z
 tags: [testing, vitest]
 related:
   [
@@ -54,16 +54,16 @@ Script tests invoke the **built CLI** (`dist/bin/cli.js`) so behavior matches wh
 
 Each wiki subcommand has a dedicated test file under `test/scripts/`:
 
-| Test file               | CLI subcommand                                                          |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `lint.test.ts`          | `lint`                                                                  |
-| `build-index.test.ts`   | `build`, `check`                                                        |
-| `sync-see-also.test.ts` | `sync`                                                                  |
-| `log.test.ts`           | `log`                                                                   |
-| `help.test.ts`          | `help`                                                                  |
-| `setup-husky.test.ts`   | `setup-husky`                                                           |
-| `migrate-pages.test.ts` | `runMigrate` legacy frontmatter and fenced-code-safe wikilink migration |
-| `scripts.test.ts`       | npm alias smoke tests                                                   |
+| Test file               | CLI subcommand                                                           |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `lint.test.ts`          | `lint`                                                                   |
+| `build-index.test.ts`   | `build`, `check`                                                         |
+| `sync-see-also.test.ts` | `sync`                                                                   |
+| `log.test.ts`           | `log`                                                                    |
+| `help.test.ts`          | `help`                                                                   |
+| `setup-husky.test.ts`   | `setup-husky`                                                            |
+| `migrate-pages.test.ts` | `runMigrate` legacy frontmatter and code-example-safe wikilink migration |
+| `scripts.test.ts`       | npm alias smoke tests                                                    |
 
 Tests use temporary wiki directories created by `makeTmpWikiDir()` and tear them down in `afterEach` hooks.
 

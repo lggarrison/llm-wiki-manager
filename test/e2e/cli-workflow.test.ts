@@ -100,6 +100,23 @@ describe('CLI e2e workflow', () => {
     expect(result.stdout).toContain('local install is v1.0.0');
   });
 
+  it('init aborts before writing files when the install config is malformed', () => {
+    const dir = makeTmpProject();
+    const packagePath = join(dir, 'package.json');
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const packageBefore = readFileSync(packagePath, 'utf8');
+    const malformedConfig = '{bad json\n';
+    writeFileSync(configPath, malformedConfig);
+
+    const result = initProject(dir);
+
+    expect(result.status).toBe(1);
+    expect(existsSync(join(dir, 'wiki'))).toBe(false);
+    expect(existsSync(join(dir, 'AGENTS.md'))).toBe(false);
+    expect(readFileSync(packagePath, 'utf8')).toBe(packageBefore);
+    expect(readFileSync(configPath, 'utf8')).toBe(malformedConfig);
+  });
+
   it('init surfaces stale node_modules across config, devDependency, outro, and doctor', () => {
     const dir = makeTmpProject();
     const runningVersion = getPackageVersion();

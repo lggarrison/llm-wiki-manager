@@ -141,6 +141,18 @@ export function readInstallConfig(projectRoot: string): InstallConfig | null {
   return readJsonFile<InstallConfig>(path);
 }
 
+export function assertPackageJsonReadable(projectRoot: string): void {
+  const path = join(projectRoot, 'package.json');
+  if (!existsSync(path)) return;
+
+  try {
+    readJsonFile<unknown>(path);
+  } catch (err) {
+    const reason = err instanceof Error ? `: ${err.message}` : '';
+    throw new Error(`package.json exists but could not be parsed${reason}`, { cause: err });
+  }
+}
+
 export function writeInstallConfig(projectRoot: string, config: InstallConfig): void {
   writeFileSync(installConfigPath(projectRoot), `${JSON.stringify(config, null, 2)}\n`, 'utf8');
 }

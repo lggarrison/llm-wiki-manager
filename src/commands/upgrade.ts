@@ -15,6 +15,7 @@ import {
   syncPackageJsonDevDependency,
   getPackageInstallStatus,
   MANAGED_SECTION_DELIMITER,
+  assertPackageJsonReadable,
 } from '../utils/fs.js';
 import {
   runUpgradeSteps,
@@ -50,6 +51,7 @@ export async function upgrade(): Promise<void> {
 
   const fromVersion = config.version;
   log.info(`Upgrading scaffold ${pc.bold(fromVersion)} → ${pc.bold(packageVersion)}`);
+  assertPackageJsonReadable(cwd);
 
   if (options.dryRun) {
     log.warn('Dry run — no files will be modified.');

@@ -284,6 +284,19 @@ describe('CLI e2e workflow', () => {
     expect(result.stdout).not.toContain('npm run wiki:setup:husky');
   });
 
+  it('init fails before writing scaffold files when package.json is malformed', () => {
+    const dir = makeTmpProject();
+    writeFileSync(join(dir, 'package.json'), '{ invalid json\n');
+
+    const result = initProject(dir);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('package.json exists but could not be parsed');
+    expect(existsSync(join(dir, 'wiki'))).toBe(false);
+    expect(existsSync(join(dir, 'AGENTS.md'))).toBe(false);
+    expect(existsSync(join(dir, '.llm-wiki-manager.json'))).toBe(false);
+  });
+
   it('re-init preserves existing log.md and schema.md', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);
@@ -343,6 +356,25 @@ describe('CLI e2e workflow', () => {
     expect(agentsAfter).toContain('## Custom notes');
     expect(agentsAfter).toContain('User-owned content.');
     expect(agentsAfter).toContain('[`wiki/AGENTS.md`](wiki/AGENTS.md)');
+  });
+
+  it('upgrade fails before refreshing files when package.json is malformed', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const schemaPath = join(dir, 'wiki', 'schema.md');
+    const agentsPath = join(dir, 'AGENTS.md');
+    const schemaBefore = '# stale schema\n';
+    writeFileSync(schemaPath, schemaBefore);
+    const agentsBefore = readFileSync(agentsPath, 'utf8');
+    writeFileSync(join(dir, 'package.json'), '{ invalid json\n');
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+
+    expect(upgrade.status).toBe(1);
+    expect(upgrade.stderr).toContain('package.json exists but could not be parsed');
+    expect(readFileSync(schemaPath, 'utf8')).toBe(schemaBefore);
+    expect(readFileSync(agentsPath, 'utf8')).toBe(agentsBefore);
   });
 
   it('init succeeds when package.json has a UTF-8 BOM', () => {

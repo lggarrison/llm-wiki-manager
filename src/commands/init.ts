@@ -17,6 +17,7 @@ import {
   isExistingInstall,
   getPackageInstallStatus,
   readInstallConfig,
+  assertPackageJsonReadable,
 } from '../utils/fs.js';
 import { resolveWikiContext } from '../wiki/context.js';
 import { runBuild } from '../wiki/build-index.js';
@@ -111,6 +112,8 @@ export async function init(): Promise<void> {
   });
 
   const cwd = process.cwd();
+  assertPackageJsonReadable(cwd);
+
   const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
   const reInit = isExistingInstall(cwd, wikiDirStr);

@@ -39,4 +39,6 @@ export const TYPE_PLACEMENT: Record<string, RegExp> = {
 
 export const META_SKIP = new Set(['index.md', 'log.md', 'schema.md', 'README.md', 'AGENTS.md']);
 
-export const BUILD_INDEX_SKIP = ['index.md', 'log.md', 'schema.md', 'README.md', 'AGENTS.md'];
+export function isRootMetaPath(relPath: string): boolean {
+  return META_SKIP.has(relPath.replace(/\\/g, '/'));
+}

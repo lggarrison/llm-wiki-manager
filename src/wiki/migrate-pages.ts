@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { basename, dirname, relative, resolve } from 'path';
 import { walkMdSkipDirs } from './walk.js';
-import { META_SKIP } from './constants.js';
+import { isRootMetaPath } from './constants.js';
 import type { WikiContext } from './context.js';
 
 const STATUS_MAP: Record<string, string> = {
@@ -163,13 +163,14 @@ export function runMigrate(ctx: WikiContext, options: MigrateOptions = {}): numb
   const { wikiDir } = ctx;
   const dryRun = options.dryRun ?? false;
 
-  const pages = walkMdSkipDirs(wikiDir, SKIP_DIRS);
+  const pages = walkMdSkipDirs(wikiDir, SKIP_DIRS).filter(
+    (file) => !isRootMetaPath(relative(wikiDir, file)),
+  );
   const slugTargets = buildSlugTargetMap(pages, wikiDir);
   let migrated = 0;
 
   for (const file of pages) {
     const rel = relative(wikiDir, file).replace(/\\/g, '/');
-    if (META_SKIP.has(rel.split('/').pop() ?? '')) continue;
 
     let content = readFileSync(file, 'utf8');
     let changed = false;

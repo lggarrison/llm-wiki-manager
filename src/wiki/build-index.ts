@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, relative } from 'path';
 import { parseFrontmatter } from './frontmatter.js';
 import { walkMd } from './walk.js';
-import { BUILD_INDEX_SKIP } from './constants.js';
+import { isRootMetaPath } from './constants.js';
 import { formatIndexMarkdown } from './format-index.js';
 import { resolveWikiContext } from './context.js';
 import type { Frontmatter } from './frontmatter.js';
@@ -16,12 +16,12 @@ function row(cells: string[]): string {
 
 function buildIndexOutput(wikiDir: string): { output: string; pages: PageEntry[] } {
   const pages = walkMd(wikiDir)
-    .filter((f) => !BUILD_INDEX_SKIP.some((s) => f.endsWith(s)))
     .map((f) => {
       const content = readFileSync(f, 'utf8');
       const fm = parseFrontmatter(content) ?? {};
       return { file: f, rel: relative(wikiDir, f).replace(/\\/g, '/'), fm };
     })
+    .filter((p) => !isRootMetaPath(p.rel))
     .filter((p) => p.fm.type);
 
   const byType: Record<string, PageEntry[]> = {

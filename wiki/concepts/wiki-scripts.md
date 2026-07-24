@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-24T11:01:04Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -62,9 +62,9 @@ Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution. Addi
 
 Subcommands resolve the wiki directory from `--wiki-dir`, then `.llm-wiki-manager.json`, then root `AGENTS.md`, defaulting to `wiki/`. All paths are relative to the consumer's project root (`process.cwd()`).
 
-## Meta files excluded from page lint
+## Meta files excluded from page operations
 
-`lint` and `build` skip structural/meta files (not wiki pages with frontmatter): `index.md`, `log.md`, `schema.md`, `README.md`, and `AGENTS.md` at the wiki root (`META_SKIP` in `src/wiki/constants.ts`).
+`lint`, `build`, `check`, and upgrade's internal `migrate-pages` skip structural/meta files (not wiki pages with frontmatter): `index.md`, `log.md`, `schema.md`, `README.md`, and `AGENTS.md` at the wiki root (`META_SKIP` in `src/wiki/constants.ts`). The skip is root-relative, so valid pages such as `concepts/search-index.md` or `concepts/index.md` still participate in indexing, checking, and migration.
 
 ## Typical workflow
 

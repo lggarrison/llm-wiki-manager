@@ -94,6 +94,21 @@ describe('build command', () => {
     expect(index).not.toContain('Schema');
   });
 
+  it('tracks valid pages whose names include root metadata filenames', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/a.md', fm({ type: 'concept', title: 'A' }));
+    runBuild(dir);
+
+    writePage(dir, 'concepts/search-index.md', fm({ type: 'concept', title: 'Search Index' }));
+    const stale = runCheck(dir);
+    expect(stale.status).toBe(1);
+    expect(stale.stderr).toContain('stale');
+
+    runBuild(dir);
+    const index = readFileSync(join(dir, 'index.md'), 'utf8');
+    expect(index).toContain('[Search Index](concepts/search-index.md)');
+  });
+
   it('ignores raw artifact files but indexes raw/raw.md hub', () => {
     const dir = newWikiDir();
     writePage(dir, 'raw/articles/notes.md', fm({ type: 'concept', title: 'Should Not Appear' }));

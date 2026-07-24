@@ -187,6 +187,36 @@ describe('migrate-pages', () => {
     );
   });
 
+  it('migrates non-root pages named like metadata files while skipping root metadata', () => {
+    const { wikiDir } = makeTmpProject();
+    writePage(
+      wikiDir,
+      'index.md',
+      fm({ status: 'draft', title: 'Root Index', type: 'hub' }) + '\nSee [[target]].\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/target.md',
+      fm({ title: 'Target', type: 'concept' }) + '\n# Target\n',
+    );
+    writePage(
+      wikiDir,
+      'concepts/index.md',
+      fm({ status: 'draft', title: 'Concept Index', type: 'concept' }) + '\nSee [[target]].\n',
+    );
+
+    runMigrateWiki(wikiDir);
+
+    const rootIndex = readFileSync(join(wikiDir, 'index.md'), 'utf8');
+    expect(rootIndex).toContain('status: draft');
+    expect(rootIndex).toContain('[[target]]');
+
+    const conceptIndex = readFileSync(join(wikiDir, 'concepts', 'index.md'), 'utf8');
+    expect(conceptIndex).toContain('status: wip');
+    expect(conceptIndex).toContain('[target](target.md)');
+    expect(conceptIndex).not.toContain('[[target]]');
+  });
+
   it('supports --dry-run without writing files', () => {
     const { wikiDir } = makeTmpProject();
     writePage(

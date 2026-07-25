@@ -1,8 +1,9 @@
 import { describe, it, expect, afterEach } from 'vitest';
+import { spawn } from 'child_process';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { makeTmpWikiDir, cleanup } from '../helpers/wiki.js';
+import { makeTmpWikiDir, cleanup, PACKAGE_ROOT } from '../helpers/wiki.js';
 import { runBuiltCli } from '../helpers/cli.js';
 
 const dirs: string[] = [];
@@ -22,6 +23,22 @@ afterEach(() => {
 
 function runLog(wikiDir: string, args: string[]) {
   return runBuiltCli(wikiDir, ['log', ...args, '--wiki-dir', wikiDir]);
+}
+
+function runLogAsync(wikiDir: string, title: string): Promise<number | null> {
+  const cliPath = join(PACKAGE_ROOT, 'dist', 'bin', 'cli.js');
+  return new Promise((resolve) => {
+    const child = spawn(
+      process.execPath,
+      [cliPath, 'log', 'add', 'maintenance', title, '--wiki-dir', wikiDir],
+      {
+        cwd: wikiDir,
+        env: { ...process.env, FORCE_COLOR: '0' },
+        stdio: 'ignore',
+      },
+    );
+    child.on('exit', (code) => resolve(code));
+  });
 }
 
 describe('log command', () => {
@@ -115,4 +132,17 @@ describe('log command', () => {
     expect(log).toContain('Second');
     expect(log.indexOf('First')).toBeLessThan(log.indexOf('Second'));
   });
+
+  it('does not lose entries from concurrent log commands', async () => {
+    const dir = newWikiDirWithLog();
+    const titles = Array.from({ length: 40 }, (_, i) => `Concurrent entry ${i}`);
+
+    const statuses = await Promise.all(titles.map((title) => runLogAsync(dir, title)));
+
+    expect(statuses).toEqual(titles.map(() => 0));
+    const log = readFileSync(join(dir, 'log.md'), 'utf8');
+    for (const title of titles) {
+      expect(log.match(new RegExp(`maintenance \\| ${title}`, 'g'))).toHaveLength(1);
+    }
+  }, 20_000);
 });

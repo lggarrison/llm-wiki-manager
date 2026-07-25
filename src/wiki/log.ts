@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { appendFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import type { WikiContext } from './context.js';
 
@@ -56,8 +56,7 @@ export function runLog(ctx: WikiContext, args: string[]): number {
   }
 
   const entry = `\n## [${date}] ${op} | ${title}\n`;
-  const existing = readFileSync(logPath, 'utf8');
-  writeFileSync(logPath, existing.trimEnd() + '\n' + entry, 'utf8');
+  appendFileSync(logPath, entry, 'utf8');
   console.log(`✓ Logged: [${date}] ${op} | ${title}`);
   return 0;
 }

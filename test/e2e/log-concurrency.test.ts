@@ -56,8 +56,9 @@ describe('log command concurrency', () => {
 
     expect(results).toEqual(titles.map(() => ({ code: 0, stderr: '' })));
     const log = readFileSync(join(wikiDir, 'log.md'), 'utf8');
+    const lines = log.split(/\r?\n/);
     for (const title of titles) {
-      expect(log.match(new RegExp(`maintenance \\| ${title}`, 'g'))).toHaveLength(1);
+      expect(lines.filter((line) => line.endsWith(`maintenance | ${title}`))).toHaveLength(1);
     }
   }, 20_000);
 });

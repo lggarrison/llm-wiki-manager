@@ -199,4 +199,18 @@ describe('migrate-pages', () => {
 
     expect(readFileSync(join(wikiDir, 'concepts', 'keep.md'), 'utf8')).toContain('status: draft');
   });
+
+  it('does not rewrite Obsidian metadata markdown', () => {
+    const { wikiDir } = makeTmpProject();
+    const obsidianContent =
+      fm({ status: 'draft', title: 'Workspace Metadata', type: 'concept' }) +
+      '\nPlugin state with [[workspace links]].\n';
+    writePage(wikiDir, '.obsidian/plugins/state.md', obsidianContent);
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, '.obsidian', 'plugins', 'state.md'), 'utf8')).toBe(
+      obsidianContent,
+    );
+  });
 });

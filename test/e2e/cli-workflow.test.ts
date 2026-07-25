@@ -195,6 +195,22 @@ describe('CLI e2e workflow', () => {
     expect(readFileSync(userPage, 'utf8')).toBe(userContentBefore);
   });
 
+  it('upgrade does not infer an install from an unrelated AGENTS.md', () => {
+    const dir = makeTmpProject();
+    const packageBefore = readFileSync(join(dir, 'package.json'), 'utf8');
+    const agentsBefore = '# Project agents\n\nUse repository conventions.\n';
+    writeFileSync(join(dir, 'AGENTS.md'), agentsBefore);
+
+    const upgrade = runBuiltCli(dir, ['upgrade']);
+
+    expect(upgrade.status).not.toBe(0);
+    expect(upgrade.stderr).toContain('Run init first');
+    expect(readFileSync(join(dir, 'package.json'), 'utf8')).toBe(packageBefore);
+    expect(readFileSync(join(dir, 'AGENTS.md'), 'utf8')).toBe(agentsBefore);
+    expect(existsSync(join(dir, 'wiki'))).toBe(false);
+    expect(existsSync(join(dir, '.llm-wiki-manager.json'))).toBe(false);
+  });
+
   it('upgrade outro shows Final Step npm install when local bin is missing', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

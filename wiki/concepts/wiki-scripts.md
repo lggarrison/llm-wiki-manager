@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-26T11:20:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -46,6 +46,8 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 | `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
 
 `doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
+
+`sync` mirrors missing `related:` entries into the real `## See also` section while ignoring headings inside fenced code examples. `log` rejects multi-line titles before writing `log.md`, keeping each invocation to a single audit entry.
 
 `migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy frontmatter status/timestamp fields only inside YAML frontmatter, and rewrites body wikilinks to markdown links relative to the page being migrated while leaving fenced code examples untouched. Bare-slug wikilinks prefer an unambiguous existing page target.
 

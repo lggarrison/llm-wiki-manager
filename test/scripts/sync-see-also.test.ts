@@ -158,6 +158,44 @@ describe('sync command', () => {
     expect(content).toContain('Old notes.');
   });
 
+  it('ignores fenced "## See also" examples when appending links', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
+    const aPath = writePage(
+      dir,
+      'concepts/a.md',
+      fm({ related: ['concepts/b.md'] }) +
+        '\nIntro.\n\n```md\n## See also\n```\n\n## See also\n\n## Notes\n\nDetails.\n',
+    );
+
+    runSync(dir);
+
+    const content = readFileSync(aPath, 'utf8');
+    const fencedHeadingIdx = content.indexOf('## See also');
+    const realHeadingIdx = content.lastIndexOf('## See also');
+    const linkIdx = content.indexOf('[B Page](b.md)');
+    const notesIdx = content.indexOf('## Notes');
+    expect(fencedHeadingIdx).toBeLessThan(realHeadingIdx);
+    expect(linkIdx).toBeGreaterThan(realHeadingIdx);
+    expect(linkIdx).toBeLessThan(notesIdx);
+  });
+
+  it('creates a real "## See also" section when only a fenced example exists', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
+    const aPath = writePage(
+      dir,
+      'concepts/a.md',
+      fm({ related: ['concepts/b.md'] }) + '\nIntro.\n\n```md\n## See also\n```\n',
+    );
+
+    runSync(dir);
+
+    const content = readFileSync(aPath, 'utf8');
+    expect(content.match(/^## See also$/gm)?.length).toBe(2);
+    expect(content.trimEnd()).toMatch(/## See also\n\n- \[B Page\]\(b\.md\)$/);
+  });
+
   it('syncs pages whose filenames contain the substring "raw"', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));

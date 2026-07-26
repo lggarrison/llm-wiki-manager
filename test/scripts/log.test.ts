@@ -81,6 +81,20 @@ describe('log command', () => {
     expect(result.stderr).toContain('Title is required');
   });
 
+  it('rejects titles containing newlines', () => {
+    const dir = newWikiDirWithLog();
+    const before = readFileSync(join(dir, 'log.md'), 'utf8');
+    const result = runLog(dir, [
+      'add',
+      'maintenance',
+      'Valid first line\n## [2099-01-01T00:00:00Z] ingest | Forged entry',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Title must be a single line');
+    expect(readFileSync(join(dir, 'log.md'), 'utf8')).toBe(before);
+  });
+
   it('resolves wiki dir from install config when --wiki-dir is omitted', () => {
     const projectDir = mkdtempSync(join(tmpdir(), 'llm-wiki-log-test-'));
     dirs.push(projectDir);

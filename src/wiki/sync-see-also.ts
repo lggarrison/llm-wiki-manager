@@ -16,14 +16,14 @@ function extractBodyLinks(content: string): Set<string> {
  * next heading), or append a new section at the end of the file.
  */
 function insertSeeAlsoLinks(content: string, links: string[]): string {
-  const headingMatch = content.match(/^## See also[^\n]*$/m);
-  if (!headingMatch || headingMatch.index === undefined) {
+  const headingMatch = findSeeAlsoHeading(content);
+  if (!headingMatch) {
     return `${content.trimEnd()}\n\n## See also\n\n${links.join('\n')}\n`;
   }
 
-  const sectionStart = headingMatch.index + headingMatch[0].length;
+  const sectionStart = headingMatch.index + headingMatch.length;
   const rest = content.slice(sectionStart);
-  const nextHeading = rest.search(/^#{1,6} /m);
+  const nextHeading = findNextHeading(rest);
 
   if (nextHeading < 0) {
     return `${content.trimEnd()}\n${links.join('\n')}\n`;
@@ -33,6 +33,65 @@ function insertSeeAlsoLinks(content: string, links: string[]): string {
   const after = rest.slice(nextHeading);
   const before = content.slice(0, sectionStart);
   return `${before}${sectionBody.trimEnd()}\n${links.join('\n')}\n\n${after}`;
+}
+
+type HeadingMatch = {
+  index: number;
+  length: number;
+};
+
+function isFenceLine(line: string): boolean {
+  return /^\s*(```|~~~)/.test(line.replace(/\r$/, ''));
+}
+
+function findSeeAlsoHeading(content: string): HeadingMatch | null {
+  let inFence = false;
+  let position = 0;
+
+  while (position < content.length) {
+    const lineStart = position;
+    const newline = content.indexOf('\n', position);
+    const lineEnd = newline >= 0 ? newline : content.length;
+    const line = content.slice(lineStart, lineEnd);
+    position = newline >= 0 ? newline + 1 : content.length;
+
+    const comparableLine = line.replace(/\r$/, '');
+    if (isFenceLine(line)) {
+      inFence = !inFence;
+      continue;
+    }
+
+    if (!inFence && /^## See also[^\n]*$/.test(comparableLine)) {
+      return { index: lineStart, length: line.length };
+    }
+  }
+
+  return null;
+}
+
+function findNextHeading(content: string): number {
+  let inFence = false;
+  let position = 0;
+
+  while (position < content.length) {
+    const lineStart = position;
+    const newline = content.indexOf('\n', position);
+    const lineEnd = newline >= 0 ? newline : content.length;
+    const line = content.slice(lineStart, lineEnd);
+    position = newline >= 0 ? newline + 1 : content.length;
+
+    const comparableLine = line.replace(/\r$/, '');
+    if (isFenceLine(line)) {
+      inFence = !inFence;
+      continue;
+    }
+
+    if (!inFence && /^#{1,6} /.test(comparableLine)) {
+      return lineStart;
+    }
+  }
+
+  return -1;
 }
 
 export type SyncOptions = {

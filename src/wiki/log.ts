@@ -48,6 +48,10 @@ export function runLog(ctx: WikiContext, args: string[]): number {
     console.error('Title is required.');
     return 1;
   }
+  if (/[\r\n]/.test(title)) {
+    console.error('Title must be a single line.');
+    return 1;
+  }
 
   const logPath = join(ctx.wikiDir, 'log.md');
   if (!existsSync(logPath)) {

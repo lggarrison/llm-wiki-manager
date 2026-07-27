@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Utils
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-07-27T11:10:00Z
 tags: [utils]
 related: [entities/commands.md, entities/templates.md, concepts/template-system.md]
 code_refs: [src/utils/fs.ts, src/utils/upgrade.ts, src/utils/fs.test.ts]
@@ -24,6 +24,8 @@ Scope tag: **`utils`** (first tag).
 | package.json   | `mergePackageJsonScripts`, `syncPackageJsonScripts`, `mergePackageJsonDevDependency`, `syncPackageJsonDevDependency`, `isPackageBinInstalled`, `packageBinPath`, `PACKAGE_NAME`, `wikiScriptCandidates`, `WIKI_SCRIPT_KEYS` |
 | AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization, standalone end-marker detection, and legacy-tail preservation                                                                                           |
 | Misc           | `getPackageVersion`, `scaffoldWikiEmptyDirs`, `WIKI_EMPTY_DIRS`                                                                                                                                                             |
+
+Legacy install inference only accepts projects where the inferred wiki directory already has `schema.md`; an unrelated root `AGENTS.md` is not enough evidence for `upgrade` to mutate the repo.
 
 ## `upgrade.ts` — upgrade orchestration
 

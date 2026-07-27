@@ -17,7 +17,7 @@
 | [CLI](entities/cli.md)             | cli       | active | 2026-07-01T22:00:00Z |
 | [Commands](entities/commands.md)   | commands  | active | 2026-07-02T18:00:00Z |
 | [Templates](entities/templates.md) | templates | active | 2026-07-02T12:00:00Z |
-| [Utils](entities/utils.md)         | utils     | active | 2026-07-02T12:00:00Z |
+| [Utils](entities/utils.md)         | utils     | active | 2026-07-27T11:10:00Z |
 
 ## Concepts
 

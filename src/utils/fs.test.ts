@@ -888,6 +888,14 @@ describe('install config', () => {
     expect(inferred?.projectName).toBe('my-app');
   });
 
+  it('does not infer an install from an unrelated AGENTS.md without a wiki schema', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n');
+    writeFileSync(join(dir, 'AGENTS.md'), '# Project agent notes\n\nNo wiki here.\n');
+
+    expect(inferInstallConfig(dir)).toBeNull();
+  });
+
   it('detects existing installs', () => {
     const dir = makeTmpDir();
     expect(isExistingInstall(dir, 'wiki')).toBe(false);

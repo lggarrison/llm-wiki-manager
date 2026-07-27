@@ -163,7 +163,7 @@ export function inferInstallConfig(projectRoot: string): InstallConfig | null {
   }
 
   const schemaPath = join(projectRoot, wikiDir, 'schema.md');
-  if (!existsSync(schemaPath) && !existsSync(agentsPath)) return null;
+  if (!existsSync(schemaPath)) return null;
 
   return {
     version: '0.0.0',

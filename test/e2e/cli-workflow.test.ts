@@ -314,6 +314,22 @@ describe('CLI e2e workflow', () => {
     expect(readFileSync(configPath, 'utf8')).toBe(configBefore);
   });
 
+  it('upgrade rejects mistyped flags without writing files', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const schemaPath = join(dir, 'wiki', 'schema.md');
+    const configPath = join(dir, '.llm-wiki-manager.json');
+    const configBefore = readFileSync(configPath, 'utf8');
+    writeFileSync(schemaPath, '# stale schema\n');
+
+    const result = runBuiltCli(dir, ['upgrade', '--dryrun']);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Unknown upgrade option: --dryrun');
+    expect(readFileSync(schemaPath, 'utf8')).toBe('# stale schema\n');
+    expect(readFileSync(configPath, 'utf8')).toBe(configBefore);
+  });
+
   it('init leaves index.md fresh so check passes without a manual build', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

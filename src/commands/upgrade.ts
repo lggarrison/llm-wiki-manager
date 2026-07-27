@@ -23,7 +23,15 @@ import {
   type UpgradeOptions,
 } from '../utils/upgrade.js';
 
-function parseUpgradeArgs(argv: string[]): UpgradeOptions {
+const UPGRADE_FLAGS = new Set(['--dry-run', '--skip-pages']);
+
+export function parseUpgradeArgs(argv: string[]): UpgradeOptions {
+  for (const arg of argv) {
+    if (!UPGRADE_FLAGS.has(arg)) {
+      throw new Error(`Unknown upgrade option: ${arg}`);
+    }
+  }
+
   return {
     dryRun: argv.includes('--dry-run'),
     skipPages: argv.includes('--skip-pages'),

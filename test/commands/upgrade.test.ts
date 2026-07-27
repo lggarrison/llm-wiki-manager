@@ -9,6 +9,7 @@ import {
   interpolate,
   templatePath,
 } from '../../src/utils/fs.js';
+import { parseUpgradeArgs } from '../../src/commands/upgrade.js';
 import { runUpgradeSteps, runPostUpgradeScripts } from '../../src/utils/upgrade.js';
 import { fm, writePage } from '../helpers/wiki.js';
 
@@ -27,6 +28,17 @@ afterEach(async () => {
 });
 
 describe('upgrade helpers', () => {
+  it('rejects unknown upgrade flags before running mutation paths', () => {
+    expect(() => parseUpgradeArgs(['--dryrun'])).toThrow('Unknown upgrade option: --dryrun');
+  });
+
+  it('accepts supported upgrade flags', () => {
+    expect(parseUpgradeArgs(['--dry-run', '--skip-pages'])).toEqual({
+      dryRun: true,
+      skipPages: true,
+    });
+  });
+
   it('refreshes root AGENTS.md managed section', () => {
     const dir = makeTmpDir();
     const agentsPath = join(dir, 'AGENTS.md');

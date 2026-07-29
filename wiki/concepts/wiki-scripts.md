@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-29T11:10:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -44,6 +44,8 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 | `log`          | `wiki:log`         | Append ingest/query/lint/maintenance entries to `log.md` |
 | `doctor`       | `wiki:doctor`      | Health-check scaffold; suggest fixes for common issues   |
 | `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
+
+`sync` mirrors missing `related:` entries into an existing `## See also` link list when present, preserving any trailing notes or later sections; otherwise it appends a new `## See also` section.
 
 `doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
 

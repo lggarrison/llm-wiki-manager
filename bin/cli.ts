@@ -69,7 +69,9 @@ async function dispatch(): Promise<number> {
     case 'check':
       return await runCheck(wikiContextFromArgs(rest));
     case 'sync':
-      return runSync(wikiContextFromArgs(rest), { dry: hasFlag(rest, '--dry') });
+      return runSync(wikiContextFromArgs(rest), {
+        dry: hasFlag(rest, '--dry') || hasFlag(rest, '--dry-run'),
+      });
     case 'log':
       return runLog(wikiContextFromArgs(rest), rest);
     case 'doctor':

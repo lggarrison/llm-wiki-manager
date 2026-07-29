@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-07-29T11:03:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -57,6 +57,7 @@ Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution. Addi
 | ---------- | ------------- | ------------------------------- |
 | `lint`     | `--warn-only` | Report issues without exiting 1 |
 | `sync`     | `--dry`       | Preview link additions only     |
+| `sync`     | `--dry-run`   | Preview link additions only     |
 
 ## Path resolution
 

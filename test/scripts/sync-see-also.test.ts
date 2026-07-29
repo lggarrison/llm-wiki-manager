@@ -70,6 +70,28 @@ describe('sync command', () => {
     expect(bLinkIdx).toBeLessThan(refsIdx);
   });
 
+  it('keeps generated links before trailing notes in a final "## See also" section', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
+    writePage(dir, 'concepts/existing.md', fm({ type: 'hub', title: 'Existing' }));
+    const aPath = writePage(
+      dir,
+      'concepts/a.md',
+      fm({ related: ['concepts/b.md'] }) +
+        '\n## See also\n\n- [Existing](existing.md)\n\nReview notes that should stay after the link list.\n',
+    );
+
+    runSync(dir);
+
+    const content = readFileSync(aPath, 'utf8');
+    const existingIdx = content.indexOf('[Existing](existing.md)');
+    const bLinkIdx = content.indexOf('[B Page](b.md)');
+    const notesIdx = content.indexOf('Review notes');
+    expect(existingIdx).toBeGreaterThan(-1);
+    expect(bLinkIdx).toBeGreaterThan(existingIdx);
+    expect(bLinkIdx).toBeLessThan(notesIdx);
+  });
+
   it('processes pages when wiki dir path contains "raw" as a substring', () => {
     const dir = mkdtempSync(join(tmpdir(), 'crawler-wiki-'));
     dirs.push(dir);

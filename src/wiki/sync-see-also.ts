@@ -11,6 +11,20 @@ function extractBodyLinks(content: string): Set<string> {
   );
 }
 
+function insertLinksIntoSection(sectionBody: string, links: string[]): string {
+  const linkItemPattern = /^- \[[^\]\n]+\]\([^)]+\)\s*$/gm;
+  const lastLinkItem = [...sectionBody.matchAll(linkItemPattern)].at(-1);
+
+  if (!lastLinkItem || lastLinkItem.index === undefined) {
+    return `${sectionBody.trimEnd()}\n${links.join('\n')}\n`;
+  }
+
+  const insertionPoint = lastLinkItem.index + lastLinkItem[0].length;
+  const before = sectionBody.slice(0, insertionPoint).trimEnd();
+  const after = sectionBody.slice(insertionPoint);
+  return `${before}\n${links.join('\n')}${after}`;
+}
+
 /**
  * Insert links at the end of an existing "## See also" section (before the
  * next heading), or append a new section at the end of the file.
@@ -26,13 +40,13 @@ function insertSeeAlsoLinks(content: string, links: string[]): string {
   const nextHeading = rest.search(/^#{1,6} /m);
 
   if (nextHeading < 0) {
-    return `${content.trimEnd()}\n${links.join('\n')}\n`;
+    return `${content.slice(0, sectionStart)}${insertLinksIntoSection(rest, links)}`;
   }
 
   const sectionBody = rest.slice(0, nextHeading);
   const after = rest.slice(nextHeading);
   const before = content.slice(0, sectionStart);
-  return `${before}${sectionBody.trimEnd()}\n${links.join('\n')}\n\n${after}`;
+  return `${before}${insertLinksIntoSection(sectionBody, links).trimEnd()}\n\n${after}`;
 }
 
 export type SyncOptions = {

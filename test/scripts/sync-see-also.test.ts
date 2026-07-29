@@ -123,6 +123,18 @@ describe('sync command', () => {
     expect(result.stdout).toContain('would add');
   });
 
+  it('--dry-run does not write changes but reports what would change', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
+    const aPath = writePage(dir, 'concepts/a.md', fm({ related: ['concepts/b.md'] }) + '\nBody.\n');
+    const before = readFileSync(aPath, 'utf8');
+
+    const result = runSync(dir, ['--dry-run']);
+
+    expect(readFileSync(aPath, 'utf8')).toBe(before);
+    expect(result.stdout).toContain('would add');
+  });
+
   it('is idempotent: running twice does not duplicate links', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));

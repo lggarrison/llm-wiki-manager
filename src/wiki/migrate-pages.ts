@@ -172,6 +172,8 @@ export function runMigrate(ctx: WikiContext, options: MigrateOptions = {}): numb
     if (META_SKIP.has(rel.split('/').pop() ?? '')) continue;
 
     let content = readFileSync(file, 'utf8');
+    if (!splitFrontmatter(content)) continue;
+
     let changed = false;
 
     const statusResult = migrateStatus(content);

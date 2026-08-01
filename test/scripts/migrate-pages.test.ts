@@ -187,6 +187,20 @@ describe('migrate-pages', () => {
     );
   });
 
+  it('does not rewrite markdown files without wiki frontmatter', () => {
+    const { wikiDir } = makeTmpProject();
+    const scratchPath = writePage(
+      wikiDir,
+      'concepts/scratch.md',
+      '# Scratch\n\nTemporary note with [[caching]] syntax.\n',
+    );
+    const before = readFileSync(scratchPath, 'utf8');
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(scratchPath, 'utf8')).toBe(before);
+  });
+
   it('supports --dry-run without writing files', () => {
     const { wikiDir } = makeTmpProject();
     writePage(

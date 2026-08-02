@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-02T11:01:08Z
 tags: [testing, vitest]
 related:
   [
@@ -48,7 +48,7 @@ Configuration lives in `vitest.config.ts`: it includes `src/**/*.test.ts` and `t
 
 Packed-install smoke tests live under `test/e2e/tarball-smoke.test.ts` and run via `npm run test:e2e`, not `npm test`.
 
-Script tests invoke the **built CLI** (`dist/bin/cli.js`) so behavior matches what consumers run.
+Script tests invoke the **built CLI** (`dist/bin/cli.js`) so behavior matches what consumers run. The lint command coverage includes malformed frontmatter list shapes, including scalar `related` and `code_refs` fields that must fail before validation is skipped.
 
 ## Script test coverage
 

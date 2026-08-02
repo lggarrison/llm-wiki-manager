@@ -19,6 +19,8 @@ export type LintOptions = {
   warnOnly?: boolean;
 };
 
+const ARRAY_FRONTMATTER_FIELDS = ['related', 'code_refs', 'sources', 'tags'] as const;
+
 function findRawArtifact(wikiDir: string, slug: string): string | null {
   for (const sub of RAW_ARTIFACT_DIRS) {
     const rel = `raw/${sub}/${slug}.md`;
@@ -142,6 +144,12 @@ export function runLint(ctx: WikiContext, options: LintOptions = {}): number {
         file,
         `frontmatter field "${key}" uses a block-style YAML list — use an inline array instead: ${key}: [a, b]`,
       );
+    }
+
+    for (const key of ARRAY_FRONTMATTER_FIELDS) {
+      if (fm[key] !== undefined && !Array.isArray(fm[key])) {
+        err(file, `frontmatter field "${key}" must be an inline array: ${key}: [a, b]`);
+      }
     }
 
     for (const field of REQUIRED_FIELDS) {

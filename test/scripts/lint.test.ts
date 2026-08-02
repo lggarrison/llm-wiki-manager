@@ -201,6 +201,20 @@ describe('lint command', () => {
     expect(result.stdout).toContain('block-style YAML list');
   });
 
+  it('fails when known list frontmatter fields are scalars', () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: A\nlast_updated: 2026-01-01T00:00:00Z\nrelated: concepts/missing.md\ncode_refs: src/missing.ts\n---\n\nBody.\n',
+    );
+
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('frontmatter field "related" must be an inline array');
+    expect(result.stdout).toContain('frontmatter field "code_refs" must be an inline array');
+  });
+
   it('accepts Prettier-wrapped inline arrays in frontmatter', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'concept', title: 'B' }));

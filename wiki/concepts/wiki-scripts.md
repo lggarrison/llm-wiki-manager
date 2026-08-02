@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-08-02T11:01:08Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -64,7 +64,7 @@ Subcommands resolve the wiki directory from `--wiki-dir`, then `.llm-wiki-manage
 
 ## Meta files excluded from page lint
 
-`lint` and `build` skip structural/meta files (not wiki pages with frontmatter): `index.md`, `log.md`, `schema.md`, `README.md`, and `AGENTS.md` at the wiki root (`META_SKIP` in `src/wiki/constants.ts`).
+`lint` and `build` skip structural/meta files (not wiki pages with frontmatter): `index.md`, `log.md`, `schema.md`, `README.md`, and `AGENTS.md` at the wiki root (`META_SKIP` in `src/wiki/constants.ts`). Lint also fails list-valued frontmatter fields such as `related`, `code_refs`, `sources`, and `tags` when they are written as scalars or block lists; they must use inline arrays so path validation and sync behavior cannot silently skip them.
 
 ## Typical workflow
 

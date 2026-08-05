@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import {
@@ -11,6 +11,7 @@ import {
 } from '../../src/utils/fs.js';
 import { runUpgradeSteps, runPostUpgradeScripts } from '../../src/utils/upgrade.js';
 import { fm, writePage } from '../helpers/wiki.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const tmpDirs: string[] = [];
 function makeTmpDir(): string {
@@ -64,6 +65,26 @@ describe('upgrade helpers', () => {
     runUpgradeSteps(dir, config);
 
     expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
+  });
+
+  it('rejects incomplete install config before writing templates', () => {
+    const dir = makeTmpDir();
+    const wikiDir = join(dir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+    writeFileSync(join(wikiDir, 'schema.md'), '# original schema\n');
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+    writeFileSync(
+      join(dir, '.llm-wiki-manager.json'),
+      JSON.stringify({ version: '1.0.0', wikiDir: 'wiki', focusDirs: [] }, null, 2) + '\n',
+    );
+
+    const result = runBuiltCli(dir, ['upgrade']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('.llm-wiki-manager.json is invalid');
+    expect(result.stderr).toContain('projectName');
+    expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toBe('# original schema\n');
+    expect(existsSync(join(dir, 'AGENTS.md'))).toBe(false);
   });
 });
 

@@ -873,6 +873,34 @@ describe('install config', () => {
     expect(readInstallConfig(dir)).toEqual(config);
   });
 
+  it('rejects incomplete .llm-wiki-manager.json files', () => {
+    const dir = makeTmpDir();
+    const path = join(dir, '.llm-wiki-manager.json');
+    writeFileSync(
+      path,
+      JSON.stringify({ version: '0.1.0', wikiDir: 'wiki', focusDirs: [] }, null, 2) + '\n',
+      'utf8',
+    );
+
+    expect(() => readInstallConfig(dir)).toThrow(/projectName/);
+  });
+
+  it('rejects .llm-wiki-manager.json with invalid focusDirs', () => {
+    const dir = makeTmpDir();
+    const path = join(dir, '.llm-wiki-manager.json');
+    writeFileSync(
+      path,
+      JSON.stringify(
+        { version: '0.1.0', projectName: 'acme', wikiDir: 'wiki', focusDirs: 'src' },
+        null,
+        2,
+      ) + '\n',
+      'utf8',
+    );
+
+    expect(() => readInstallConfig(dir)).toThrow(/focusDirs/);
+  });
+
   it('infers paths from AGENTS.md and schema.md', () => {
     const dir = makeTmpDir();
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n');

@@ -91,6 +91,8 @@ async function promptInitValues(): Promise<InitFlagValues> {
 export async function init(): Promise<void> {
   intro(pc.cyan('llm-wiki-manager — wiki scaffold'));
 
+  const cwd = process.cwd();
+  const existingConfig = readInstallConfig(cwd);
   const fromFlags = parseInitArgs(process.argv.slice(3));
   const values = fromFlags ?? (await promptInitValues());
 
@@ -110,7 +112,6 @@ export async function init(): Promise<void> {
     initTimestamp,
   });
 
-  const cwd = process.cwd();
   const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
   const reInit = isExistingInstall(cwd, wikiDirStr);
@@ -165,7 +166,6 @@ export async function init(): Promise<void> {
     );
   }
 
-  const existingConfig = readInstallConfig(cwd);
   writeInstallConfig(cwd, {
     version: getPackageVersion(),
     projectName: projectNameStr,

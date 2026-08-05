@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Template System
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-05T11:05:00Z
 tags: [templates, scaffold]
 related: [concepts/init-command.md, concepts/repo-layout.md, concepts/dogfooding.md]
 code_refs: [src/utils/fs.ts, templates/AGENTS.md, templates/wiki/schema.md]
@@ -33,6 +33,8 @@ Wiki management logic (lint, build, sync, log, doctor, etc.) lives in `src/wiki/
 `copyTemplate` and scaffold helpers recursively copy template files, then walk interpolated file types replacing `{{VAR}}` placeholders via `interpolate()`.
 
 Interpolated extensions: `.md`, `.mjs`, `.js`, `.json`, and `.entity-scopes` (`shouldInterpolateFile` in `src/utils/fs.ts`).
+
+Install-config callers validate required fields before building these interpolation variables, preventing missing metadata from leaking literal placeholders into refreshed templates.
 
 Common variables:
 

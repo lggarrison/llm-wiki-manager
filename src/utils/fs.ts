@@ -138,11 +138,47 @@ export function installConfigPath(projectRoot: string): string {
 export function readInstallConfig(projectRoot: string): InstallConfig | null {
   const path = installConfigPath(projectRoot);
   if (!existsSync(path)) return null;
-  return readJsonFile<InstallConfig>(path);
+  return validateInstallConfig(readJsonFile<unknown>(path));
 }
 
 export function writeInstallConfig(projectRoot: string, config: InstallConfig): void {
   writeFileSync(installConfigPath(projectRoot), `${JSON.stringify(config, null, 2)}\n`, 'utf8');
+}
+
+function validateInstallConfig(config: unknown): InstallConfig {
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    throw new Error(`${INSTALL_CONFIG_FILENAME} is invalid: expected an object`);
+  }
+
+  const record = config as Record<string, unknown>;
+  const invalidFields: string[] = [];
+
+  if (typeof record.version !== 'string' || record.version.trim() === '') {
+    invalidFields.push('version');
+  }
+  if (typeof record.projectName !== 'string' || record.projectName.trim() === '') {
+    invalidFields.push('projectName');
+  }
+  if (typeof record.wikiDir !== 'string' || record.wikiDir.trim() === '') {
+    invalidFields.push('wikiDir');
+  }
+  if (
+    !Array.isArray(record.focusDirs) ||
+    record.focusDirs.some((entry) => typeof entry !== 'string')
+  ) {
+    invalidFields.push('focusDirs');
+  }
+
+  if (invalidFields.length > 0) {
+    throw new Error(`${INSTALL_CONFIG_FILENAME} is invalid: expected ${invalidFields.join(', ')}`);
+  }
+
+  return {
+    version: record.version,
+    projectName: record.projectName,
+    wikiDir: record.wikiDir,
+    focusDirs: record.focusDirs,
+  };
 }
 
 export function inferInstallConfig(projectRoot: string): InstallConfig | null {

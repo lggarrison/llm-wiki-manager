@@ -174,10 +174,10 @@ function validateInstallConfig(config: unknown): InstallConfig {
   }
 
   return {
-    version: record.version,
-    projectName: record.projectName,
-    wikiDir: record.wikiDir,
-    focusDirs: record.focusDirs,
+    version: record.version as string,
+    projectName: record.projectName as string,
+    wikiDir: record.wikiDir as string,
+    focusDirs: record.focusDirs as string[],
   };
 }
 

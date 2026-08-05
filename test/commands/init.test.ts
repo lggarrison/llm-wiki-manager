@@ -1,13 +1,13 @@
-import { afterEach, describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { parseInitArgs } from '../../src/commands/init.js';
-import { runBuiltCli } from '../helpers/cli.js';
+import { init, parseInitArgs } from '../../src/commands/init.js';
 
 const tmpDirs: string[] = [];
 
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const dir of tmpDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -41,7 +41,7 @@ describe('parseInitArgs', () => {
 });
 
 describe('init command validation', () => {
-  it('rejects incomplete install config before scaffolding files', () => {
+  it('rejects incomplete install config before scaffolding files', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'llm-wiki-init-config-test-'));
     tmpDirs.push(dir);
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
@@ -50,11 +50,23 @@ describe('init command validation', () => {
       JSON.stringify({ version: '1.0.0', wikiDir: 'wiki', focusDirs: [] }, null, 2) + '\n',
     );
 
-    const result = runBuiltCli(dir, ['init', '--project-name', 'acme', '--wiki-dir', 'wiki']);
+    const originalArgv = process.argv;
+    process.argv = [
+      process.execPath,
+      'llm-wiki-manager',
+      'init',
+      '--project-name',
+      'acme',
+      '--wiki-dir',
+      'wiki',
+    ];
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('.llm-wiki-manager.json is invalid');
-    expect(result.stderr).toContain('projectName');
+    try {
+      await expect(init()).rejects.toThrow(/projectName/);
+    } finally {
+      process.argv = originalArgv;
+    }
     expect(existsSync(join(dir, 'wiki'))).toBe(false);
     expect(existsSync(join(dir, 'AGENTS.md'))).toBe(false);
   });

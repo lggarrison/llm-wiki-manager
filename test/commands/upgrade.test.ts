@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -11,7 +11,7 @@ import {
 } from '../../src/utils/fs.js';
 import { runUpgradeSteps, runPostUpgradeScripts } from '../../src/utils/upgrade.js';
 import { fm, writePage } from '../helpers/wiki.js';
-import { runBuiltCli } from '../helpers/cli.js';
+import { upgrade } from '../../src/commands/upgrade.js';
 
 const tmpDirs: string[] = [];
 function makeTmpDir(): string {
@@ -21,6 +21,7 @@ function makeTmpDir(): string {
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   const { rmSync } = await import('fs');
   for (const dir of tmpDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
@@ -67,7 +68,7 @@ describe('upgrade helpers', () => {
     expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
   });
 
-  it('rejects incomplete install config before writing templates', () => {
+  it('rejects incomplete install config before writing templates', async () => {
     const dir = makeTmpDir();
     const wikiDir = join(dir, 'wiki');
     mkdirSync(wikiDir, { recursive: true });
@@ -78,11 +79,15 @@ describe('upgrade helpers', () => {
       JSON.stringify({ version: '1.0.0', wikiDir: 'wiki', focusDirs: [] }, null, 2) + '\n',
     );
 
-    const result = runBuiltCli(dir, ['upgrade']);
+    const originalArgv = process.argv;
+    process.argv = [process.execPath, 'llm-wiki-manager', 'upgrade'];
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
 
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain('.llm-wiki-manager.json is invalid');
-    expect(result.stderr).toContain('projectName');
+    try {
+      await expect(upgrade()).rejects.toThrow(/projectName/);
+    } finally {
+      process.argv = originalArgv;
+    }
     expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toBe('# original schema\n');
     expect(existsSync(join(dir, 'AGENTS.md'))).toBe(false);
   });

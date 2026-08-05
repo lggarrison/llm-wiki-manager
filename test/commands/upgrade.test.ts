@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import {
@@ -11,6 +11,7 @@ import {
 } from '../../src/utils/fs.js';
 import { runUpgradeSteps, runPostUpgradeScripts } from '../../src/utils/upgrade.js';
 import { fm, writePage } from '../helpers/wiki.js';
+import { upgrade } from '../../src/commands/upgrade.js';
 
 const tmpDirs: string[] = [];
 function makeTmpDir(): string {
@@ -20,6 +21,7 @@ function makeTmpDir(): string {
 }
 
 afterEach(async () => {
+  vi.restoreAllMocks();
   const { rmSync } = await import('fs');
   for (const dir of tmpDirs.splice(0)) {
     rmSync(dir, { recursive: true, force: true });
@@ -64,6 +66,30 @@ describe('upgrade helpers', () => {
     runUpgradeSteps(dir, config);
 
     expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toContain('Wiki Schema — acme');
+  });
+
+  it('rejects incomplete install config before writing templates', async () => {
+    const dir = makeTmpDir();
+    const wikiDir = join(dir, 'wiki');
+    mkdirSync(wikiDir, { recursive: true });
+    writeFileSync(join(wikiDir, 'schema.md'), '# original schema\n');
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'acme' }, null, 2) + '\n');
+    writeFileSync(
+      join(dir, '.llm-wiki-manager.json'),
+      JSON.stringify({ version: '1.0.0', wikiDir: 'wiki', focusDirs: [] }, null, 2) + '\n',
+    );
+
+    const originalArgv = process.argv;
+    process.argv = [process.execPath, 'llm-wiki-manager', 'upgrade'];
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+
+    try {
+      await expect(upgrade()).rejects.toThrow(/projectName/);
+    } finally {
+      process.argv = originalArgv;
+    }
+    expect(readFileSync(join(wikiDir, 'schema.md'), 'utf8')).toBe('# original schema\n');
+    expect(existsSync(join(dir, 'AGENTS.md'))).toBe(false);
   });
 });
 

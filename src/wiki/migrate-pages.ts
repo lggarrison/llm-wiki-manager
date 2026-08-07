@@ -10,7 +10,7 @@ const STATUS_MAP: Record<string, string> = {
   archived: 'deprecated',
 };
 
-const SKIP_DIRS = ['raw', 'archive'];
+const SKIP_DIRS = ['raw', 'archive', '.obsidian'];
 
 type FrontmatterParts = {
   opening: string;

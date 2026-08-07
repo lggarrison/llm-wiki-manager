@@ -199,4 +199,18 @@ describe('migrate-pages', () => {
 
     expect(readFileSync(join(wikiDir, 'concepts', 'keep.md'), 'utf8')).toContain('status: draft');
   });
+
+  it('does not migrate markdown inside the Obsidian metadata directory', () => {
+    const { wikiDir } = makeTmpProject();
+    const obsidianContent =
+      fm({ status: 'draft', title: 'Daily Notes', type: 'concept', last_updated: '2026-01-15' }) +
+      '\nUse [[today]] as an Obsidian-side template.\n';
+    writePage(wikiDir, '.obsidian/daily-notes.md', obsidianContent);
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, '.obsidian', 'daily-notes.md'), 'utf8')).toBe(
+      obsidianContent,
+    );
+  });
 });

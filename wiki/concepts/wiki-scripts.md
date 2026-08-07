@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-08-07T11:00:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -47,11 +47,11 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 
 `doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
 
-`migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy frontmatter status/timestamp fields only inside YAML frontmatter, and rewrites body wikilinks to markdown links relative to the page being migrated while leaving fenced code examples untouched. Bare-slug wikilinks prefer an unambiguous existing page target.
+`migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy frontmatter status/timestamp fields only inside YAML frontmatter, and rewrites body wikilinks to markdown links relative to the page being migrated while leaving fenced code examples untouched. Bare-slug wikilinks prefer an unambiguous existing page target. Migration skips generated/archive and Obsidian-private metadata trees (`raw/`, `archive/`, `.obsidian/`).
 
 ## Flags
 
-Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution. Additional flags:
+Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution and fail fast when either flag is present without a non-flag value. Additional flags:
 
 | Subcommand | Flag          | Effect                          |
 | ---------- | ------------- | ------------------------------- |

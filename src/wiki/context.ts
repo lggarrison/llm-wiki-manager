@@ -47,7 +47,11 @@ export function resolveWikiContext(
 export function flagValue(args: string[], name: string): string | undefined {
   const idx = args.indexOf(name);
   if (idx < 0) return undefined;
-  return args[idx + 1];
+  const value = args[idx + 1]?.trim();
+  if (!value || value.startsWith('-')) {
+    throw new Error(`${name} requires a value`);
+  }
+  return value;
 }
 
 export function hasFlag(args: string[], name: string): boolean {

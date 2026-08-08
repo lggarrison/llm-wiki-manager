@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, existsSync, statSync } from 'fs';
 import { join, resolve, relative, dirname, basename } from 'path';
-import { parseFrontmatter, detectBlockListKeys } from './frontmatter.js';
+import { parseFrontmatter, detectBlockListKeys, detectBlockScalarKeys } from './frontmatter.js';
 import { walkMd } from './walk.js';
 import {
   VALID_TYPES,
@@ -141,6 +141,13 @@ export function runLint(ctx: WikiContext, options: LintOptions = {}): number {
       err(
         file,
         `frontmatter field "${key}" uses a block-style YAML list — use an inline array instead: ${key}: [a, b]`,
+      );
+    }
+
+    for (const key of detectBlockScalarKeys(content)) {
+      err(
+        file,
+        `frontmatter field "${key}" uses a block/folded YAML scalar — use a single-line value instead: ${key}: value`,
       );
     }
 

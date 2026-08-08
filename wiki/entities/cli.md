@@ -1,7 +1,7 @@
 ---
 type: overview
 title: CLI
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-08-08T11:20:00Z
 tags: [cli]
 related: [entities/commands.md, concepts/wiki-scripts.md]
 code_refs: [bin/cli.ts, dist/bin/cli.js]
@@ -34,7 +34,7 @@ Default command when none is given: **`init`**. Global options: `--help`, `--ver
 | `doctor`      | `src/wiki/doctor.ts`        |
 | `setup-husky` | `src/wiki/setup-husky.ts`   |
 
-Wiki subcommands accept `--wiki-dir` and `--repo-root`. See [Wiki Management Scripts](../concepts/wiki-scripts.md) for flags and npm script aliases.
+Wiki subcommands accept `--wiki-dir` and `--repo-root`. See [Wiki Management Scripts](../concepts/wiki-scripts.md) for flags, npm script aliases, and lint frontmatter constraints.
 
 ## See also
 

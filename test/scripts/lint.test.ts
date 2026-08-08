@@ -201,6 +201,18 @@ describe('lint command', () => {
     expect(result.stdout).toContain('block-style YAML list');
   });
 
+  it('fails on block/folded YAML scalars in frontmatter', () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: |\n  Wrapped Title\nlast_updated: 2026-01-01T00:00:00Z\n---\n\nBody.\n',
+    );
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('block/folded YAML scalar');
+  });
+
   it('accepts Prettier-wrapped inline arrays in frontmatter', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'concept', title: 'B' }));

@@ -50,6 +50,20 @@ describe('build command', () => {
     expect(index).toContain('perf');
   });
 
+  it('does not emit raw YAML block scalar markers as titles', () => {
+    const dir = newWikiDir();
+    writePage(
+      dir,
+      'concepts/a.md',
+      '---\ntype: concept\ntitle: |\n  Wrapped Title\nlast_updated: 2026-01-01T00:00:00Z\n---\n\nBody.\n',
+    );
+    const result = runBuild(dir);
+    expect(result.status).toBe(0);
+    const index = readFileSync(join(dir, 'index.md'), 'utf8');
+    expect(index).toContain('[Wrapped Title](concepts/a.md)');
+    expect(index).not.toContain('[     | ](concepts/a.md)');
+  });
+
   it('lists a source page under the Sources section', () => {
     const dir = newWikiDir();
     writePage(dir, 'sources/s.md', fm({ type: 'source', title: 'RFC 9110' }));

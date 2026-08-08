@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-08T11:20:00Z
 tags: [testing, vitest]
 related:
   [
@@ -65,7 +65,7 @@ Each wiki subcommand has a dedicated test file under `test/scripts/`:
 | `migrate-pages.test.ts` | `runMigrate` legacy frontmatter and fenced-code-safe wikilink migration |
 | `scripts.test.ts`       | npm alias smoke tests                                                   |
 
-Tests use temporary wiki directories created by `makeTmpWikiDir()` and tear them down in `afterEach` hooks.
+Tests use temporary wiki directories created by `makeTmpWikiDir()` and tear them down in `afterEach` hooks. The script tests include frontmatter parser regressions so lint rejects unsupported YAML forms before build/sync can consume corrupted metadata.
 
 ## CI and release
 

@@ -58,6 +58,14 @@ describe('shouldSkipWikiPath', () => {
     expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, 'archive/old.md'))).toBe(true);
     expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, '.obsidian/workspace.md'))).toBe(true);
   });
+
+  it('does not skip valid pages whose names contain ".obsidian"', () => {
+    const wikiDir = makeWikiDir();
+    expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, 'concepts/my.obsidian-notes.md'))).toBe(
+      false,
+    );
+    expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, 'entities/obsidian-tools.md'))).toBe(false);
+  });
 });
 
 describe('walkMd', () => {
@@ -73,6 +81,19 @@ describe('walkMd', () => {
     expect(rels).toContain('concepts/drawing.md');
     expect(rels).toContain('raw/raw.md');
     expect(rels).not.toContain('raw/articles/notes.md');
+  });
+
+  it('includes valid wiki pages whose names contain ".obsidian"', () => {
+    const wikiDir = makeWikiDir();
+    touch(wikiDir, 'concepts/my.obsidian-notes.md');
+    touch(wikiDir, '.obsidian/workspace.md');
+
+    const rels = walkMd(wikiDir)
+      .map((f) => relPath(wikiDir, f))
+      .sort();
+
+    expect(rels).toContain('concepts/my.obsidian-notes.md');
+    expect(rels).not.toContain('.obsidian/workspace.md');
   });
 });
 

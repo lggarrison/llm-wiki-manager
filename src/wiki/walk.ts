@@ -5,7 +5,7 @@ import { RAW_ARTIFACT_DIRS } from './constants.js';
 export function shouldSkipWikiPath(wikiDir: string, full: string): boolean {
   const rel = relative(wikiDir, full).replace(/\\/g, '/');
   if (rel.startsWith('archive/') || rel === 'archive') return true;
-  if (rel.includes('.obsidian')) return true;
+  if (rel === '.obsidian' || rel.startsWith('.obsidian/')) return true;
   for (const sub of RAW_ARTIFACT_DIRS) {
     if (rel.startsWith(`raw/${sub}/`) || rel === `raw/${sub}`) return true;
   }

@@ -27,25 +27,33 @@ type InitFlagValues = {
   focusDirs: string;
 };
 
+const INIT_FLAGS = new Set(['--project-name', '--wiki-dir', '--focus-dirs']);
+
 export function parseInitArgs(argv: string[]): InitFlagValues | null {
   const flagIndex = argv.indexOf('--project-name');
   if (flagIndex === -1) return null;
 
-  const projectName = argv[flagIndex + 1]?.trim();
-  if (!projectName) {
-    throw new Error('--project-name requires a value');
+  for (const arg of argv) {
+    if (arg.startsWith('-') && !INIT_FLAGS.has(arg)) {
+      throw new Error(`Unknown init option: ${arg}`);
+    }
   }
 
-  const readFlag = (name: string, fallback: string): string => {
+  const readFlag = (name: string, fallback?: string): string => {
     const idx = argv.indexOf(name);
-    if (idx === -1) return fallback;
-    const value = argv[idx + 1]?.trim();
+    if (idx === -1) {
+      if (fallback !== undefined) return fallback;
+      throw new Error(`${name} requires a value`);
+    }
+    const rawValue = argv[idx + 1];
+    const value = rawValue?.trim();
     if (!value) throw new Error(`${name} requires a value`);
+    if (rawValue.startsWith('-')) throw new Error(`${name} requires a value`);
     return value;
   };
 
   return {
-    projectName,
+    projectName: readFlag('--project-name'),
     wikiDir: readFlag('--wiki-dir', 'wiki'),
     focusDirs: readFlag('--focus-dirs', ''),
   };

@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-09T11:01:18Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -36,6 +36,8 @@ llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 | `--project-name` | yes      | —                 |
 | `--wiki-dir`     | no       | `wiki`            |
 | `--focus-dirs`   | no       | _(whole project)_ |
+
+In non-interactive mode, init rejects unknown flags and flag-like missing values before scaffolding begins, so a typo cannot silently select the default wiki path or treat another option name as `--wiki-dir`.
 
 ## Scaffold steps
 

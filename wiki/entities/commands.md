@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-08-09T11:01:18Z
 tags: [commands]
 related:
   [entities/utils.md, concepts/init-command.md, concepts/dogfooding.md, concepts/wiki-scripts.md]
@@ -28,6 +28,8 @@ Non-interactive init (used in tests and CI):
 | `--project-name` | yes      |
 | `--wiki-dir`     | no       |
 | `--focus-dirs`   | no       |
+
+The non-interactive parser fails fast on unknown options and missing values that look like flags before any scaffold files are written.
 
 ## Upgrade flags
 

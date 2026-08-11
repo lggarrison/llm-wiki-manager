@@ -41,6 +41,14 @@ describe('shouldSkipWikiPath', () => {
     expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, 'entities/billing.md'))).toBe(false);
   });
 
+  it('does not skip pages whose filename contains ".obsidian"', () => {
+    const wikiDir = makeWikiDir();
+    expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, 'concepts/using.obsidian.md'))).toBe(false);
+    expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, 'entities/vs.obsidian-comparison.md'))).toBe(
+      false,
+    );
+  });
+
   it('does not skip raw/raw.md hub page', () => {
     const wikiDir = makeWikiDir();
     expect(shouldSkipWikiPath(wikiDir, touch(wikiDir, 'raw/raw.md'))).toBe(false);
@@ -64,6 +72,7 @@ describe('walkMd', () => {
   it('includes drawing.md and raw/raw.md but excludes raw artifact files', () => {
     const wikiDir = makeWikiDir();
     touch(wikiDir, 'concepts/drawing.md');
+    touch(wikiDir, 'concepts/using.obsidian.md');
     touch(wikiDir, 'raw/raw.md');
     touch(wikiDir, 'raw/articles/notes.md');
 
@@ -71,6 +80,7 @@ describe('walkMd', () => {
       .map((f) => relPath(wikiDir, f))
       .sort();
     expect(rels).toContain('concepts/drawing.md');
+    expect(rels).toContain('concepts/using.obsidian.md');
     expect(rels).toContain('raw/raw.md');
     expect(rels).not.toContain('raw/articles/notes.md');
   });

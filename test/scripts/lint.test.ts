@@ -42,6 +42,15 @@ describe('lint command', () => {
     expect(result.stdout).toContain('missing frontmatter');
   });
 
+  it('lints pages whose filename contains ".obsidian"', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/using.obsidian.md', 'No frontmatter here.\n');
+    const result = runLint(dir);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('missing frontmatter');
+    expect(result.stdout).toContain('using.obsidian.md');
+  });
+
   it('fails when a required field is missing', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/a.md', '---\ntype: concept\ntitle: A\n---\n');

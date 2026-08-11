@@ -1,7 +1,8 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
+import { runLint as runSourceLint } from '../../src/wiki/lint.js';
 
 const dirs: string[] = [];
 function newWikiDir(): string {
@@ -45,10 +46,16 @@ describe('lint command', () => {
   it('lints pages whose filename contains ".obsidian"', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/using.obsidian.md', 'No frontmatter here.\n');
-    const result = runLint(dir);
-    expect(result.status).toBe(1);
-    expect(result.stdout).toContain('missing frontmatter');
-    expect(result.stdout).toContain('using.obsidian.md');
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const status = runSourceLint({ wikiDir: dir, repoRoot: dir, cwd: dir });
+    const output = log.mock.calls.map((args) => args.join(' ')).join('\n');
+
+    log.mockRestore();
+
+    expect(status).toBe(1);
+    expect(output).toContain('missing frontmatter');
+    expect(output).toContain('using.obsidian.md');
   });
 
   it('fails when a required field is missing', () => {

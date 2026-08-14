@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-14T11:14:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -52,7 +52,7 @@ Wiki management logic lives in the published package (`src/wiki/`), not as copie
 
 ## Idempotency
 
-Re-running `init` on an already-initialized project only creates missing scaffold files. It does not overwrite existing wiki content, `log.md`, or `schema.md`. Use `upgrade` to refresh template files.
+Re-running `init` on an already-initialized project only creates missing scaffold files. It validates any existing `.llm-wiki-manager.json` before writing, then preserves prior focus directories when new flags omit them. It does not overwrite existing wiki content, `log.md`, or `schema.md`. Use `upgrade` to refresh template files.
 
 ## See also
 

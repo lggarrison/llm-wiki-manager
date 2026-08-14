@@ -873,6 +873,30 @@ describe('install config', () => {
     expect(readInstallConfig(dir)).toEqual(config);
   });
 
+  it('rejects partial install config before callers can use missing focusDirs', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, '.llm-wiki-manager.json'),
+      JSON.stringify({ version: '0.1.0', projectName: 'acme', wikiDir: 'wiki' }, null, 2) + '\n',
+    );
+
+    expect(() => readInstallConfig(dir)).toThrow(
+      '.llm-wiki-manager.json is invalid: "focusDirs" must be an array of strings',
+    );
+  });
+
+  it('rejects partial install config before template placeholders are refreshed', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, '.llm-wiki-manager.json'),
+      JSON.stringify({ version: '0.1.0', wikiDir: 'wiki', focusDirs: [] }, null, 2) + '\n',
+    );
+
+    expect(() => readInstallConfig(dir)).toThrow(
+      '.llm-wiki-manager.json is invalid: "projectName" must be a non-empty string',
+    );
+  });
+
   it('infers paths from AGENTS.md and schema.md', () => {
     const dir = makeTmpDir();
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'my-app' }, null, 2) + '\n');

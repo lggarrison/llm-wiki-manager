@@ -97,6 +97,41 @@ export function readJsonFile<T>(path: string): T {
   return JSON.parse(raw) as T;
 }
 
+function assertStringField(config: Record<string, unknown>, field: keyof InstallConfig): string {
+  const value = config[field];
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`${INSTALL_CONFIG_FILENAME} is invalid: "${field}" must be a non-empty string`);
+  }
+  return value;
+}
+
+function assertStringArrayField(
+  config: Record<string, unknown>,
+  field: keyof InstallConfig,
+): string[] {
+  const value = config[field];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== 'string')) {
+    throw new Error(
+      `${INSTALL_CONFIG_FILENAME} is invalid: "${field}" must be an array of strings`,
+    );
+  }
+  return value;
+}
+
+function parseInstallConfig(value: unknown): InstallConfig {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${INSTALL_CONFIG_FILENAME} is invalid: expected an object`);
+  }
+
+  const config = value as Record<string, unknown>;
+  return {
+    version: assertStringField(config, 'version'),
+    projectName: assertStringField(config, 'projectName'),
+    wikiDir: assertStringField(config, 'wikiDir'),
+    focusDirs: assertStringArrayField(config, 'focusDirs'),
+  };
+}
+
 export function getPackageVersion(): string {
   const pkg = readJsonFile<{ version: string }>(join(PACKAGE_ROOT, 'package.json'));
   return pkg.version;
@@ -138,7 +173,7 @@ export function installConfigPath(projectRoot: string): string {
 export function readInstallConfig(projectRoot: string): InstallConfig | null {
   const path = installConfigPath(projectRoot);
   if (!existsSync(path)) return null;
-  return readJsonFile<InstallConfig>(path);
+  return parseInstallConfig(readJsonFile<unknown>(path));
 }
 
 export function writeInstallConfig(projectRoot: string, config: InstallConfig): void {

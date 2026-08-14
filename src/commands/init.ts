@@ -113,6 +113,7 @@ export async function init(): Promise<void> {
   const cwd = process.cwd();
   const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
+  const existingConfig = readInstallConfig(cwd);
   const reInit = isExistingInstall(cwd, wikiDirStr);
 
   if (reInit) {
@@ -165,7 +166,6 @@ export async function init(): Promise<void> {
     );
   }
 
-  const existingConfig = readInstallConfig(cwd);
   writeInstallConfig(cwd, {
     version: getPackageVersion(),
     projectName: projectNameStr,

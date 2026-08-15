@@ -74,10 +74,6 @@ function migrateStatus(content: string): { updated: string; changed: boolean } {
       changed = true;
     }
   }
-  if (!/^status:/m.test(frontmatter)) {
-    frontmatter = frontmatter.length > 0 ? `${frontmatter}\nstatus: wip` : 'status: wip';
-    changed = true;
-  }
   return { updated: joinFrontmatter(parts, frontmatter), changed };
 }
 

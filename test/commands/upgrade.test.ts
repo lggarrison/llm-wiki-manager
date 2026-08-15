@@ -128,5 +128,7 @@ describe('migrate-pages via upgrade', () => {
     const content = readFileSync(join(wikiDir, 'concepts', 'legacy.md'), 'utf8');
     expect(content).toContain('status: wip');
     expect(content).not.toContain('status: draft');
+    const statusless = readFileSync(join(wikiDir, 'concepts', 'status-migration.md'), 'utf8');
+    expect(statusless).not.toMatch(/^status:/m);
   });
 });

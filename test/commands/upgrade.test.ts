@@ -114,8 +114,20 @@ describe('migrate-pages via upgrade', () => {
     writePage(
       wikiDir,
       'concepts/status-migration.md',
-      fm({ title: 'Status Migration', type: 'concept' }) +
-        '\n# Status Migration\n\nCovers [legacy status values](legacy.md).\n',
+      [
+        '---',
+        'type: concept',
+        'title: Status Migration',
+        'last_updated: 2026-01-01T00:00:00Z',
+        'tags: []',
+        'related: []',
+        '---',
+        '',
+        '# Status Migration',
+        '',
+        'Covers [legacy status values](legacy.md).',
+        '',
+      ].join('\n'),
     );
 
     await runPostUpgradeScripts(dir, {

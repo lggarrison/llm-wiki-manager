@@ -52,6 +52,27 @@ describe('migrate-pages', () => {
     );
   });
 
+  it('does not add a default status when status is absent', () => {
+    const { wikiDir } = makeTmpProject();
+    const original = [
+      '---',
+      'type: concept',
+      'title: Statusless',
+      'last_updated: 2026-01-15T09:30:00Z',
+      'tags: []',
+      'related: []',
+      '---',
+      '',
+      '# Statusless',
+      '',
+    ].join('\n');
+    writePage(wikiDir, 'concepts/statusless.md', original);
+
+    runMigrateWiki(wikiDir);
+
+    expect(readFileSync(join(wikiDir, 'concepts', 'statusless.md'), 'utf8')).toBe(original);
+  });
+
   it('converts a date-only last_updated to a UTC ISO timestamp', () => {
     const { wikiDir } = makeTmpProject();
     writePage(

@@ -114,8 +114,20 @@ describe('migrate-pages via upgrade', () => {
     writePage(
       wikiDir,
       'concepts/status-migration.md',
-      fm({ title: 'Status Migration', type: 'concept' }) +
-        '\n# Status Migration\n\nCovers [legacy status values](legacy.md).\n',
+      [
+        '---',
+        'type: concept',
+        'title: Status Migration',
+        'last_updated: 2026-01-01T00:00:00Z',
+        'tags: []',
+        'related: []',
+        '---',
+        '',
+        '# Status Migration',
+        '',
+        'Covers [legacy status values](legacy.md).',
+        '',
+      ].join('\n'),
     );
 
     await runPostUpgradeScripts(dir, {
@@ -128,5 +140,7 @@ describe('migrate-pages via upgrade', () => {
     const content = readFileSync(join(wikiDir, 'concepts', 'legacy.md'), 'utf8');
     expect(content).toContain('status: wip');
     expect(content).not.toContain('status: draft');
+    const statusless = readFileSync(join(wikiDir, 'concepts', 'status-migration.md'), 'utf8');
+    expect(statusless).not.toMatch(/^status:/m);
   });
 });

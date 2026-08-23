@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
-import { readInstallConfig } from '../utils/fs.js';
+import { findInstallRoot, readInstallConfig } from '../utils/fs.js';
 
 export type WikiContext = {
   cwd: string;
@@ -38,9 +38,11 @@ export function resolveWikiContext(
     repoRoot?: string;
   } = {},
 ): WikiContext {
-  const cwd = options.cwd ?? process.cwd();
-  const repoRoot = resolve(options.repoRoot ?? cwd);
-  const wikiDir = resolveWikiDir(cwd, options.wikiDir);
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const repoRoot = options.repoRoot
+    ? resolve(cwd, options.repoRoot)
+    : (findInstallRoot(cwd) ?? cwd);
+  const wikiDir = resolveWikiDir(repoRoot, options.wikiDir);
   return { cwd, wikiDir, repoRoot };
 }
 

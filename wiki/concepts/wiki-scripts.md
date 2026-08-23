@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-08-23T11:09:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -20,6 +20,7 @@ code_refs:
     src/wiki/log.ts,
     src/wiki/help.ts,
     src/wiki/doctor.ts,
+    src/wiki/context.ts,
     src/wiki/setup-husky.ts,
     src/wiki/migrate-pages.ts,
     src/wiki/constants.ts,
@@ -60,7 +61,7 @@ Wiki subcommands accept `--wiki-dir` and `--repo-root` for path resolution. Addi
 
 ## Path resolution
 
-Subcommands resolve the wiki directory from `--wiki-dir`, then `.llm-wiki-manager.json`, then root `AGENTS.md`, defaulting to `wiki/`. All paths are relative to the consumer's project root (`process.cwd()`).
+Subcommands resolve the project root from `--repo-root`, or by walking up from the invocation directory to an existing `.llm-wiki-manager.json`, before falling back to the current directory. The wiki directory then resolves from `--wiki-dir`, the install config, root `AGENTS.md`, or finally `wiki/`.
 
 ## Meta files excluded from page lint
 

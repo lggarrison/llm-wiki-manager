@@ -17,6 +17,7 @@ import {
   isExistingInstall,
   getPackageInstallStatus,
   readInstallConfig,
+  findInstallRoot,
 } from '../utils/fs.js';
 import { resolveWikiContext } from '../wiki/context.js';
 import { runBuild } from '../wiki/build-index.js';
@@ -110,7 +111,15 @@ export async function init(): Promise<void> {
     initTimestamp,
   });
 
-  const cwd = process.cwd();
+  const invocationCwd = resolve(process.cwd());
+  const existingInstallRoot = findInstallRoot(invocationCwd);
+  if (existingInstallRoot && existingInstallRoot !== invocationCwd) {
+    throw new Error(
+      `Existing llm-wiki-manager install found at ${existingInstallRoot}. Run init from that directory to update it.`,
+    );
+  }
+
+  const cwd = existingInstallRoot ?? invocationCwd;
   const wikiDest = resolve(cwd, wikiDirStr);
   const agentsDest = resolve(cwd, 'AGENTS.md');
   const reInit = isExistingInstall(cwd, wikiDirStr);

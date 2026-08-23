@@ -7,7 +7,7 @@ import {
   writeFileSync,
   existsSync,
 } from 'fs';
-import { join, dirname, relative } from 'path';
+import { join, dirname, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 export const PACKAGE_NAME = 'llm-wiki-manager';
@@ -133,6 +133,16 @@ export function buildTemplateVars(input: {
 
 export function installConfigPath(projectRoot: string): string {
   return join(projectRoot, INSTALL_CONFIG_FILENAME);
+}
+
+export function findInstallRoot(startDir: string): string | null {
+  let dir = resolve(startDir);
+  for (;;) {
+    if (existsSync(installConfigPath(dir))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
 }
 
 export function readInstallConfig(projectRoot: string): InstallConfig | null {

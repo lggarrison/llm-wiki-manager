@@ -299,6 +299,20 @@ describe('CLI e2e workflow', () => {
     expect(readFileSync(schemaPath, 'utf8')).toContain('User edits.');
   });
 
+  it('init from a subdirectory of an existing install fails without creating a nested wiki', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+    const subdir = join(dir, 'packages', 'app');
+    mkdirSync(subdir, { recursive: true });
+
+    const nestedInit = initProject(subdir);
+
+    expect(nestedInit.status).toBe(1);
+    expect(nestedInit.stderr).toContain('Existing llm-wiki-manager install found');
+    expect(existsSync(join(subdir, '.llm-wiki-manager.json'))).toBe(false);
+    expect(existsSync(join(subdir, 'wiki'))).toBe(false);
+  });
+
   it('upgrade --dry-run reports changes without writing files', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

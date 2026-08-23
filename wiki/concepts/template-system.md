@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Template System
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-23T11:09:00Z
 tags: [templates, scaffold]
 related: [concepts/init-command.md, concepts/repo-layout.md, concepts/dogfooding.md]
 code_refs: [src/utils/fs.ts, templates/AGENTS.md, templates/wiki/schema.md]
@@ -50,7 +50,7 @@ Consumers receive **copies** of wiki templates under their chosen wiki path. npm
 
 Upgrade refreshes meta paths in `WIKI_META_UPGRADE_PATHS`; init-only paths (`index.md`, `log.md`) are written on first init but not overwritten on re-init.
 
-Root `AGENTS.md` is managed between explicit start/end markers. The managed-section helpers normalize marker-bearing templates, require standalone end-marker lines outside fenced code, and avoid discarding unbounded legacy content when upgrading files created before end markers existed.
+Root `AGENTS.md` is managed between explicit start/end markers. The managed-section helpers normalize marker-bearing templates, require a real standalone start marker outside fenced code before replacing or skipping a block, and avoid discarding unbounded legacy content when upgrading files created before end markers existed.
 
 ## See also
 

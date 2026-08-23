@@ -6,6 +6,7 @@ import {
   buildTemplateVars,
   scaffoldWikiTemplates,
   replaceManagedSection,
+  amendFile,
   interpolate,
   templatePath,
 } from '../../src/utils/fs.js';
@@ -45,6 +46,61 @@ describe('upgrade helpers', () => {
     expect(updated).toContain('# Project');
     expect(updated).toContain('[`wiki/AGENTS.md`](wiki/AGENTS.md)');
     expect(updated).not.toContain('Stale pointer.');
+  });
+
+  it('replaces only a real managed section when prose mentions the marker first', () => {
+    const dir = makeTmpDir();
+    const agentsPath = join(dir, 'AGENTS.md');
+    writeFileSync(
+      agentsPath,
+      [
+        '# Project',
+        '',
+        'Docs mention `<!-- llm-wiki-manager -->` as an example before the real block.',
+        '',
+        '<!-- llm-wiki-manager -->',
+        '# Old',
+        '',
+        'Stale pointer.',
+        '<!-- /llm-wiki-manager -->',
+        '',
+        'User-owned tail.',
+        '',
+      ].join('\n'),
+    );
+
+    const content = interpolate(readFileSync(templatePath('AGENTS.md'), 'utf8'), {
+      PROJECT_NAME: 'acme',
+      WIKI_DIR: 'wiki',
+    });
+    replaceManagedSection(agentsPath, content);
+
+    const updated = readFileSync(agentsPath, 'utf8');
+    expect(updated).toContain(
+      'Docs mention `<!-- llm-wiki-manager -->` as an example before the real block.',
+    );
+    expect(updated).toContain('User-owned tail.');
+    expect(updated).toContain('[`wiki/AGENTS.md`](wiki/AGENTS.md)');
+    expect(updated).not.toContain('Stale pointer.');
+  });
+
+  it('amends AGENTS.md when marker text appears only in prose', () => {
+    const dir = makeTmpDir();
+    const agentsPath = join(dir, 'AGENTS.md');
+    writeFileSync(
+      agentsPath,
+      '# Project\n\nThis note mentions `<!-- llm-wiki-manager -->` but has no managed block.\n',
+    );
+
+    const content = interpolate(readFileSync(templatePath('AGENTS.md'), 'utf8'), {
+      PROJECT_NAME: 'acme',
+      WIKI_DIR: 'wiki',
+    });
+
+    expect(amendFile(agentsPath, content)).toBe(true);
+    const updated = readFileSync(agentsPath, 'utf8');
+    expect(updated).toContain('This note mentions `<!-- llm-wiki-manager -->`');
+    expect(updated).toContain('[`wiki/AGENTS.md`](wiki/AGENTS.md)');
   });
 
   it('runUpgradeSteps overwrites wiki meta templates', () => {

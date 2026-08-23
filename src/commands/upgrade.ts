@@ -15,6 +15,7 @@ import {
   syncPackageJsonDevDependency,
   getPackageInstallStatus,
   MANAGED_SECTION_DELIMITER,
+  findInstallRoot,
 } from '../utils/fs.js';
 import {
   runUpgradeSteps,
@@ -34,7 +35,7 @@ export async function upgrade(): Promise<void> {
   const options = parseUpgradeArgs(process.argv.slice(3));
   intro(pc.cyan('llm-wiki-manager — upgrade'));
 
-  const cwd = process.cwd();
+  const cwd = findInstallRoot(process.cwd()) ?? process.cwd();
   const packageVersion = getPackageVersion();
   let config = readInstallConfig(cwd);
 

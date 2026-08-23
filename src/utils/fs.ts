@@ -7,7 +7,7 @@ import {
   writeFileSync,
   existsSync,
 } from 'fs';
-import { join, dirname, relative } from 'path';
+import { join, dirname, relative, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 export const PACKAGE_NAME = 'llm-wiki-manager';
@@ -133,6 +133,16 @@ export function buildTemplateVars(input: {
 
 export function installConfigPath(projectRoot: string): string {
   return join(projectRoot, INSTALL_CONFIG_FILENAME);
+}
+
+export function findInstallRoot(startDir: string): string | null {
+  let dir = resolve(startDir);
+  for (;;) {
+    if (existsSync(installConfigPath(dir))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
 }
 
 export function readInstallConfig(projectRoot: string): InstallConfig | null {
@@ -542,6 +552,32 @@ function findManagedSectionEnd(text: string, fromIndex: number): number {
   return -1;
 }
 
+function findManagedSectionStart(text: string): number {
+  let inFence = false;
+  let position = 0;
+
+  while (position < text.length) {
+    const newline = text.indexOf('\n', position);
+    const lineEnd = newline >= 0 ? newline + 1 : text.length;
+    const line = text.slice(position, lineEnd);
+    const lineWithoutEol = line.replace(/\r?\n$/, '');
+    const isFence = /^\s*(```|~~~)/.test(lineWithoutEol);
+
+    if (!inFence && lineWithoutEol === MANAGED_SECTION_DELIMITER) {
+      return position;
+    }
+
+    if (isFence) inFence = !inFence;
+    position = lineEnd;
+  }
+
+  return -1;
+}
+
+export function hasManagedSection(text: string): boolean {
+  return findManagedSectionStart(text) >= 0;
+}
+
 function managedBlock(section: string): string {
   return `${MANAGED_SECTION_DELIMITER}\n${stripManagedMarkers(section)}\n${MANAGED_SECTION_END}`;
 }
@@ -549,7 +585,7 @@ function managedBlock(section: string): string {
 export function amendFile(filePath: string, section: string): boolean {
   if (existsSync(filePath)) {
     const existing = readFileSync(filePath, 'utf8');
-    if (existing.includes(MANAGED_SECTION_DELIMITER)) return false; // already amended
+    if (hasManagedSection(existing)) return false; // already amended
     // Downgrade top-level heading to second-level when appending
     const appendSection = section.replace(/^# /m, '## ');
     writeFileSync(filePath, `${existing.trimEnd()}\n\n${managedBlock(appendSection)}\n`, 'utf8');
@@ -566,7 +602,7 @@ export function replaceManagedSection(filePath: string, section: string): boolea
   }
 
   const existing = readFileSync(filePath, 'utf8');
-  const start = existing.indexOf(MANAGED_SECTION_DELIMITER);
+  const start = findManagedSectionStart(existing);
   if (start < 0) return false;
 
   const afterDelimiter = start + MANAGED_SECTION_DELIMITER.length;

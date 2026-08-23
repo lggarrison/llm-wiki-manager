@@ -1,9 +1,12 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createRequire } from 'module';
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { tmpdir } from 'os';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 import { PACKAGE_ROOT } from '../helpers/paths.js';
+import { runBuild as buildIndex } from '../../src/wiki/build-index.js';
+import { resolveWikiContext } from '../../src/wiki/context.js';
 
 const require = createRequire(import.meta.url);
 
@@ -181,5 +184,34 @@ describe('build command', () => {
     runBuildWithRepoRoot(dir, PACKAGE_ROOT);
     const second = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(second).toBe(first);
+  });
+
+  it('discovers the root install config when build runs from a subdirectory', async () => {
+    const projectRoot = mkdtempSync(join(tmpdir(), 'llm-wiki-project-'));
+    dirs.push(projectRoot);
+    const wikiDir = join(projectRoot, 'wiki');
+    mkdirSync(join(projectRoot, 'packages', 'app'), { recursive: true });
+    writeFileSync(
+      join(projectRoot, '.llm-wiki-manager.json'),
+      JSON.stringify(
+        {
+          version: '1.0.3',
+          projectName: 'acme',
+          wikiDir: 'wiki',
+          focusDirs: [],
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+    writePage(wikiDir, 'concepts/root-page.md', fm({ type: 'concept', title: 'Root Page' }));
+
+    const status = await buildIndex(
+      resolveWikiContext({ cwd: join(projectRoot, 'packages', 'app') }),
+    );
+
+    expect(status).toBe(0);
+    expect(readFileSync(join(wikiDir, 'index.md'), 'utf8')).toContain('Root Page');
+    expect(existsSync(join(projectRoot, 'packages', 'app', 'wiki', 'index.md'))).toBe(false);
   });
 });

@@ -3,7 +3,6 @@ import { join, resolve } from 'path';
 import pc from 'picocolors';
 import {
   INSTALL_CONFIG_FILENAME,
-  MANAGED_SECTION_DELIMITER,
   WIKI_SCRIPT_KEYS,
   getPackageVersion,
   getInstalledPackageVersion,
@@ -14,6 +13,8 @@ import {
   readInstallConfig,
   readJsonFile,
   wikiScriptCandidates,
+  findInstallRoot,
+  hasManagedSection,
 } from '../utils/fs.js';
 import type { InstallConfig } from '../utils/fs.js';
 import { isIndexStale } from './build-index.js';
@@ -56,15 +57,16 @@ function readConfig(cwd: string, report: Report): InstallConfig | null {
 }
 
 export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
+  const projectRoot = findInstallRoot(cwd) ?? cwd;
   const report: Report = { ok: [], problems: [] };
   const packageVersion = getPackageVersion();
 
   console.log(`llm-wiki-manager doctor — v${packageVersion}\n`);
 
-  const config = readConfig(cwd, report);
+  const config = readConfig(projectRoot, report);
 
   if (config) {
-    const installedVersion = getInstalledPackageVersion(cwd);
+    const installedVersion = getInstalledPackageVersion(projectRoot);
     if (installedVersion && installedVersion !== config.version) {
       if (compareVersions(installedVersion, config.version) > 0) {
         report.problems.push(
@@ -83,7 +85,7 @@ export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
       );
     }
 
-    const wikiDir = resolve(cwd, config.wikiDir);
+    const wikiDir = resolve(projectRoot, config.wikiDir);
     if (!existsSync(wikiDir)) {
       report.problems.push(`wiki directory missing: ${config.wikiDir}/ — run init`);
     } else {
@@ -97,7 +99,7 @@ export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
       }
 
       if (existsSync(join(wikiDir, 'index.md'))) {
-        if (await isIndexStale(wikiDir, cwd)) {
+        if (await isIndexStale(wikiDir, projectRoot)) {
           report.problems.push('index.md is stale — run npm run wiki:build');
         } else {
           report.ok.push('index.md is up to date');
@@ -105,10 +107,10 @@ export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
       }
     }
 
-    const agentsPath = join(cwd, 'AGENTS.md');
+    const agentsPath = join(projectRoot, 'AGENTS.md');
     if (!existsSync(agentsPath)) {
       report.problems.push('root AGENTS.md missing — run init');
-    } else if (!readFileSync(agentsPath, 'utf8').includes(MANAGED_SECTION_DELIMITER)) {
+    } else if (!hasManagedSection(readFileSync(agentsPath, 'utf8'))) {
       report.problems.push(
         'root AGENTS.md has no llm-wiki-manager managed section — run upgrade to add it',
       );
@@ -116,7 +118,7 @@ export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
       report.ok.push('root AGENTS.md has the managed section');
     }
 
-    const pkgPath = join(cwd, 'package.json');
+    const pkgPath = join(projectRoot, 'package.json');
     if (existsSync(pkgPath)) {
       try {
         const pkg = readJsonFile<{ scripts?: Record<string, string> }>(pkgPath);
@@ -131,7 +133,7 @@ export async function runDoctor(cwd: string = process.cwd()): Promise<number> {
           );
         }
 
-        if (hasWikiScripts(scripts) && !isPackageBinInstalled(cwd)) {
+        if (hasWikiScripts(scripts) && !isPackageBinInstalled(projectRoot)) {
           report.problems.push(
             'llm-wiki-manager is not installed locally — run npm install, then npm run wiki:* (not npx run wiki:*); or use npx llm-wiki-manager <command> before installing',
           );

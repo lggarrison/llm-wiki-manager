@@ -299,6 +299,27 @@ describe('CLI e2e workflow', () => {
     expect(readFileSync(schemaPath, 'utf8')).toContain('User edits.');
   });
 
+  it('re-init repairs stale wiki script commands', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const pkgPath = join(dir, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    pkg.scripts['wiki:lint'] = 'node old/wiki-lint.js';
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+
+    const reInit = initProject(dir);
+    expect(reInit.status).toBe(0);
+    expect(reInit.stdout).toContain('Synced package.json wiki scripts');
+
+    const updated = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    expect(updated.scripts['wiki:lint']).toBe('llm-wiki-manager lint');
+  });
+
   it('upgrade --dry-run reports changes without writing files', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

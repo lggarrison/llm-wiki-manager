@@ -7,6 +7,7 @@ import {
   amendFile,
   interpolate,
   mergePackageJsonScripts,
+  syncPackageJsonScripts,
   mergePackageJsonDevDependency,
   scaffoldWikiEmptyDirs,
   scaffoldEntityOverviews,
@@ -137,11 +138,14 @@ export async function init(): Promise<void> {
   log.step('Building index.md…');
   await runBuild(resolveWikiContext({ cwd, wikiDir: wikiDirStr, repoRoot: cwd }));
 
-  const pkgResult = mergePackageJsonScripts(cwd);
+  const pkgResult = reInit ? syncPackageJsonScripts(cwd) : mergePackageJsonScripts(cwd);
   const depResult = mergePackageJsonDevDependency(cwd);
   const runningVersion = getPackageVersion();
   if (pkgResult.status === 'merged') {
     log.step(`Adding npm scripts to package.json (${pkgResult.added.join(', ')})…`);
+  } else if (pkgResult.status === 'synced') {
+    const changes = [...pkgResult.added, ...pkgResult.updated.map((k) => `${k} (updated)`)];
+    log.step(`Synced package.json wiki scripts (${changes.join(', ')})…`);
   } else if (pkgResult.status === 'no-package-json') {
     log.warn('No package.json found — skipped npm scripts (see README for manual setup).');
   } else if (depResult.status === 'merged') {

@@ -25,7 +25,7 @@
 | ---------------------------------------------------------------------------- | -------------------------- | ------ | -------------------- |
 | [Dogfooding](concepts/dogfooding.md)                                         | dogfooding, architecture   | active | 2026-07-01T22:00:00Z |
 | [E2E Tests](concepts/e2e-tests.md)                                           | testing, vitest, cli       | active | 2026-07-02T18:00:00Z |
-| [Init Command](concepts/init-command.md)                                     | cli, scaffold              | active | 2026-07-02T12:00:00Z |
+| [Init Command](concepts/init-command.md)                                     | cli, scaffold              | active | 2026-08-25T11:02:25Z |
 | [Node Version and @types/node Alignment](concepts/node-version-and-types.md) | toolchain, typescript, ci  | active | 2026-07-01T22:00:00Z |
 | [Release](concepts/release.md)                                               | release, maintainers       | active | 2026-07-02T04:30:00Z |
 | [Repository Layout](concepts/repo-layout.md)                                 | architecture               | active | 2026-07-02T12:00:00Z |

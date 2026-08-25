@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-25T11:02:25Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -42,7 +42,8 @@ llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 1. **Wiki directory** — copies `templates/wiki/` via `scaffoldWikiTemplates`, creates empty dirs, and writes entity overview stubs when focus dirs are provided.
 2. **index.md** — runs `runBuild` so `wiki:check` passes immediately after init.
 3. **package.json** — when present:
-   - merges missing `wiki:*` npm scripts (skipped if all wiki scripts already exist)
+   - merges missing `wiki:*` npm scripts on first install
+   - on re-init, syncs managed `wiki:*` commands back to the current CLI aliases
    - adds `llm-wiki-manager` to `devDependencies` when absent (runs even when script merge is skipped)
    - run `npm install` afterward so `npm run wiki:*` resolves the local CLI
 4. **AGENTS.md** — amends repo-root `AGENTS.md` from `templates/AGENTS.md` (pointer template); vault copy comes from `templates/wiki/AGENTS.md` via the wiki scaffold.
@@ -52,7 +53,7 @@ Wiki management logic lives in the published package (`src/wiki/`), not as copie
 
 ## Idempotency
 
-Re-running `init` on an already-initialized project only creates missing scaffold files. It does not overwrite existing wiki content, `log.md`, or `schema.md`. Use `upgrade` to refresh template files.
+Re-running `init` on an already-initialized project only creates missing scaffold files and repairs managed npm script aliases. It does not overwrite existing wiki content, `log.md`, or `schema.md`. Use `upgrade` to refresh template files.
 
 ## See also
 

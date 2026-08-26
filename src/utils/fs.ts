@@ -367,6 +367,11 @@ function parsePinnedVersion(range: string): string | null {
   return match?.[1] ?? null;
 }
 
+function parseSimpleRegistryVersionRange(range: string): string | null {
+  const match = range.match(/^[~^]?(\d+\.\d+\.\d+)$/);
+  return match?.[1] ?? null;
+}
+
 export function compareVersions(a: string, b: string): number {
   const pa = a.split('.').map((part) => Number.parseInt(part, 10));
   const pb = b.split('.').map((part) => Number.parseInt(part, 10));
@@ -442,11 +447,19 @@ export function mergePackageJsonDevDependency(
     devDependencies?: Record<string, string>;
   }>(pkgPath);
 
-  if (pkg.dependencies?.[PACKAGE_NAME]) {
-    return { status: 'unchanged' };
+  const desired = `^${version}`;
+  const existingDependency = pkg.dependencies?.[PACKAGE_NAME];
+  if (existingDependency) {
+    const existingVersion = parseSimpleRegistryVersionRange(existingDependency);
+    if (!existingVersion || compareVersions(version, existingVersion) <= 0) {
+      return { status: 'unchanged' };
+    }
+
+    pkg.dependencies![PACKAGE_NAME] = desired;
+    writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+    return { status: 'updated', version, previous: existingDependency };
   }
 
-  const desired = `^${version}`;
   const existing = pkg.devDependencies?.[PACKAGE_NAME];
   if (existing === desired) {
     return { status: 'unchanged' };

@@ -472,7 +472,7 @@ describe('mergePackageJsonDevDependency', () => {
     expect(pkg.devDependencies[PACKAGE_NAME]).toBe('^2.0.0');
   });
 
-  it('does not overwrite an existing dependency entry', () => {
+  it('updates a stale existing dependency entry in place', () => {
     const dir = makeTmpDir();
     writeFileSync(
       join(dir, 'package.json'),
@@ -486,7 +486,57 @@ describe('mergePackageJsonDevDependency', () => {
       ) + '\n',
     );
 
+    expect(mergePackageJsonDevDependency(dir, '2.0.0')).toEqual({
+      status: 'updated',
+      version: '2.0.0',
+      previous: '^1.0.0',
+    });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.dependencies[PACKAGE_NAME]).toBe('^2.0.0');
+    expect(pkg.devDependencies).toBeUndefined();
+  });
+
+  it('does not downgrade an existing dependency entry', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          dependencies: { [PACKAGE_NAME]: '^2.0.0' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
+    expect(mergePackageJsonDevDependency(dir, '1.0.0')).toEqual({ status: 'unchanged' });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.dependencies[PACKAGE_NAME]).toBe('^2.0.0');
+    expect(pkg.devDependencies).toBeUndefined();
+  });
+
+  it('does not overwrite a custom existing dependency spec', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, 'package.json'),
+      JSON.stringify(
+        {
+          name: 'acme',
+          dependencies: { [PACKAGE_NAME]: 'workspace:*' },
+        },
+        null,
+        2,
+      ) + '\n',
+    );
+
     expect(mergePackageJsonDevDependency(dir, '2.0.0')).toEqual({ status: 'unchanged' });
+
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    expect(pkg.dependencies[PACKAGE_NAME]).toBe('workspace:*');
+    expect(pkg.devDependencies).toBeUndefined();
   });
 
   it('returns no-package-json when package.json is missing', () => {

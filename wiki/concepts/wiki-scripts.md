@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-08-26T11:12:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -23,6 +23,7 @@ code_refs:
     src/wiki/setup-husky.ts,
     src/wiki/migrate-pages.ts,
     src/wiki/constants.ts,
+    src/utils/fs.ts,
   ]
 status: active
 summary: llm-wiki-manager CLI subcommands that validate, index, sync, and log wiki operations.
@@ -30,7 +31,7 @@ summary: llm-wiki-manager CLI subcommands that validate, index, sync, and log wi
 
 # Wiki Management Scripts
 
-After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts that delegate to `llm-wiki-manager` subcommands and records `llm-wiki-manager` in `devDependencies` when absent. Run `npm install` so `npm run wiki:*` resolves the local CLI binary in `node_modules/.bin/`. Both `init` and `upgrade` show a **Final Step: npm install** outro when the local bin is missing. Implementation lives in `src/wiki/` inside the package — nothing is copied into consumer projects.
+After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts that delegate to `llm-wiki-manager` subcommands and records `llm-wiki-manager` in package dependencies when absent. Existing production dependency entries stay in `dependencies` and stale registry ranges are bumped in place, avoiding duplicate dependency sections. Run `npm install` so `npm run wiki:*` resolves the local CLI binary in `node_modules/.bin/`. Both `init` and `upgrade` show a **Final Step: npm install** outro when the local bin is missing. Implementation lives in `src/wiki/` inside the package — nothing is copied into consumer projects.
 
 ## Commands
 

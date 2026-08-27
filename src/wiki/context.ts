@@ -46,8 +46,11 @@ export function resolveWikiContext(
 
 export function flagValue(args: string[], name: string): string | undefined {
   const idx = args.indexOf(name);
-  if (idx < 0) return undefined;
-  return args[idx + 1];
+  if (idx >= 0) return args[idx + 1];
+
+  const prefix = `${name}=`;
+  const match = args.find((arg) => arg.startsWith(prefix));
+  return match?.slice(prefix.length);
 }
 
 export function hasFlag(args: string[], name: string): boolean {

@@ -18,7 +18,7 @@ import {
   getPackageInstallStatus,
   readInstallConfig,
 } from '../utils/fs.js';
-import { resolveWikiContext } from '../wiki/context.js';
+import { flagValue, resolveWikiContext } from '../wiki/context.js';
 import { runBuild } from '../wiki/build-index.js';
 
 type InitFlagValues = {
@@ -28,18 +28,18 @@ type InitFlagValues = {
 };
 
 export function parseInitArgs(argv: string[]): InitFlagValues | null {
-  const flagIndex = argv.indexOf('--project-name');
-  if (flagIndex === -1) return null;
+  const projectNameFlag = flagValue(argv, '--project-name');
+  if (projectNameFlag === undefined) return null;
 
-  const projectName = argv[flagIndex + 1]?.trim();
+  const projectName = projectNameFlag.trim();
   if (!projectName) {
     throw new Error('--project-name requires a value');
   }
 
   const readFlag = (name: string, fallback: string): string => {
-    const idx = argv.indexOf(name);
-    if (idx === -1) return fallback;
-    const value = argv[idx + 1]?.trim();
+    const rawValue = flagValue(argv, name);
+    if (rawValue === undefined) return fallback;
+    const value = rawValue.trim();
     if (!value) throw new Error(`${name} requires a value`);
     return value;
   };

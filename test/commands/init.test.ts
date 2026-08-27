@@ -26,4 +26,18 @@ describe('parseInitArgs', () => {
       focusDirs: 'src,api',
     });
   });
+
+  it('reads equals-form flags', () => {
+    const values = parseInitArgs([
+      '--project-name=acme',
+      '--wiki-dir=docs',
+      '--focus-dirs=src,api',
+    ]);
+
+    expect(values).toEqual({
+      projectName: 'acme',
+      wikiDir: 'docs',
+      focusDirs: 'src,api',
+    });
+  });
 });

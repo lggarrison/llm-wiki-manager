@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-08-27T11:21:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -30,6 +30,8 @@ For CI and tests, pass all values via flags (skips prompts):
 ```bash
 llm-wiki-manager init --project-name my-app --wiki-dir wiki --focus-dirs src,api
 ```
+
+The parser accepts either space-separated values (`--wiki-dir wiki`) or equals-form values (`--wiki-dir=wiki`).
 
 | Flag             | Required | Default           |
 | ---------------- | -------- | ----------------- |

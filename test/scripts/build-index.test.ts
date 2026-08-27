@@ -1,9 +1,10 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { createRequire } from 'module';
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 import { PACKAGE_ROOT } from '../helpers/paths.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const require = createRequire(import.meta.url);
 
@@ -112,6 +113,38 @@ describe('build command', () => {
     runBuild(dir);
     const second = readFileSync(join(dir, 'index.md'), 'utf8');
     expect(second).toBe(first);
+  });
+
+  it('honors equals-form --wiki-dir when config points at another vault', () => {
+    const projectDir = newWikiDir();
+    writeFileSync(
+      join(projectDir, '.llm-wiki-manager.json'),
+      JSON.stringify({
+        version: '1.0.3',
+        projectName: 'acme',
+        wikiDir: 'other-wiki',
+        focusDirs: [],
+      }),
+      'utf8',
+    );
+    writePage(
+      projectDir,
+      'wiki/concepts/intended.md',
+      fm({ type: 'concept', title: 'Intended Wiki' }),
+    );
+    writePage(
+      projectDir,
+      'other-wiki/concepts/fallback.md',
+      fm({ type: 'concept', title: 'Fallback Wiki' }),
+    );
+
+    const result = runBuiltCli(projectDir, ['build', '--wiki-dir=wiki']);
+
+    expect(result.status).toBe(0);
+    const index = readFileSync(join(projectDir, 'wiki', 'index.md'), 'utf8');
+    expect(index).toContain('[Intended Wiki](concepts/intended.md)');
+    expect(index).not.toContain('Fallback Wiki');
+    expect(existsSync(join(projectDir, 'other-wiki', 'index.md'))).toBe(false);
   });
 
   it('check passes when index.md matches the generated output', () => {

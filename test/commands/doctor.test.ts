@@ -86,6 +86,45 @@ describe('doctor command', () => {
     expect(result.stdout).toContain('run npm install');
   });
 
+  it('reports a package range that cannot install the scaffold version', () => {
+    const dir = makeTmpProject();
+    const pkgPath = join(dir, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      dependencies: Record<string, string>;
+    };
+    pkg.dependencies = { [PACKAGE_NAME]: '^0.5.0' };
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir);
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain(`package.json declares ${PACKAGE_NAME} ^0.5.0`);
+    expect(result.stdout).toContain('cannot install scaffold');
+    expect(result.stdout).toContain('upgrade');
+  });
+
+  it('does not suggest npm install alone when the package range blocks the scaffold version', () => {
+    const dir = makeTmpProject();
+    const pkgPath = join(dir, 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+      dependencies: Record<string, string>;
+    };
+    pkg.dependencies = { [PACKAGE_NAME]: '^0.5.0' };
+    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+
+    expect(initProject(dir).status).toBe(0);
+    stubInstalledPackage(dir, '0.5.0');
+
+    const result = runBuiltCli(dir, ['doctor']);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain(`package.json declares ${PACKAGE_NAME} ^0.5.0`);
+    expect(result.stdout).toContain('node_modules has v0.5.0');
+    expect(result.stdout).toContain('sync package.json before reinstalling');
+    expect(result.stdout).not.toContain('run npm install');
+  });
+
   it('suggests upgrade when node_modules is ahead of the scaffold version', () => {
     const dir = makeTmpProject();
     expect(initProject(dir).status).toBe(0);

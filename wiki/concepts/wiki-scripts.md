@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-08-29T11:13:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -45,7 +45,7 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 | `doctor`       | `wiki:doctor`      | Health-check scaffold; suggest fixes for common issues   |
 | `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
 
-`doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
+`doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`. It checks the committed package manifest too: if `dependencies` or `devDependencies` pins a registry range too old to install the recorded scaffold version, doctor tells users to run `upgrade` before reinstalling instead of blessing a locally hand-fixed `node_modules`.
 
 `migrate-pages` runs internally during `upgrade` via `runMigrate` — not exposed as a public subcommand. It rewrites legacy frontmatter status/timestamp fields only inside YAML frontmatter, and rewrites body wikilinks to markdown links relative to the page being migrated while leaving fenced code examples untouched. Bare-slug wikilinks prefer an unambiguous existing page target.
 

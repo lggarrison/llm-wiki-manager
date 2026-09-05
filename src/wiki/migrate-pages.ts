@@ -127,6 +127,7 @@ function migrateWikilinks(
   const migrateBody = (body: string): string => {
     let migrated = '';
     let inFence = false;
+    let inIndentedCode = false;
     let position = 0;
 
     while (position < body.length) {
@@ -142,7 +143,24 @@ function migrateWikilinks(
         continue;
       }
 
-      migrated += inFence ? line : replaceLinks(line);
+      if (inFence) {
+        migrated += line;
+        continue;
+      }
+
+      const isIndentedCode = /^( {4}|\t)/.test(lineWithoutEol);
+      if (isIndentedCode) {
+        inIndentedCode = true;
+        migrated += line;
+        continue;
+      }
+      if (inIndentedCode && lineWithoutEol.trim() === '') {
+        migrated += line;
+        continue;
+      }
+
+      inIndentedCode = false;
+      migrated += replaceLinks(line);
     }
 
     return migrated;

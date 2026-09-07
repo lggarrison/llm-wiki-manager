@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-09-07T11:10:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -22,6 +22,7 @@ The `init` command in `src/commands/init.ts` interactively collects project sett
 | Focus directories | `src` (clear to document whole project) | `schema.md`, `AGENTS.md` scope, entity overviews |
 
 These become interpolation variables (`PROJECT_NAME`, `WIKI_DIR`, `FOCUS_DIRS`, `FOCUS_DIRS_LIST`, `INIT_TIMESTAMP`) passed to [Template System](template-system.md).
+Each focus directory's final path segment becomes an entity scope slug, so init rejects values whose derived slug is not lowercase kebab-case before writing scaffold files.
 
 ## Non-interactive flags
 

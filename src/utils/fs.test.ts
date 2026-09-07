@@ -33,6 +33,7 @@ import {
   WIKI_EMPTY_DIRS,
   WIKI_INIT_ONLY_PATHS,
   WIKI_META_UPGRADE_PATHS,
+  validateFocusDirs,
 } from './fs.js';
 
 const tmpDirs: string[] = [];
@@ -184,6 +185,20 @@ describe('scopeSlugFromFocusDir', () => {
   });
 });
 
+describe('validateFocusDirs', () => {
+  it('accepts focus dirs whose derived scope slug is lowercase kebab-case', () => {
+    expect(() => validateFocusDirs(['src/commands', 'src/ui/_national-map'])).not.toThrow();
+  });
+
+  it('rejects focus dirs with line breaks before they reach generated frontmatter', () => {
+    expect(() => validateFocusDirs(['src\nstatus: active'])).toThrow(/line breaks are not allowed/);
+  });
+
+  it('rejects focus dirs whose derived scope slug would fail wiki lint', () => {
+    expect(() => validateFocusDirs(['src/admin tools'])).toThrow(/lowercase kebab-case/);
+  });
+});
+
 describe('scaffoldEntityOverviews', () => {
   it('creates draft overview stubs for each focus directory', () => {
     const dir = makeTmpDir();
@@ -202,6 +217,15 @@ describe('scaffoldEntityOverviews', () => {
     writeFileSync(join(dir, 'entities', 'api.md'), 'existing');
     scaffoldEntityOverviews(dir, ['src/api'], '2026-06-30');
     expect(readFileSync(join(dir, 'entities', 'api.md'), 'utf8')).toBe('existing');
+  });
+
+  it('rejects invalid focus dirs before creating entity files', () => {
+    const dir = makeTmpDir();
+
+    expect(() => scaffoldEntityOverviews(dir, ['src\nstatus: active'], '2026-06-30')).toThrow(
+      /line breaks are not allowed/,
+    );
+    expect(existsSync(join(dir, 'entities'))).toBe(false);
   });
 });
 
@@ -905,5 +929,15 @@ describe('buildTemplateVars', () => {
       focusDirs: ['src/commands', 'templates'],
     });
     expect(vars.ENTITY_SCOPE_LINES).toBe('commands\ntemplates');
+  });
+
+  it('rejects focus dirs that would corrupt generated entity metadata', () => {
+    expect(() =>
+      buildTemplateVars({
+        projectName: 'acme',
+        wikiDir: 'wiki',
+        focusDirs: ['src\nstatus: active'],
+      }),
+    ).toThrow(/line breaks are not allowed/);
   });
 });

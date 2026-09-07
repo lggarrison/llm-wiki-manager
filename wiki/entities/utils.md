@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Utils
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-09-07T11:10:00Z
 tags: [utils]
 related: [entities/commands.md, entities/templates.md, concepts/template-system.md]
 code_refs: [src/utils/fs.ts, src/utils/upgrade.ts, src/utils/fs.test.ts]
@@ -20,7 +20,7 @@ Scope tag: **`utils`** (first tag).
 | Template paths | `templatePath`, `copyTemplate`, `scaffoldWikiTemplates`, `buildTemplateVars`                                                                                                                                                |
 | Interpolation  | `interpolate`, `WIKI_META_UPGRADE_PATHS`, `WIKI_INIT_ONLY_PATHS`                                                                                                                                                            |
 | Install config | `readInstallConfig`, `writeInstallConfig`, `isExistingInstall`, `inferInstallConfig`                                                                                                                                        |
-| Entity stubs   | `scaffoldEntityOverviews`, `entityOverviewStub`, `scopeSlugFromFocusDir`                                                                                                                                                    |
+| Entity stubs   | `scaffoldEntityOverviews`, `entityOverviewStub`, `scopeSlugFromFocusDir`, `validateFocusDirs`                                                                                                                               |
 | package.json   | `mergePackageJsonScripts`, `syncPackageJsonScripts`, `mergePackageJsonDevDependency`, `syncPackageJsonDevDependency`, `isPackageBinInstalled`, `packageBinPath`, `PACKAGE_NAME`, `wikiScriptCandidates`, `WIKI_SCRIPT_KEYS` |
 | AGENTS.md      | `amendFile`, `replaceManagedSection`, managed marker normalization, standalone end-marker detection, and legacy-tail preservation                                                                                           |
 | Misc           | `getPackageVersion`, `scaffoldWikiEmptyDirs`, `WIKI_EMPTY_DIRS`                                                                                                                                                             |
@@ -35,7 +35,7 @@ Scope tag: **`utils`** (first tag).
 
 ## Tests
 
-`fs.test.ts` covers template copy, interpolation, install config, scaffold helpers, managed `AGENTS.md` marker behavior (including fenced copied-marker examples), devDependency merging, and local binary detection.
+`fs.test.ts` covers template copy, interpolation, install config, scaffold helpers, focus-dir validation, managed `AGENTS.md` marker behavior (including fenced copied-marker examples), devDependency merging, and local binary detection.
 
 ## See also
 

@@ -22,6 +22,8 @@ export type InstallConfig = {
   focusDirs: string[];
 };
 
+const SCOPE_SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
 export type CopyTemplateResult = {
   created: string[];
   skipped: string[];
@@ -108,6 +110,8 @@ export function buildTemplateVars(input: {
   focusDirs: string[];
   initTimestamp?: string;
 }): Record<string, string> {
+  validateFocusDirs(input.focusDirs);
+
   const initTimestamp = input.initTimestamp ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
   const entitySlugs = input.focusDirs.map((d) => scopeSlugFromFocusDir(d));
   const entityScopeLines =
@@ -256,6 +260,29 @@ export function scopeSlugFromFocusDir(focusDir: string): string {
   return base.replace(/^_/, '');
 }
 
+function describeFocusDir(focusDir: string): string {
+  return JSON.stringify(focusDir);
+}
+
+export function validateFocusDirs(focusDirs: readonly string[]): void {
+  for (const focusDir of focusDirs) {
+    if (/[\r\n]/.test(focusDir)) {
+      throw new Error(
+        `Invalid focus directory ${describeFocusDir(focusDir)}: line breaks are not allowed`,
+      );
+    }
+
+    const slug = scopeSlugFromFocusDir(focusDir);
+    if (!SCOPE_SLUG_PATTERN.test(slug)) {
+      throw new Error(
+        `Invalid focus directory ${describeFocusDir(
+          focusDir,
+        )}: derived scope slug ${JSON.stringify(slug)} must be lowercase kebab-case`,
+      );
+    }
+  }
+}
+
 export function entityOverviewStub(
   slug: string,
   sourcePath: string,
@@ -309,6 +336,8 @@ export function scaffoldEntityOverviews(
   focusDirs: string[],
   initTimestamp: string,
 ): string[] {
+  validateFocusDirs(focusDirs);
+
   mkdirSync(join(wikiDest, 'entities'), { recursive: true });
   const slugs: string[] = [];
   for (const focusDir of focusDirs) {

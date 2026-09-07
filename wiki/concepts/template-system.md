@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Template System
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-09-07T11:10:00Z
 tags: [templates, scaffold]
 related: [concepts/init-command.md, concepts/repo-layout.md, concepts/dogfooding.md]
 code_refs: [src/utils/fs.ts, templates/AGENTS.md, templates/wiki/schema.md]
@@ -43,6 +43,8 @@ Common variables:
 | `FOCUS_DIRS`      | `` `src/`, `templates/` `` |
 | `FOCUS_DIRS_LIST` | bullet list for schema.md  |
 | `INIT_TIMESTAMP`  | UTC ISO timestamp of init  |
+
+`buildTemplateVars` validates focus directories before interpolation so generated `.entity-scopes`, entity filenames, and entity frontmatter all share lint-clean lowercase-kebab scope slugs.
 
 ## Templates vs consumer output
 

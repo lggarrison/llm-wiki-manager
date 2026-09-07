@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-09-07T11:10:00Z
 tags: [commands]
 related:
   [entities/utils.md, concepts/init-command.md, concepts/dogfooding.md, concepts/wiki-scripts.md]
@@ -28,6 +28,8 @@ Non-interactive init (used in tests and CI):
 | `--project-name` | yes      |
 | `--wiki-dir`     | no       |
 | `--focus-dirs`   | no       |
+
+Focus dirs derive entity scope slugs from their final path segment; invalid lowercase-kebab scope slugs are rejected before scaffolding.
 
 ## Upgrade flags
 

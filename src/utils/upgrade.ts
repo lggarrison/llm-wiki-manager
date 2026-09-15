@@ -4,6 +4,7 @@ import {
   buildTemplateVars,
   scaffoldWikiEmptyDirs,
   scaffoldEntityOverviews,
+  syncEntityScopes,
   scaffoldWikiTemplates,
 } from './fs.js';
 import { resolveWikiContext } from '../wiki/context.js';
@@ -42,6 +43,7 @@ export function runUpgradeSteps(
     scaffoldWikiEmptyDirs(wikiDest);
     if (config.focusDirs.length > 0) {
       scaffoldEntityOverviews(wikiDest, config.focusDirs, vars.INIT_TIMESTAMP);
+      syncEntityScopes(wikiDest, config.focusDirs);
     }
   }
 

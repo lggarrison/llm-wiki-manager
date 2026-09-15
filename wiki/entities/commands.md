@@ -1,7 +1,7 @@
 ---
 type: overview
 title: Commands
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-09-15T11:21:00Z
 tags: [commands]
 related:
   [entities/utils.md, concepts/init-command.md, concepts/dogfooding.md, concepts/wiki-scripts.md]
@@ -28,6 +28,8 @@ Non-interactive init (used in tests and CI):
 | `--project-name` | yes      |
 | `--wiki-dir`     | no       |
 | `--focus-dirs`   | no       |
+
+Focus directories must derive unique entity scope slugs from their final path segments; duplicate slugs are rejected before scaffold writes.
 
 ## Upgrade flags
 

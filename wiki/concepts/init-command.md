@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Init Command
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-09-15T11:21:00Z
 tags: [cli, scaffold]
 related: [concepts/template-system.md, concepts/repo-layout.md, concepts/wiki-scripts.md]
 code_refs: [src/commands/init.ts]
@@ -22,6 +22,8 @@ The `init` command in `src/commands/init.ts` interactively collects project sett
 | Focus directories | `src` (clear to document whole project) | `schema.md`, `AGENTS.md` scope, entity overviews |
 
 These become interpolation variables (`PROJECT_NAME`, `WIKI_DIR`, `FOCUS_DIRS`, `FOCUS_DIRS_LIST`, `INIT_TIMESTAMP`) passed to [Template System](template-system.md).
+
+Focus directories derive flat entity scope slugs from their final path segment (for example, `src/api` → `api`). Init rejects duplicate derived slugs such as `src/api,lib/api` so one overview file cannot silently stand in for two documented source areas.
 
 ## Non-interactive flags
 
@@ -52,7 +54,7 @@ Wiki management logic lives in the published package (`src/wiki/`), not as copie
 
 ## Idempotency
 
-Re-running `init` on an already-initialized project only creates missing scaffold files. It does not overwrite existing wiki content, `log.md`, or `schema.md`. Use `upgrade` to refresh template files.
+Re-running `init` on an already-initialized project only creates missing scaffold files. It does not overwrite existing wiki content, `log.md`, or `schema.md`. If new focus dirs are supplied, init appends any missing derived slugs to `.entity-scopes` so lint enforces the new overview stubs. Use `upgrade` to refresh template files.
 
 ## See also
 

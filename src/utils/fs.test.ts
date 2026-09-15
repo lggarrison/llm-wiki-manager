@@ -27,7 +27,9 @@ import {
   WIKI_SCRIPT_KEYS,
   wikiScriptCandidates,
   scopeSlugFromFocusDir,
+  focusDirScopeSlugs,
   scaffoldEntityOverviews,
+  syncEntityScopes,
   scaffoldWikiEmptyDirs,
   readJsonFile,
   WIKI_EMPTY_DIRS,
@@ -182,6 +184,22 @@ describe('scopeSlugFromFocusDir', () => {
   it('strips a leading underscore from the segment', () => {
     expect(scopeSlugFromFocusDir('src/ui/_national-map')).toBe('national-map');
   });
+
+  it('rejects focus directories that derive the same scope slug', () => {
+    expect(() => focusDirScopeSlugs(['src/api', 'lib/api'])).toThrow(
+      /both derive entity scope "api"/,
+    );
+  });
+
+  it('rejects duplicate scope slugs before template interpolation', () => {
+    expect(() =>
+      buildTemplateVars({
+        projectName: 'acme',
+        wikiDir: 'wiki',
+        focusDirs: ['src/api', 'lib/api'],
+      }),
+    ).toThrow(/both derive entity scope "api"/);
+  });
 });
 
 describe('scaffoldEntityOverviews', () => {
@@ -202,6 +220,42 @@ describe('scaffoldEntityOverviews', () => {
     writeFileSync(join(dir, 'entities', 'api.md'), 'existing');
     scaffoldEntityOverviews(dir, ['src/api'], '2026-06-30');
     expect(readFileSync(join(dir, 'entities', 'api.md'), 'utf8')).toBe('existing');
+  });
+
+  it('rejects focus directories that would overwrite the same overview', () => {
+    const dir = makeTmpDir();
+    expect(() => scaffoldEntityOverviews(dir, ['src/api', 'lib/api'], '2026-06-30')).toThrow(
+      /both derive entity scope "api"/,
+    );
+    expect(existsSync(join(dir, 'entities'))).toBe(true);
+    expect(existsSync(join(dir, 'entities', 'api.md'))).toBe(false);
+  });
+});
+
+describe('syncEntityScopes', () => {
+  it('appends missing focus-derived scopes without dropping existing comments', () => {
+    const dir = makeTmpDir();
+    writeFileSync(
+      join(dir, '.entity-scopes'),
+      '# Required entity overview slugs (one per line)\n# Add scope slugs below\n',
+    );
+
+    const added = syncEntityScopes(dir, ['src', 'api']);
+
+    expect(added).toEqual(['src', 'api']);
+    expect(readFileSync(join(dir, '.entity-scopes'), 'utf8')).toBe(
+      '# Required entity overview slugs (one per line)\n# Add scope slugs below\nsrc\napi\n',
+    );
+  });
+
+  it('preserves existing custom scopes and adds only missing slugs', () => {
+    const dir = makeTmpDir();
+    writeFileSync(join(dir, '.entity-scopes'), '# scopes\nsrc\ncustom\n');
+
+    const added = syncEntityScopes(dir, ['src', 'api']);
+
+    expect(added).toEqual(['api']);
+    expect(readFileSync(join(dir, '.entity-scopes'), 'utf8')).toBe('# scopes\nsrc\ncustom\napi\n');
   });
 });
 

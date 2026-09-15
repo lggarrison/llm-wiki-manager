@@ -68,6 +68,15 @@ describe('CLI e2e workflow', () => {
     expect(pkg.devDependencies?.['llm-wiki-manager']).toMatch(/^\^/);
   });
 
+  it('init rejects focus directories that map to the same entity scope', () => {
+    const dir = makeTmpProject();
+    const result = initProject(dir, ['--focus-dirs', 'src/api,lib/api']);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('both derive entity scope "api"');
+    expect(existsSync(join(dir, 'wiki'))).toBe(false);
+  });
+
   it('init outro shows Final Step npm install when local bin is missing', () => {
     const dir = makeTmpProject();
     const result = initProject(dir);
@@ -297,6 +306,19 @@ describe('CLI e2e workflow', () => {
     expect(reInit.status).toBe(0);
     expect(readFileSync(logPath, 'utf8')).toContain('Do not overwrite.');
     expect(readFileSync(schemaPath, 'utf8')).toContain('User edits.');
+  });
+
+  it('re-init with new focus dirs updates .entity-scopes', () => {
+    const dir = makeTmpProject();
+    expect(initProject(dir).status).toBe(0);
+
+    const reInit = initProject(dir, ['--focus-dirs', 'src,api']);
+    expect(reInit.status).toBe(0);
+
+    const scopes = readFileSync(join(dir, 'wiki', '.entity-scopes'), 'utf8');
+    expect(scopes).toContain('src\napi\n');
+    expect(existsSync(join(dir, 'wiki', 'entities', 'src.md'))).toBe(true);
+    expect(existsSync(join(dir, 'wiki', 'entities', 'api.md'))).toBe(true);
   });
 
   it('upgrade --dry-run reports changes without writing files', () => {

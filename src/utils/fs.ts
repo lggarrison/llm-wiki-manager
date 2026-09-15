@@ -109,7 +109,7 @@ export function buildTemplateVars(input: {
   initTimestamp?: string;
 }): Record<string, string> {
   const initTimestamp = input.initTimestamp ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  const entitySlugs = input.focusDirs.map((d) => scopeSlugFromFocusDir(d));
+  const entitySlugs = focusDirScopeSlugs(input.focusDirs);
   const entityScopeLines =
     entitySlugs.length > 0
       ? entitySlugs.join('\n')
@@ -256,6 +256,30 @@ export function scopeSlugFromFocusDir(focusDir: string): string {
   return base.replace(/^_/, '');
 }
 
+function focusDirScopeEntries(focusDirs: readonly string[]): { focusDir: string; slug: string }[] {
+  return focusDirs.map((focusDir) => ({ focusDir, slug: scopeSlugFromFocusDir(focusDir) }));
+}
+
+export function focusDirScopeSlugs(focusDirs: readonly string[]): string[] {
+  const seen = new Map<string, string>();
+  const slugs: string[] = [];
+  for (const { focusDir, slug } of focusDirScopeEntries(focusDirs)) {
+    const previous = seen.get(slug);
+    if (previous) {
+      throw new Error(
+        `Focus directories ${JSON.stringify(previous)} and ${JSON.stringify(
+          focusDir,
+        )} both derive entity scope ${JSON.stringify(
+          slug,
+        )}. Use unique final path segments so every focus directory has its own overview.`,
+      );
+    }
+    seen.set(slug, focusDir);
+    slugs.push(slug);
+  }
+  return slugs;
+}
+
 export function entityOverviewStub(
   slug: string,
   sourcePath: string,
@@ -310,16 +334,36 @@ export function scaffoldEntityOverviews(
   initTimestamp: string,
 ): string[] {
   mkdirSync(join(wikiDest, 'entities'), { recursive: true });
-  const slugs: string[] = [];
-  for (const focusDir of focusDirs) {
-    const slug = scopeSlugFromFocusDir(focusDir);
-    slugs.push(slug);
+  const slugs = focusDirScopeSlugs(focusDirs);
+  for (let i = 0; i < focusDirs.length; i++) {
+    const focusDir = focusDirs[i] ?? '';
+    const slug = slugs[i] ?? scopeSlugFromFocusDir(focusDir);
     const entityPath = join(wikiDest, 'entities', `${slug}.md`);
     if (!existsSync(entityPath)) {
       writeFileSync(entityPath, entityOverviewStub(slug, focusDir, initTimestamp));
     }
   }
   return slugs;
+}
+
+export function syncEntityScopes(wikiDest: string, focusDirs: readonly string[]): string[] {
+  const slugs = focusDirScopeSlugs(focusDirs);
+  if (slugs.length === 0) return [];
+
+  const scopesPath = join(wikiDest, '.entity-scopes');
+  const existing = existsSync(scopesPath) ? readFileSync(scopesPath, 'utf8') : '';
+  const existingScopes = new Set(
+    existing
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#')),
+  );
+  const missing = slugs.filter((slug) => !existingScopes.has(slug));
+  if (missing.length === 0) return [];
+
+  const prefix = existing.trimEnd();
+  writeFileSync(scopesPath, `${prefix ? `${prefix}\n` : ''}${missing.join('\n')}\n`, 'utf8');
+  return missing;
 }
 
 export const WIKI_SCRIPT_KEYS = [

@@ -10,6 +10,7 @@ import {
   mergePackageJsonDevDependency,
   scaffoldWikiEmptyDirs,
   scaffoldEntityOverviews,
+  syncEntityScopes,
   scaffoldWikiTemplates,
   buildTemplateVars,
   writeInstallConfig,
@@ -131,6 +132,10 @@ export async function init(): Promise<void> {
   scaffoldWikiEmptyDirs(wikiDest);
   if (focusDirList.length > 0) {
     scaffoldEntityOverviews(wikiDest, focusDirList, initTimestamp);
+    const addedScopes = syncEntityScopes(wikiDest, focusDirList);
+    if (addedScopes.length > 0) {
+      log.info(`Updated .entity-scopes: ${addedScopes.join(', ')}`);
+    }
   }
 
   // Generate index.md from the scaffolded pages so wiki:check passes immediately

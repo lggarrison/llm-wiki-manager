@@ -1,15 +1,15 @@
-# llm-wiki-manager Wiki
+# acme Wiki
 
 Human entry point for browsing this vault in [Obsidian](https://obsidian.md/) or any markdown viewer.
 
 ## Start here
 
-| File                   | Purpose                                            |
-| ---------------------- | -------------------------------------------------- |
-| [index.md](index.md)   | Auto-generated catalog of all wiki pages           |
+| File | Purpose |
+| --- | --- |
+| [index.md](index.md) | Auto-generated catalog of all wiki pages |
 | [schema.md](schema.md) | Full conventions — frontmatter, layout, operations |
-| [AGENTS.md](AGENTS.md) | Agent instructions (Cursor / LLM maintainers)      |
-| [log.md](log.md)       | Chronological record of wiki operations            |
+| [AGENTS.md](AGENTS.md) | Agent instructions (Cursor / LLM maintainers) |
+| [log.md](log.md) | Chronological record of wiki operations |
 
 ## Layout (short)
 

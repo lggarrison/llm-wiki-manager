@@ -1,6 +1,8 @@
 {
-  "version": "1.0.0",
-  "projectName": "llm-wiki-manager",
+  "version": "1.0.3",
+  "projectName": "acme",
   "wikiDir": "wiki",
-  "focusDirs": []
+  "focusDirs": [
+    "src"
+  ]
 }

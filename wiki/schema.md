@@ -1,4 +1,4 @@
-# Wiki Schema — llm-wiki-manager
+# Wiki Schema — acme
 
 This document defines the conventions your LLM agent must follow when creating and maintaining wiki pages.
 
@@ -11,7 +11,7 @@ Every wiki page **must** begin with YAML frontmatter:
 ```yaml
 ---
 type: overview | entity | comparison | deep-dive | concept | source | hub
-title: 'Human-readable title'
+title: "Human-readable title"
 last_updated: YYYY-MM-DDTHH:MM:SSZ
 tags: []
 related: []
@@ -21,17 +21,17 @@ status: active | wip | deprecated
 
 ### Field definitions
 
-| Field          | Required    | Values / Notes                                                                                                                                                                                                                                                                        |
-| -------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `type`         | yes         | `overview` — entity scope entry; `entity` — feature/module page; `comparison` — cross-scope comparison; `deep-dive` — long-form reference; `concept` — cross-cutting knowledge; `source` — raw artifact summary; `hub` — navigation page (`README.md`, `index.md`, `raw/raw.md` only) |
-| `title`        | yes         | Human-readable, used in index and log                                                                                                                                                                                                                                                 |
-| `last_updated` | yes         | UTC ISO 8601 timestamp `YYYY-MM-DDTHH:MM:SSZ`; update on every change                                                                                                                                                                                                                 |
-| `tags`         | recommended | List of topic labels; first tag on entity pages is the scope slug                                                                                                                                                                                                                     |
-| `related`      | recommended | List of relative paths to related pages (may be empty `[]`)                                                                                                                                                                                                                           |
-| `status`       | recommended | `active` → reliable reference; `wip` → in progress; `deprecated` → superseded                                                                                                                                                                                                         |
-| `summary`      | no          | One-sentence description; shown in index tables                                                                                                                                                                                                                                       |
-| `sources`      | no          | (concept pages) paths to source summaries that back this concept                                                                                                                                                                                                                      |
-| `code_refs`    | no          | Repo paths validated by lint with `--repo-root`                                                                                                                                                                                                                                       |
+| Field | Required | Values / Notes |
+|---|---|---|
+| `type` | yes | `overview` — entity scope entry; `entity` — feature/module page; `comparison` — cross-scope comparison; `deep-dive` — long-form reference; `concept` — cross-cutting knowledge; `source` — raw artifact summary; `hub` — navigation page (`README.md`, `index.md`, `raw/raw.md` only) |
+| `title` | yes | Human-readable, used in index and log |
+| `last_updated` | yes | UTC ISO 8601 timestamp `YYYY-MM-DDTHH:MM:SSZ`; update on every change |
+| `tags` | recommended | List of topic labels; first tag on entity pages is the scope slug |
+| `related` | recommended | List of relative paths to related pages (may be empty `[]`) |
+| `status` | recommended | `active` → reliable reference; `wip` → in progress; `deprecated` → superseded |
+| `summary` | no | One-sentence description; shown in index tables |
+| `sources` | no | (concept pages) paths to source summaries that back this concept |
+| `code_refs` | no | Repo paths validated by lint with `--repo-root` |
 
 ---
 
@@ -39,7 +39,7 @@ status: active | wip | deprecated
 
 This wiki documents the following directories:
 
-- _(whole project — no specific directory scope)_
+- `src/`
 
 When ingesting new source material or creating concept pages, prefer content that originates from or is relevant to these directories. Pages about code outside this scope are allowed but should be clearly tagged.
 
@@ -89,12 +89,12 @@ This keeps the Obsidian graph readable: one node per topic, not a pile of identi
 
 The **first tag** must be the scope slug for entity pages. Derive slugs from documented source directories (adapt this table per project):
 
-| Source path     | Scope tag   | Entity overview         |
-| --------------- | ----------- | ----------------------- |
-| `src/commands/` | `commands`  | `entities/commands.md`  |
-| `src/utils/`    | `utils`     | `entities/utils.md`     |
-| `templates/`    | `templates` | `entities/templates.md` |
-| `bin/`          | `cli`       | `entities/cli.md`       |
+| Source path       | Scope tag   | Entity overview            |
+| ----------------- | ----------- | -------------------------- |
+| `src/commands/`   | `commands`  | `entities/commands.md`     |
+| `src/utils/`      | `utils`     | `entities/utils.md`        |
+| `templates/`      | `templates` | `entities/templates.md`    |
+| `bin/`            | `cli`       | `entities/cli.md`          |
 
 In UI-heavy projects the same rule applies with paths like `src/ui/_<app>/` → tag `<app>`, `src/ui/core/` → `core`, `src/api/` → `api`.
 
@@ -116,9 +116,7 @@ Cross-cutting mechanisms (init flow, template interpolation, dogfooding) belong 
 ## Three Core Operations
 
 ### Ingest
-
 Process a new source document:
-
 1. Place the raw document in `wiki/raw/`
 2. Read it and discuss key takeaways
 3. Create a summary page in `wiki/sources/<slug>.md`
@@ -129,18 +127,14 @@ Process a new source document:
 8. Run `npm run wiki:log -- add ingest "<title of source>"`
 
 ### Query
-
 Answer a question using the wiki:
-
 1. Read `index.md` to locate relevant pages
 2. Synthesize an answer with citations to wiki pages
 3. If the answer reveals a gap, create a stub page with `status: wip`
 4. Log: `npm run wiki:log -- add query "<question summary>"`
 
 ### Lint
-
 Periodic health check:
-
 1. Run `npm run wiki:lint` (or `llm-wiki-manager lint` if npm scripts are unavailable)
 2. Resolve any errors before adding new content
 3. Log: `npm run wiki:log -- add lint "health check"`
@@ -150,7 +144,6 @@ Periodic health check:
 ## Contradiction Handling
 
 When two pages assert conflicting facts:
-
 1. Add a `> ⚠️ Contradiction: see [other page](path)` blockquote to both pages
 2. Create a concept page that reconciles the conflict with evidence
 3. Update both original pages to reference the reconciliation page

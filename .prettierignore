@@ -1,8 +1,0 @@
-dist
-node_modules
-coverage
-templates
-wiki/index.md
-_references
-.husky/_
-*.tgz

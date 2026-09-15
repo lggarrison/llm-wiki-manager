@@ -11,28 +11,38 @@ function extractBodyLinks(content: string): Set<string> {
   );
 }
 
+function splitFrontmatter(content: string): { frontmatter: string; body: string } {
+  const match = content.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/);
+  if (!match) return { frontmatter: '', body: content };
+  return {
+    frontmatter: match[0],
+    body: content.slice(match[0].length),
+  };
+}
+
 /**
  * Insert links at the end of an existing "## See also" section (before the
  * next heading), or append a new section at the end of the file.
  */
 function insertSeeAlsoLinks(content: string, links: string[]): string {
-  const headingMatch = content.match(/^## See also[^\n]*$/m);
+  const { frontmatter, body } = splitFrontmatter(content);
+  const headingMatch = body.match(/^## See also[^\n]*$/m);
   if (!headingMatch || headingMatch.index === undefined) {
-    return `${content.trimEnd()}\n\n## See also\n\n${links.join('\n')}\n`;
+    return `${frontmatter}${body.trimEnd()}\n\n## See also\n\n${links.join('\n')}\n`;
   }
 
   const sectionStart = headingMatch.index + headingMatch[0].length;
-  const rest = content.slice(sectionStart);
+  const rest = body.slice(sectionStart);
   const nextHeading = rest.search(/^#{1,6} /m);
 
   if (nextHeading < 0) {
-    return `${content.trimEnd()}\n${links.join('\n')}\n`;
+    return `${frontmatter}${body.trimEnd()}\n${links.join('\n')}\n`;
   }
 
   const sectionBody = rest.slice(0, nextHeading);
   const after = rest.slice(nextHeading);
-  const before = content.slice(0, sectionStart);
-  return `${before}${sectionBody.trimEnd()}\n${links.join('\n')}\n\n${after}`;
+  const before = body.slice(0, sectionStart);
+  return `${frontmatter}${before}${sectionBody.trimEnd()}\n${links.join('\n')}\n\n${after}`;
 }
 
 export type SyncOptions = {

@@ -137,6 +137,44 @@ describe('sync command', () => {
     expect(afterFirst.match(/\[B Page\]\(b\.md\)/g)?.length).toBe(1);
   });
 
+  it('does not insert missing links into frontmatter heading comments', () => {
+    const dir = newWikiDir();
+    writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));
+    const aPath = writePage(
+      dir,
+      'concepts/a.md',
+      [
+        '---',
+        'type: concept',
+        'title: A Page',
+        'last_updated: 2026-09-15T00:00:00Z',
+        'related: [concepts/b.md]',
+        '## See also',
+        '---',
+        '',
+        '# A Page',
+        '',
+        'Body.',
+        '',
+      ].join('\n'),
+    );
+
+    runSync(dir);
+    const afterFirst = readFileSync(aPath, 'utf8');
+    runSync(dir);
+    const afterSecond = readFileSync(aPath, 'utf8');
+
+    const frontmatterEnd = afterSecond.indexOf('\n---\n') + '\n---\n'.length;
+    const frontmatter = afterSecond.slice(0, frontmatterEnd);
+    const linkIdx = afterSecond.indexOf('[B Page](b.md)');
+    const bodyIdx = afterSecond.indexOf('# A Page');
+
+    expect(frontmatter).not.toContain('[B Page](b.md)');
+    expect(linkIdx).toBeGreaterThan(bodyIdx);
+    expect(afterSecond).toBe(afterFirst);
+    expect(afterSecond.match(/\[B Page\]\(b\.md\)/g)?.length).toBe(1);
+  });
+
   it('inserts links inside "## See also" when it is not the last section', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));

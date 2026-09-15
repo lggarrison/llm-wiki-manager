@@ -4,7 +4,7 @@ The wiki implements Karpathy's LLM-Wiki pattern: a persistent, compounding knowl
 
 Read **`schema.md`** first for the full specification. This file is the quick orientation for agents maintaining this vault.
 
-**Documentation scope** — the entire project
+**Documentation scope** — `src/`
 
 ---
 
@@ -38,15 +38,15 @@ Quick pitfalls for new maintainers:
 
 Every page declares its role with `type:` in frontmatter. `npm run wiki:lint` enforces type values and placement.
 
-| Type         | Placement                                     | Purpose                                                                                            |
-| ------------ | --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `overview`   | `entities/<slug>.md`                          | One scope entry point per documented source area (see `.entity-scopes`)                            |
-| `entity`     | `entities/<slug>.md`                          | A concrete feature, module, or component                                                           |
-| `comparison` | `entities/<slug>.md`                          | Same topic across two or more scopes                                                               |
-| `deep-dive`  | `entities/<slug>.md`                          | Long-form reference; co-locate by filename (e.g. `bubbles.md` + `bubbles-architecture-diagram.md`) |
-| `concept`    | `concepts/<slug>.md`                          | Genuinely cross-scope pattern or mechanism                                                         |
-| `source`     | `sources/<slug>.md`                           | LLM summary of one raw artifact                                                                    |
-| `hub`        | `README.md`, `index.md`, or `raw/raw.md` only | Vault navigation/meta pages                                                                        |
+| Type | Placement | Purpose |
+| --- | --- | --- |
+| `overview` | `entities/<slug>.md` | One scope entry point per documented source area (see `.entity-scopes`) |
+| `entity` | `entities/<slug>.md` | A concrete feature, module, or component |
+| `comparison` | `entities/<slug>.md` | Same topic across two or more scopes |
+| `deep-dive` | `entities/<slug>.md` | Long-form reference; co-locate by filename (e.g. `bubbles.md` + `bubbles-architecture-diagram.md`) |
+| `concept` | `concepts/<slug>.md` | Genuinely cross-scope pattern or mechanism |
+| `source` | `sources/<slug>.md` | LLM summary of one raw artifact |
+| `hub` | `README.md`, `index.md`, or `raw/raw.md` only | Vault navigation/meta pages |
 
 Quick placement guide:
 
@@ -69,23 +69,23 @@ Do not encode scope with folder nesting under `entities/`.
 
 ### Required
 
-| Field          | Notes                                                               |
-| -------------- | ------------------------------------------------------------------- |
-| `type`         | One of the page types in §3                                         |
-| `title`        | Human-readable; used in `index.md`                                  |
+| Field | Notes |
+| --- | --- |
+| `type` | One of the page types in §3 |
+| `title` | Human-readable; used in `index.md` |
 | `last_updated` | UTC ISO 8601 timestamp `YYYY-MM-DDTHH:MM:SSZ`; update on every edit |
 
 ### Encouraged
 
-| Field       | Notes                                                                                  |
-| ----------- | -------------------------------------------------------------------------------------- |
-| `aliases`   | Alternate titles for search                                                            |
-| `tags`      | Topic labels; first tag is the scope slug on entity-family pages                       |
-| `related`   | Wiki-root-relative paths to related pages                                              |
-| `sources`   | Paths to source summaries that back this page (entities and concepts)                  |
+| Field | Notes |
+| --- | --- |
+| `aliases` | Alternate titles for search |
+| `tags` | Topic labels; first tag is the scope slug on entity-family pages |
+| `related` | Wiki-root-relative paths to related pages |
+| `sources` | Paths to source summaries that back this page (entities and concepts) |
 | `code_refs` | Repo-root-relative code paths (e.g. `src/commands/init.ts`); lint verifies each exists |
-| `status`    | `active` · `deprecated` · `wip`                                                        |
-| `summary`   | One sentence; shown in index tables                                                    |
+| `status` | `active` · `deprecated` · `wip` |
+| `summary` | One sentence; shown in index tables |
 
 Two field semantics worth internalizing:
 

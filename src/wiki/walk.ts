@@ -2,6 +2,10 @@ import { readdirSync, statSync, existsSync } from 'fs';
 import { join, relative } from 'path';
 import { RAW_ARTIFACT_DIRS } from './constants.js';
 
+function isMarkdownFile(entry: string): boolean {
+  return /\.md$/i.test(entry);
+}
+
 export function shouldSkipWikiPath(wikiDir: string, full: string): boolean {
   const rel = relative(wikiDir, full).replace(/\\/g, '/');
   if (rel.startsWith('archive/') || rel === 'archive') return true;
@@ -20,7 +24,7 @@ export function walkMd(wikiDir: string): string[] {
       const full = join(dir, entry);
       if (shouldSkipWikiPath(wikiDir, full)) continue;
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.md')) results.push(full);
+      else if (isMarkdownFile(entry)) results.push(full);
     }
   }
   walk(wikiDir);
@@ -36,7 +40,7 @@ export function walkMdSkipDirs(wikiDir: string, skipDirs: string[]): string[] {
       const rel = relative(wikiDir, full).replace(/\\/g, '/');
       if (skipDirs.some((d) => rel === d || rel.startsWith(`${d}/`))) continue;
       if (statSync(full).isDirectory()) walk(full);
-      else if (entry.endsWith('.md')) results.push(full);
+      else if (isMarkdownFile(entry)) results.push(full);
     }
   }
   walk(wikiDir);

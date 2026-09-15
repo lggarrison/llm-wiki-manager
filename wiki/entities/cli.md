@@ -1,7 +1,7 @@
 ---
 type: overview
 title: CLI
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-09-15T11:07:00Z
 tags: [cli]
 related: [entities/commands.md, concepts/wiki-scripts.md]
 code_refs: [bin/cli.ts, dist/bin/cli.js]

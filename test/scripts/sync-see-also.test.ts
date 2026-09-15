@@ -158,6 +158,31 @@ describe('sync command', () => {
     expect(content).toContain('Old notes.');
   });
 
+  it('reuses See also headings with alternate case, level, or inline formatting', () => {
+    const cases = [
+      { heading: '### See also', label: 'B Page' },
+      { heading: '## See Also', label: 'C Page' },
+      { heading: '## **See also**', label: 'D Page' },
+    ];
+
+    for (const { heading, label } of cases) {
+      const dir = newWikiDir();
+      writePage(dir, 'concepts/target.md', fm({ type: 'hub', title: label }));
+      const aPath = writePage(
+        dir,
+        'concepts/a.md',
+        fm({ related: ['concepts/target.md'] }) + `\nBody.\n\n${heading}\n\n- Existing note.\n`,
+      );
+
+      runSync(dir);
+
+      const content = readFileSync(aPath, 'utf8');
+      expect(content).toContain(heading);
+      expect(content).toContain(`[${label}](target.md)`);
+      expect(content.match(/#{2,3}\s+(?:\*\*)?See also(?:\*\*)?/gi)?.length).toBe(1);
+    }
+  });
+
   it('syncs pages whose filenames contain the substring "raw"', () => {
     const dir = newWikiDir();
     writePage(dir, 'concepts/b.md', fm({ type: 'hub', title: 'B Page' }));

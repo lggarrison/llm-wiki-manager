@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-09-15T11:07:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -22,6 +22,7 @@ code_refs:
     src/wiki/doctor.ts,
     src/wiki/setup-husky.ts,
     src/wiki/migrate-pages.ts,
+    src/wiki/walk.ts,
     src/wiki/constants.ts,
   ]
 status: active
@@ -44,6 +45,8 @@ After [Init Command](init-command.md), `package.json` gains `wiki:*` npm scripts
 | `log`          | `wiki:log`         | Append ingest/query/lint/maintenance entries to `log.md` |
 | `doctor`       | `wiki:doctor`      | Health-check scaffold; suggest fixes for common issues   |
 | `setup-husky`  | `wiki:setup:husky` | Wire pre-push `wiki:check`; print lint-staged guide      |
+
+The shared Markdown walkers include `.md` files case-insensitively, so pages such as `concepts/api.MD` are still linted, indexed, synced, and migrated on case-sensitive filesystems. `sync` reuses existing H2/H3 See-also headings case-insensitively, including simple inline formatting like `## **See also**`, before appending a new section.
 
 `doctor` also reports when `wiki:*` scripts exist but `llm-wiki-manager` is not installed locally (missing `node_modules/.bin/` shim) and suggests `npm install`.
 

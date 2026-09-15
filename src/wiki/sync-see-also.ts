@@ -11,17 +11,60 @@ function extractBodyLinks(content: string): Set<string> {
   );
 }
 
+function normalizeHeadingText(text: string): string {
+  return text
+    .replace(/[*_`~]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+type HeadingMatch = {
+  index: number;
+  text: string;
+};
+
+function findSeeAlsoHeading(content: string): HeadingMatch | null {
+  let inFence = false;
+  let position = 0;
+
+  while (position < content.length) {
+    const newline = content.indexOf('\n', position);
+    const lineEnd = newline >= 0 ? newline + 1 : content.length;
+    const line = content.slice(position, lineEnd);
+    const lineWithoutEol = line.replace(/\r?\n$/, '');
+    const isFence = /^\s*(```|~~~)/.test(lineWithoutEol);
+
+    if (isFence) {
+      inFence = !inFence;
+      position = lineEnd;
+      continue;
+    }
+
+    if (!inFence) {
+      const heading = lineWithoutEol.match(/^#{2,3}\s+([^\n]*)$/i);
+      if (heading && normalizeHeadingText(heading[1] ?? '').startsWith('see also')) {
+        return { index: position, text: lineWithoutEol };
+      }
+    }
+
+    position = lineEnd;
+  }
+
+  return null;
+}
+
 /**
  * Insert links at the end of an existing "## See also" section (before the
  * next heading), or append a new section at the end of the file.
  */
 function insertSeeAlsoLinks(content: string, links: string[]): string {
-  const headingMatch = content.match(/^## See also[^\n]*$/m);
+  const headingMatch = findSeeAlsoHeading(content);
   if (!headingMatch || headingMatch.index === undefined) {
     return `${content.trimEnd()}\n\n## See also\n\n${links.join('\n')}\n`;
   }
 
-  const sectionStart = headingMatch.index + headingMatch[0].length;
+  const sectionStart = headingMatch.index + headingMatch.text.length;
   const rest = content.slice(sectionStart);
   const nextHeading = rest.search(/^#{1,6} /m);
 

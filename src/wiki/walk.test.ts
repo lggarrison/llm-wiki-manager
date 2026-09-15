@@ -74,6 +74,15 @@ describe('walkMd', () => {
     expect(rels).toContain('raw/raw.md');
     expect(rels).not.toContain('raw/articles/notes.md');
   });
+
+  it('includes markdown files with uppercase extensions', () => {
+    const wikiDir = makeWikiDir();
+    touch(wikiDir, 'concepts/upper.MD');
+
+    const rels = walkMd(wikiDir).map((f) => relPath(wikiDir, f));
+
+    expect(rels).toContain('concepts/upper.MD');
+  });
 });
 
 describe('walkMdSkipDirs', () => {
@@ -90,5 +99,16 @@ describe('walkMdSkipDirs', () => {
     expect(rels).toContain('concepts/drawing.md');
     expect(rels).not.toContain('raw/raw.md');
     expect(rels).not.toContain('archive/old.md');
+  });
+
+  it('includes markdown files with uppercase extensions', () => {
+    const wikiDir = makeWikiDir();
+    touch(wikiDir, 'concepts/upper.MD');
+
+    const rels = walkMdSkipDirs(wikiDir, ['raw', 'archive', '.obsidian']).map((f) =>
+      relPath(wikiDir, f),
+    );
+
+    expect(rels).toContain('concepts/upper.MD');
   });
 });

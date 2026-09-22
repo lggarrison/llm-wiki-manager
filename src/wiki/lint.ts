@@ -82,6 +82,16 @@ export function runLint(ctx: WikiContext, options: LintOptions = {}): number {
   const errors: string[] = [];
   const warnings: string[] = [];
 
+  if (!existsSync(wikiDir)) {
+    console.log(`\nWiki lint failed: wiki directory does not exist: ${wikiDir}\n`);
+    return 1;
+  }
+
+  if (!statSync(wikiDir).isDirectory()) {
+    console.log(`\nWiki lint failed: wiki path is not a directory: ${wikiDir}\n`);
+    return 1;
+  }
+
   function err(file: string, msg: string): void {
     errors.push(`  ${relative(cwd, file)}: ${msg}`);
   }

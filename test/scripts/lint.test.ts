@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { runBuiltCli } from '../helpers/cli.js';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 
 const dirs: string[] = [];
@@ -21,6 +22,14 @@ function runLint(wikiDir: string, extraArgs: string[] = []) {
 }
 
 describe('lint command', () => {
+  it('fails when the requested wiki directory does not exist', () => {
+    const dir = newWikiDir();
+    const missingDir = join(dir, 'missing-wiki');
+    const result = runBuiltCli(dir, ['lint', '--wiki-dir', missingDir]);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('wiki directory does not exist');
+  });
+
   it('exits 0 for a wiki with no pages', () => {
     const dir = newWikiDir();
     const result = runLint(dir);

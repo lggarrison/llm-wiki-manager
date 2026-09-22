@@ -1,7 +1,7 @@
 ---
 type: overview
 title: CLI
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-09-22T11:45:00Z
 tags: [cli]
 related: [entities/commands.md, concepts/wiki-scripts.md]
 code_refs: [bin/cli.ts, dist/bin/cli.js]
@@ -35,6 +35,8 @@ Default command when none is given: **`init`**. Global options: `--help`, `--ver
 | `setup-husky` | `src/wiki/setup-husky.ts`   |
 
 Wiki subcommands accept `--wiki-dir` and `--repo-root`. See [Wiki Management Scripts](../concepts/wiki-scripts.md) for flags and npm script aliases.
+
+The `lint` dispatch path fails early when the resolved wiki directory is missing or is not a directory, so validation jobs do not pass after checking zero pages.
 
 ## See also
 

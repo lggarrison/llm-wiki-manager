@@ -44,7 +44,7 @@ export async function runSetupHusky(cwd: string = process.cwd()): Promise<number
     return 1;
   }
 
-  let husky: () => void;
+  let husky: () => string | void;
   try {
     const huskyEntry = join(cwd, 'node_modules', 'husky', 'index.js');
     if (!existsSync(huskyEntry)) {
@@ -61,7 +61,12 @@ export async function runSetupHusky(cwd: string = process.cwd()): Promise<number
     return 1;
   }
 
-  husky();
+  const huskyResult = husky();
+  if (typeof huskyResult === 'string' && huskyResult.trim().length > 0) {
+    console.error(`setup-husky: husky install failed: ${huskyResult.trim()}`);
+    return 1;
+  }
+
   mkdirSync(join(cwd, HUSKY_DIR), { recursive: true });
 
   const results: Record<string, 'unchanged' | 'appended' | 'created'> = {};

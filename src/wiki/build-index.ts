@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, statSync } from 'fs';
 import { join, relative } from 'path';
 import { parseFrontmatter } from './frontmatter.js';
 import { walkMd } from './walk.js';
@@ -140,10 +140,24 @@ function normalizeEol(content: string): string {
   return content.replace(/\r\n/g, '\n');
 }
 
+function validateWikiDirectory(wikiDir: string): string | null {
+  if (!existsSync(wikiDir)) {
+    return `wiki directory does not exist: ${wikiDir}`;
+  }
+  if (!statSync(wikiDir).isDirectory()) {
+    return `wiki path is not a directory: ${wikiDir}`;
+  }
+  return null;
+}
+
 async function buildFinalIndexOutput(
   ctx: WikiContext,
 ): Promise<{ output: string; pages: PageEntry[] }> {
   const { wikiDir, repoRoot } = ctx;
+  const wikiDirError = validateWikiDirectory(wikiDir);
+  if (wikiDirError) {
+    throw new Error(wikiDirError);
+  }
   const { output: rawOutput, pages } = buildIndexOutput(wikiDir);
   const indexPath = join(wikiDir, 'index.md');
   const formatted = await formatIndexMarkdown(rawOutput, indexPath, repoRoot);
@@ -160,6 +174,11 @@ export async function isIndexStale(wikiDir: string, repoRoot: string): Promise<b
 
 export async function runBuild(ctx: WikiContext): Promise<number> {
   const { wikiDir } = ctx;
+  const wikiDirError = validateWikiDirectory(wikiDir);
+  if (wikiDirError) {
+    console.error(`✗ ${wikiDirError}`);
+    return 1;
+  }
   const { output, pages } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
   writeFileSync(indexPath, output, 'utf8');
@@ -169,6 +188,11 @@ export async function runBuild(ctx: WikiContext): Promise<number> {
 
 export async function runCheck(ctx: WikiContext): Promise<number> {
   const { wikiDir } = ctx;
+  const wikiDirError = validateWikiDirectory(wikiDir);
+  if (wikiDirError) {
+    console.error(`✗ ${wikiDirError}`);
+    return 1;
+  }
   const { output, pages } = await buildFinalIndexOutput(ctx);
   const indexPath = join(wikiDir, 'index.md');
   const existing = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';

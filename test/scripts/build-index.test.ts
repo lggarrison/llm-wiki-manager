@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { makeTmpWikiDir, cleanup, writePage, fm, runWikiCliWithWikiDir } from '../helpers/wiki.js';
 import { PACKAGE_ROOT } from '../helpers/paths.js';
+import { runBuiltCli } from '../helpers/cli.js';
 
 const require = createRequire(import.meta.url);
 
@@ -31,6 +32,15 @@ function runCheck(wikiDir: string) {
 }
 
 describe('build command', () => {
+  it('fails clearly when the requested wiki directory does not exist', () => {
+    const dir = newWikiDir();
+    const missingDir = join(dir, 'missing-wiki');
+    const result = runBuiltCli(dir, ['build', '--wiki-dir', missingDir]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('wiki directory does not exist');
+    expect(result.stderr).not.toContain('ENOENT');
+  });
+
   it('writes index.md with "none yet" placeholders for an empty wiki', () => {
     const dir = newWikiDir();
     const result = runBuild(dir);
@@ -136,6 +146,15 @@ describe('build command', () => {
     const stale = runCheck(dir);
     expect(stale.status).toBe(1);
     expect(stale.stderr).toContain('stale');
+  });
+
+  it('check fails clearly when the requested wiki directory does not exist', () => {
+    const dir = newWikiDir();
+    const missingDir = join(dir, 'missing-wiki');
+    const result = runBuiltCli(dir, ['check', '--wiki-dir', missingDir]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('wiki directory does not exist');
+    expect(result.stderr).not.toContain('stale');
   });
 
   it('check does not modify index.md', () => {

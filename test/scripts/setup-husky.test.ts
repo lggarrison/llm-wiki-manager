@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
@@ -21,14 +21,17 @@ afterEach(() => {
   }
 });
 
-function installFakeHusky(projectDir: string): void {
+function installFakeHusky(
+  projectDir: string,
+  moduleSource = 'export default function husky() {}\n',
+): void {
   const huskyDir = join(projectDir, 'node_modules', 'husky');
   mkdirSync(huskyDir, { recursive: true });
   writeFileSync(
     join(huskyDir, 'package.json'),
     JSON.stringify({ type: 'module', exports: { '.': './index.js' } }),
   );
-  writeFileSync(join(huskyDir, 'index.js'), 'export default function husky() {}\n');
+  writeFileSync(join(huskyDir, 'index.js'), moduleSource);
 }
 
 function runSetupHusky(projectDir: string): ReturnType<typeof runBuiltCli> {
@@ -56,6 +59,21 @@ describe('setup-husky command', () => {
     const result = runSetupHusky(projectDir);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('husky is not installed');
+  });
+
+  it('exits 1 when husky reports activation failure', () => {
+    const projectDir = makeProjectDir(true);
+    initGitRepo(projectDir);
+    installFakeHusky(
+      projectDir,
+      "export default function husky() { return 'HUSKY=0 skip install'; }\n",
+    );
+
+    const result = runSetupHusky(projectDir);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('husky install failed');
+    expect(result.stderr).toContain('HUSKY=0 skip install');
+    expect(existsSync(join(projectDir, '.husky', 'pre-push'))).toBe(false);
   });
 
   it('creates pre-push and prints lint-staged recommendation', () => {

@@ -1,7 +1,7 @@
 ---
 type: overview
 title: CLI
-last_updated: 2026-07-01T22:00:00Z
+last_updated: 2026-11-09T11:20:00Z
 tags: [cli]
 related: [entities/commands.md, concepts/wiki-scripts.md]
 code_refs: [bin/cli.ts, dist/bin/cli.js]
@@ -35,6 +35,8 @@ Default command when none is given: **`init`**. Global options: `--help`, `--ver
 | `setup-husky` | `src/wiki/setup-husky.ts`   |
 
 Wiki subcommands accept `--wiki-dir` and `--repo-root`. See [Wiki Management Scripts](../concepts/wiki-scripts.md) for flags and npm script aliases.
+
+`setup-husky` delegates to the consumer project's installed Husky package, writes or refreshes `.husky/pre-push`, and ensures the hook file is executable so Git will invoke it.
 
 ## See also
 

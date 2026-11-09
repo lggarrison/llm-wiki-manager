@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Wiki Management Scripts
-last_updated: 2026-07-02T18:00:00Z
+last_updated: 2026-11-09T11:20:00Z
 tags: [scripts, lint, maintenance]
 related:
   [
@@ -81,6 +81,7 @@ Use `wiki:check` (read-only) in consumer CI and pre-push hooks to catch stale `i
 ## Git hooks
 
 - **Consumers:** `wiki:setup:husky` wires pre-push `wiki:check` and prints a lint-staged snippet for pre-commit wiki validation.
+- Generated or refreshed hook files are marked executable so Git actually runs the configured `wiki:check` hook on Unix-like systems.
 - **This repo (maintainers):** pre-push runs the full `release:check` chain (see [Dogfooding](dogfooding.md)), not just `wiki:check`.
 
 ## See also

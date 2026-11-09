@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { runBuiltCli } from '../helpers/cli.js';
@@ -39,6 +39,10 @@ function initGitRepo(projectDir: string): void {
   mkdirSync(join(projectDir, '.git'), { recursive: true });
 }
 
+function isExecutable(path: string): boolean {
+  return (statSync(path).mode & 0o111) !== 0;
+}
+
 describe('setup-husky command', () => {
   it('exits 1 when .git is missing', () => {
     const projectDir = makeProjectDir();
@@ -74,6 +78,7 @@ describe('setup-husky command', () => {
     expect(readFileSync(join(projectDir, '.husky', 'pre-push'), 'utf8')).toBe(
       'npm run wiki:check\n',
     );
+    expect(isExecutable(join(projectDir, '.husky', 'pre-push'))).toBe(true);
     expect(result.stdout).toContain('pre-push: created');
     expect(result.stdout).toContain('lint-staged');
     expect(result.stdout).toContain('"lint-staged": {');
@@ -95,7 +100,22 @@ describe('setup-husky command', () => {
     expect(prePush).toContain('npm test');
     expect(prePush).toContain('# llm-wiki-manager');
     expect(prePush).toContain('npm run wiki:check');
+    expect(isExecutable(join(projectDir, '.husky', 'pre-push'))).toBe(true);
     expect(result.stdout).toContain('pre-push: appended to');
+  });
+
+  it('repairs an already configured hook that is not executable', () => {
+    const projectDir = makeProjectDir();
+    initGitRepo(projectDir);
+    installFakeHusky(projectDir);
+    mkdirSync(join(projectDir, '.husky'), { recursive: true });
+    const hookPath = join(projectDir, '.husky', 'pre-push');
+    writeFileSync(hookPath, '# llm-wiki-manager\nnpm run wiki:check\n', { mode: 0o644 });
+
+    const result = runSetupHusky(projectDir);
+    expect(result.status).toBe(0);
+    expect(isExecutable(hookPath)).toBe(true);
+    expect(result.stdout).toContain('pre-push: already configured');
   });
 
   it('is idempotent on re-run', () => {

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
 import { readInstallConfig } from '../utils/fs.js';
@@ -29,6 +29,12 @@ function amendHook(
 
   writeFileSync(hookPath, `${command}\n`, 'utf8');
   return 'created';
+}
+
+function ensureHookExecutable(cwd: string, hookName: string): void {
+  const hookPath = join(cwd, HUSKY_DIR, hookName);
+  const mode = statSync(hookPath).mode;
+  chmodSync(hookPath, mode | 0o111);
 }
 
 function printLintStagedRecommendation(wikiDir: string): void {
@@ -67,6 +73,7 @@ export async function runSetupHusky(cwd: string = process.cwd()): Promise<number
   const results: Record<string, 'unchanged' | 'appended' | 'created'> = {};
   for (const [hook, command] of Object.entries(HOOKS)) {
     results[hook] = amendHook(cwd, hook, command);
+    ensureHookExecutable(cwd, hook);
   }
 
   for (const [hook, status] of Object.entries(results)) {

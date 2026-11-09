@@ -1,7 +1,7 @@
 ---
 type: concept
 title: Unit Tests
-last_updated: 2026-07-02T12:00:00Z
+last_updated: 2026-11-09T11:20:00Z
 tags: [testing, vitest]
 related:
   [
@@ -61,7 +61,7 @@ Each wiki subcommand has a dedicated test file under `test/scripts/`:
 | `sync-see-also.test.ts` | `sync`                                                                  |
 | `log.test.ts`           | `log`                                                                   |
 | `help.test.ts`          | `help`                                                                  |
-| `setup-husky.test.ts`   | `setup-husky`                                                           |
+| `setup-husky.test.ts`   | `setup-husky`, including executable hook permissions                    |
 | `migrate-pages.test.ts` | `runMigrate` legacy frontmatter and fenced-code-safe wikilink migration |
 | `scripts.test.ts`       | npm alias smoke tests                                                   |
 
